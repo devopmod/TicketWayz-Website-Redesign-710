@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-width: 320px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark {
+  background-color: #18181b;
+  color: #ffffff;
+}
+
+body.light {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* Скрытие полосы прокрутки на всех браузерах */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE и Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Стилизованный скроллбар */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: #ffbf00;
+  border-radius: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: #e6ac00;
+}
+
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: #ffbf00 rgba(0, 0, 0, 0.1);
+}
+
+/* Стили для плавного скроллинга */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Фиксированная ширина карточек */
+.card-fixed-width {
+  min-width: 240px;
+  width: 240px;
+}
+
+/* Фиксированный размер карточек в сетке */
+.event-card-small {
+  width: 256px !important;
+  height: 96px !important;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+/* Обеспечение правильного отображения flex элементов в мобильном виде */
+@media (max-width: 640px) {
+  .flex-nowrap {
+    flex-wrap: nowrap;
+    min-width: min-content;
+  }
+
+  /* Стили для сетки событий на мобильных устройствах */
+  .event-grid-mobile {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Сохраняем фиксированный размер для карточек даже на мобильных устройствах */
+  .event-card-small {
+    width: 256px !important;
+    height: 96px !important;
+  }
+}
+
+/* Добавлены стили для циклического скролла */
+.infinite-scroll {
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.infinite-scroll > div {
+  scroll-snap-align: start;
+}
+
+/* Стили для рядов карточек */
+.event-row {
+  display: flex;
+  margin-bottom: 16px;
+  scroll-snap-align: start;
+}
+
+/* Стили для чекбоксов */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 3px;
+  background-color: transparent;
+  display: inline-block;
+  position: relative;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #ffbf00;
+  border-color: #ffbf00;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid black;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Стили для ползунка диапазона */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #d1d5db;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffbf00;
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffbf00;
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]::-ms-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffbf00;
+  cursor: pointer;
+  border: none;
+}
