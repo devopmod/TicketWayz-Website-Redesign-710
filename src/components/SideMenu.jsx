@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiHome, FiCalendar, FiSettings, FiSun, FiMoon } from 'react-icons/fi';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {motion, AnimatePresence} from 'framer-motion';
+import {FiX, FiHome, FiCalendar, FiSettings, FiMapPin, FiLayout} from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import ThemeToggle from './ThemeToggle';
 
-const SideMenu = ({ isOpen, onClose }) => {
+const SideMenu = ({isOpen, onClose}) => {
   const [language, setLanguage] = useState('RU');
   const navigate = useNavigate();
 
   const menuItems = [
     { icon: FiHome, label: 'Главная', path: '/' },
     { icon: FiCalendar, label: 'События', path: '/events' },
+    { icon: FiMapPin, label: 'Места проведения', path: '/venues' },
     { icon: FiSettings, label: 'Админ', path: '/admin' },
   ];
 

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FiMenu } from 'react-icons/fi';
+import React, {useState} from 'react';
+import {Link} from 'react-router-dom';
+import {FiMenu} from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import SideMenu from './SideMenu';
 
