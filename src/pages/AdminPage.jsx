@@ -8,11 +8,12 @@ import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import supabase from '../lib/supabase';
 
-const {FiUsers,FiCalendar,FiDollarSign,FiTrendingUp,FiChevronRight,FiChevronLeft,FiPlus,FiEdit2,FiTrash2,FiSettings,FiMapPin,FiLoader,FiShoppingBag,FiCheck,FiX,FiRefreshCw,FiDownload,FiEye}=FiIcons;
+const {FiUsers,FiCalendar,FiDollarSign,FiTrendingUp,FiChevronRight,FiChevronLeft,FiPlus,FiEdit2,FiTrash2,FiSettings,FiMapPin,FiLoader,FiShoppingBag,FiCheck,FiX,FiRefreshCw,FiDownload,FiEye,FiSave,FiRotateCcw,FiGlobe,FiTag,FiImage}=FiIcons;
 
 const AdminPage=()=> {
   const navigate=useNavigate();
   const [activeTab,setActiveTab]=useState('dashboard');
+  const [activeSettingsTab,setActiveSettingsTab]=useState('general');
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -36,6 +37,24 @@ const AdminPage=()=> {
   const [showOrderDetails,setShowOrderDetails]=useState(false);
   const [processingOrderAction,setProcessingOrderAction]=useState(false);
 
+  // Settings state
+  const [settings,setSettings]=useState({
+    siteName: 'TicketWayz',
+    siteDescription: 'Лучший сервис для покупки билетов на концерты, вечеринки и автобусные туры',
+    siteKeywords: 'билеты, концерты, вечеринки, автобусные туры, развлечения',
+    ogTitle: '',
+    ogDescription: '',
+    ogImage: '',
+    favicon: '/favicon.ico',
+    googleAnalytics: '',
+    yandexMetrica: '',
+    customCSS: '',
+    customJS: ''
+  });
+  const [settingsSaving,setSettingsSaving]=useState(false);
+  const [settingsError,setSettingsError]=useState(null);
+  const [settingsSuccess,setSettingsSuccess]=useState(false);
+
   // Моковые данные для админки
   const stats={
     users: 1245,
@@ -47,6 +66,11 @@ const AdminPage=()=> {
   // Fetch events
   useEffect(()=> {
     loadEvents();
+  },[]);
+
+  // Load settings on component mount
+  useEffect(()=> {
+    loadSettings();
   },[]);
 
   // Fetch venues when venues tab is active
@@ -68,6 +92,122 @@ const AdminPage=()=> {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Load settings from localStorage
+  const loadSettings=()=> {
+    try {
+      const savedSettings=localStorage.getItem('siteSettings');
+      if (savedSettings) {
+        const parsedSettings=JSON.parse(savedSettings);
+        setSettings(prev=> ({...prev,...parsedSettings}));
+        // Apply site name to document title
+        if (parsedSettings.siteName) {
+          document.title=parsedSettings.siteName;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading settings:',error);
+    }
+  };
+
+  // Save settings to localStorage and apply them
+  const saveSettings=async ()=> {
+    try {
+      setSettingsSaving(true);
+      setSettingsError(null);
+      setSettingsSuccess(false);
+
+      // Save to localStorage
+      localStorage.setItem('siteSettings',JSON.stringify(settings));
+
+      // Apply settings immediately
+      document.title=settings.siteName;
+      
+      // Update meta tags
+      updateMetaTags();
+
+      setSettingsSuccess(true);
+      setTimeout(()=> setSettingsSuccess(false),3000);
+    } catch (error) {
+      console.error('Error saving settings:',error);
+      setSettingsError('Не удалось сохранить настройки');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  // Update meta tags in document head
+  const updateMetaTags=()=> {
+    // Update or create meta description
+    let metaDescription=document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription=document.createElement('meta');
+      metaDescription.name='description';
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content=settings.siteDescription;
+
+    // Update or create meta keywords
+    let metaKeywords=document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      metaKeywords=document.createElement('meta');
+      metaKeywords.name='keywords';
+      document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.content=settings.siteKeywords;
+
+    // Open Graph tags
+    updateOrCreateMetaTag('property','og:title',settings.ogTitle || settings.siteName);
+    updateOrCreateMetaTag('property','og:description',settings.ogDescription || settings.siteDescription);
+    updateOrCreateMetaTag('property','og:image',settings.ogImage);
+    updateOrCreateMetaTag('property','og:type','website');
+
+    // Twitter Card tags
+    updateOrCreateMetaTag('name','twitter:card','summary_large_image');
+    updateOrCreateMetaTag('name','twitter:title',settings.ogTitle || settings.siteName);
+    updateOrCreateMetaTag('name','twitter:description',settings.ogDescription || settings.siteDescription);
+    updateOrCreateMetaTag('name','twitter:image',settings.ogImage);
+  };
+
+  // Helper function to update or create meta tags
+  const updateOrCreateMetaTag=(attribute,value,content)=> {
+    if (!content) return;
+    
+    let metaTag=document.querySelector(`meta[${attribute}="${value}"]`);
+    if (!metaTag) {
+      metaTag=document.createElement('meta');
+      metaTag.setAttribute(attribute,value);
+      document.head.appendChild(metaTag);
+    }
+    metaTag.content=content;
+  };
+
+  // Reset settings to defaults
+  const resetSettings=()=> {
+    if (window.confirm('Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?')) {
+      setSettings({
+        siteName: 'TicketWayz',
+        siteDescription: 'Лучший сервис для покупки билетов на концерты, вечеринки и автобусные туры',
+        siteKeywords: 'билеты, концерты, вечеринки, автобусные туры, развлечения',
+        ogTitle: '',
+        ogDescription: '',
+        ogImage: '',
+        favicon: '/favicon.ico',
+        googleAnalytics: '',
+        yandexMetrica: '',
+        customCSS: '',
+        customJS: ''
+      });
+    }
+  };
+
+  // Handle settings form changes
+  const handleSettingsChange=(field,value)=> {
+    setSettings(prev=> ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // Venues functions
@@ -606,6 +746,12 @@ const AdminPage=()=> {
     {id: 'settings',label: 'Настройки',icon: FiSettings},
   ];
 
+  const settingsMenuItems=[
+    {id: 'general',label: 'Общие настройки',icon: FiGlobe},
+    {id: 'seo',label: 'SEO и метаданные',icon: FiTag},
+    {id: 'appearance',label: 'Внешний вид',icon: FiImage},
+  ];
+
   const Sidebar=({className=''})=> (
     <div className={`bg-zinc-100 dark:bg-zinc-800 border-r border-zinc-200 dark:border-zinc-700 h-full ${className}`}>
       <div className="p-4">
@@ -680,9 +826,9 @@ const AdminPage=()=> {
   };
 
   // Получение названия события из первого билета заказа
-  const getEventTitle = (order) => {
+  const getEventTitle=(order)=> {
     if (order.order_items && order.order_items.length > 0) {
-      const firstItem = order.order_items[0];
+      const firstItem=order.order_items[0];
       if (firstItem.ticket && firstItem.ticket.event) {
         return firstItem.ticket.event.title || 'Неизвестное событие';
       }
@@ -1124,7 +1270,289 @@ const AdminPage=()=> {
             </div>
           )}
 
-          {(activeTab !=='dashboard' && activeTab !=='events' && activeTab !=='venues' && activeTab !=='orders') && (
+          {/* Settings Tab Content */}
+          {activeTab==='settings' && (
+            <div className="space-y-6">
+              {/* Settings Navigation */}
+              <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg inline-flex">
+                {settingsMenuItems.map((item)=> (
+                  <button
+                    key={item.id}
+                    onClick={()=> setActiveSettingsTab(item.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition ${
+                      activeSettingsTab===item.id
+                        ? 'bg-yellow-500 text-black'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <SafeIcon icon={item.icon} className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Settings Content */}
+              <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+                {/* Error and Success Messages */}
+                {settingsError && (
+                  <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-lg mb-6">
+                    {settingsError}
+                  </div>
+                )}
+
+                {settingsSuccess && (
+                  <div className="bg-green-500/10 border border-green-500 text-green-500 p-4 rounded-lg mb-6">
+                    Настройки успешно сохранены!
+                  </div>
+                )}
+
+                {/* General Settings Tab */}
+                {activeSettingsTab==='general' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4 text-zinc-900 dark:text-white">
+                        Общие настройки сайта
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                            Название сайта
+                          </label>
+                          <input
+                            type="text"
+                            value={settings.siteName}
+                            onChange={(e)=> handleSettingsChange('siteName',e.target.value)}
+                            className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                            placeholder="Название вашего сайта"
+                          />
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                            Отображается во вкладке браузера и в заголовках страниц
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                            Favicon URL
+                          </label>
+                          <input
+                            type="text"
+                            value={settings.favicon}
+                            onChange={(e)=> handleSettingsChange('favicon',e.target.value)}
+                            className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                            placeholder="/favicon.ico"
+                          />
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                            Иконка сайта в браузере (16x16 или 32x32 пикселя)
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                          Описание сайта
+                        </label>
+                        <textarea
+                          value={settings.siteDescription}
+                          onChange={(e)=> handleSettingsChange('siteDescription',e.target.value)}
+                          rows="3"
+                          className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          placeholder="Краткое описание вашего сайта"
+                        />
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                          Используется в мета-тегах и поисковых системах (150-160 символов)
+                        </p>
+                      </div>
+
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                          Ключевые слова
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.siteKeywords}
+                          onChange={(e)=> handleSettingsChange('siteKeywords',e.target.value)}
+                          className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          placeholder="билеты, концерты, вечеринки"
+                        />
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                          Разделяйте ключевые слова запятыми
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SEO and Metadata Tab */}
+                {activeSettingsTab==='seo' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4 text-zinc-900 dark:text-white">
+                        SEO и метаданные
+                      </h3>
+                      
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="text-lg font-medium mb-3 text-zinc-800 dark:text-zinc-200">
+                            Open Graph (для социальных сетей)
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                OG: Заголовок
+                              </label>
+                              <input
+                                type="text"
+                                value={settings.ogTitle}
+                                onChange={(e)=> handleSettingsChange('ogTitle',e.target.value)}
+                                className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="Оставьте пустым для использования названия сайта"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                OG: Изображение
+                              </label>
+                              <input
+                                type="url"
+                                value={settings.ogImage}
+                                onChange={(e)=> handleSettingsChange('ogImage',e.target.value)}
+                                className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="https://example.com/image.jpg"
+                              />
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                                Рекомендуемый размер: 1200x630 пикселей
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                              OG: Описание
+                            </label>
+                            <textarea
+                              value={settings.ogDescription}
+                              onChange={(e)=> handleSettingsChange('ogDescription',e.target.value)}
+                              rows="3"
+                              className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                              placeholder="Оставьте пустым для использования описания сайта"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-lg font-medium mb-3 text-zinc-800 dark:text-zinc-200">
+                            Аналитика
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                Google Analytics ID
+                              </label>
+                              <input
+                                type="text"
+                                value={settings.googleAnalytics}
+                                onChange={(e)=> handleSettingsChange('googleAnalytics',e.target.value)}
+                                className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="GA-XXXXXXXXX-X"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                Яндекс.Метрика ID
+                              </label>
+                              <input
+                                type="text"
+                                value={settings.yandexMetrica}
+                                onChange={(e)=> handleSettingsChange('yandexMetrica',e.target.value)}
+                                className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="12345678"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Appearance Tab */}
+                {activeSettingsTab==='appearance' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4 text-zinc-900 dark:text-white">
+                        Внешний вид
+                      </h3>
+                      
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                            Пользовательский CSS
+                          </label>
+                          <textarea
+                            value={settings.customCSS}
+                            onChange={(e)=> handleSettingsChange('customCSS',e.target.value)}
+                            rows="8"
+                            className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 font-mono text-sm"
+                            placeholder="/* Ваш пользовательский CSS код */"
+                          />
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                            Добавьте свои стили для кастомизации внешнего вида
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                            Пользовательский JavaScript
+                          </label>
+                          <textarea
+                            value={settings.customJS}
+                            onChange={(e)=> handleSettingsChange('customJS',e.target.value)}
+                            rows="8"
+                            className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 font-mono text-sm"
+                            placeholder="// Ваш пользовательский JavaScript код"
+                          />
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                            Добавьте свои скрипты (будьте осторожны!)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-between items-center pt-6 border-t border-zinc-300 dark:border-zinc-600">
+                  <button
+                    onClick={resetSettings}
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-300 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-400 dark:hover:bg-zinc-500 transition"
+                  >
+                    <SafeIcon icon={FiRotateCcw} className="w-4 h-4" />
+                    Сбросить
+                  </button>
+
+                  <button
+                    onClick={saveSettings}
+                    disabled={settingsSaving}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition ${
+                      settingsSaving
+                        ? 'bg-zinc-400 text-zinc-600 cursor-not-allowed'
+                        : 'bg-yellow-500 text-black hover:bg-yellow-400'
+                    }`}
+                  >
+                    <SafeIcon icon={FiSave} className="w-4 h-4" />
+                    {settingsSaving ? 'Сохранение...' : 'Сохранить настройки'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(activeTab !=='dashboard' && activeTab !=='events' && activeTab !=='venues' && activeTab !=='orders' && activeTab !=='settings') && (
             <div className="bg-zinc-100 dark:bg-zinc-800 p-8 rounded-lg text-center">
               <h2 className="text-xl font-medium mb-2">Раздел в разработке</h2>
               <p className="text-zinc-600 dark:text-zinc-400 mb-4">
