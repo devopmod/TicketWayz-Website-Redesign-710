@@ -60,6 +60,7 @@ id: `${seat.id}-${Date.now()}-${Math.random()}`,// УНИКАЛЬНЫЙ UI ID д
 ticketId: realTicketIds[0],// Основной ticket ID для совместимости
 ticketIds: realTicketIds,// НОВОЕ: Массив всех УНИКАЛЬНЫХ ticket IDs
 elementId: seat.elementId || seat.id,
+seatId: seat.id, // КРИТИЧНО ДОБАВЛЕНО: Оригинальный ID кресла для корректного сравнения
 label: seat.number || seat.label || `Место ${seat.id.substring(0,4)}`,
 quantity: quantity,
 unitPrice: actualUnitPrice,
@@ -257,15 +258,21 @@ return [];
 
 // КРИТИЧНО ИСПРАВЛЕННАЯ функция обработки выбора мест
 const handleSeatToggle=async (seat)=> {
-// Check if the seat is in the selected array
-const existingIndex=selectedSeats.findIndex(s=> s.elementId===seat.elementId || s.id===seat.id);
+console.log('🎯 ОТЛАДКА handleSeatToggle: Processing seat:', seat);
+console.log('🎯 ОТЛАДКА handleSeatToggle: Current selectedSeats:', selectedSeats);
 
-if (existingIndex >=0) {
+// ИСПРАВЛЕНО: Проверяем по ОРИГИНАЛЬНОМУ ID кресла, а не по elementId
+const existingIndex = selectedSeats.findIndex(s => s.seatId === seat.id);
+console.log('🎯 ОТЛАДКА handleSeatToggle: Found existing index:', existingIndex);
+
+if (existingIndex >= 0) {
 // Remove the seat
-setSelectedSeats(selectedSeats.filter((_,index)=> index !==existingIndex));
+console.log('🎯 ОТЛАДКА handleSeatToggle: Removing seat from selection');
+setSelectedSeats(selectedSeats.filter((_, index) => index !== existingIndex));
 } else {
 // Add the seat with the price from event prices
 try {
+console.log('🎯 ОТЛАДКА handleSeatToggle: Adding seat to selection');
 const seatPrice=await getSeatPrice(seat);
 console.log(`Got price for seat ${seat.id}: ${seatPrice}`);
 
@@ -293,6 +300,7 @@ seatPrice,
 correspondingTickets // Передаем РЕАЛЬНЫЕ билеты
 );
 
+console.log('🎯 ОТЛАДКА handleSeatToggle: Created cart item:', cartItem);
 setSelectedSeats([...selectedSeats,cartItem]);
 } catch (error) {
 console.error('Error getting seat price:',error);
