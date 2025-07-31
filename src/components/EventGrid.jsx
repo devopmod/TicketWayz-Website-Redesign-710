@@ -1,42 +1,40 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import EventCard from './EventCard';
-import { events } from '../assets/mockData';
 
-const EventGrid = ({ selectedDate, selectedGenre }) => {
+const EventGrid = ({selectedDate, selectedGenre, events = []}) => {
   const [filteredEvents, setFilteredEvents] = useState([]);
   const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     let filtered = [...events];
-
-    // Сортируем события по дате
+    
+    // Sort events by date
     filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Фильтрация по дате - показываем события от выбранной даты и позже
+    
+    // Filter by date - show events from selected date and later
     if (selectedDate) {
       filtered = filtered.filter(event => event.date >= selectedDate);
     } else {
-      // Если дата не выбрана, показываем только будущие события
+      // If date not selected, show only future events
       const today = new Date().toISOString().split('T')[0];
       filtered = filtered.filter(event => event.date >= today);
     }
-
-    // Фильтрация по жанру
-    if (selectedGenre && selectedGenre.id !== 1) {
-      // id=1 это "Все"
+    
+    // Filter by genre
+    if (selectedGenre && selectedGenre.id !== 1) { // id=1 is "All"
       filtered = filtered.filter(
-        event => event.genre.toLowerCase() === selectedGenre.name.toLowerCase()
+        event => event.genre && event.genre.toLowerCase() === selectedGenre.name.toLowerCase()
       );
     }
-
+    
     setFilteredEvents(filtered);
-  }, [selectedDate, selectedGenre]);
+  }, [selectedDate, selectedGenre, events]);
 
-  // Организуем события в колонки по 3 в каждой
+  // Organize events in columns of 3 each
   const organizeEventsInColumns = (events) => {
     const columns = [];
     const totalColumns = Math.ceil(events.length / 3);
-
+    
     for (let col = 0; col < totalColumns; col++) {
       const columnEvents = [];
       for (let row = 0; row < 3; row++) {
@@ -47,6 +45,7 @@ const EventGrid = ({ selectedDate, selectedGenre }) => {
       }
       columns.push(columnEvents);
     }
+    
     return columns;
   };
 
@@ -54,14 +53,14 @@ const EventGrid = ({ selectedDate, selectedGenre }) => {
 
   return (
     <div className="mb-12">
-      <div
-        ref={scrollContainerRef}
-        className="overflow-x-auto hide-scrollbar pb-4"
+      <div 
+        ref={scrollContainerRef} 
+        className="overflow-x-auto hide-scrollbar pb-4" 
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
-          height: '312px' // Фиксированная высота на 3 карточки (96px * 3 + отступы)
+          height: '320px' // Fixed height for container
         }}
       >
         <div className="flex min-w-min h-full">
@@ -72,18 +71,13 @@ const EventGrid = ({ selectedDate, selectedGenre }) => {
                   <EventCard event={event} size="small" />
                 </div>
               ))}
-
-              {/* Заполняем пустое место если в колонке меньше 3 событий */}
+              {/* Fill empty space if column has fewer than 3 events */}
               {column.length < 3 && Array(3 - column.length).fill().map((_, emptyIndex) => (
-                <div
-                  key={`empty-${colIndex}-${emptyIndex}`}
-                  className="mb-4"
-                  style={{ height: '96px' }}
-                ></div>
+                <div key={`empty-${colIndex}-${emptyIndex}`} className="mb-4" style={{height: '96px'}}></div>
               ))}
             </div>
           ))}
-
+          
           {filteredEvents.length === 0 && (
             <div className="w-full text-center py-8 text-gray-400 flex items-center justify-center h-full">
               Нет событий, соответствующих выбранным фильтрам

@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {Routes, Route, useLocation} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -9,7 +9,6 @@ import VenuePage from './pages/VenuePage';
 import CheckoutPage from './pages/CheckoutPage';
 import ThankYouPage from './pages/ThankYouPage';
 import AdminPage from './pages/AdminPage';
-import VenuesPage from './pages/VenuesPage';
 import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
 
@@ -26,10 +25,10 @@ function App() {
     // Проверяем сохраненную тему в localStorage
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     // Определяем начальную тему
     const initialDarkMode = savedTheme ? savedTheme === 'dark' : prefersDark;
-    
+
     // Применяем тему
     const root = document.documentElement;
     const body = document.body;
@@ -45,7 +44,7 @@ function App() {
       body.style.backgroundColor = '#ffffff';
       body.style.color = '#000000';
     }
-    
+
     // Сохраняем выбранную тему в localStorage, если её не было
     if (!savedTheme) {
       localStorage.setItem('theme', initialDarkMode ? 'dark' : 'light');
@@ -67,7 +66,6 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/thank-you" element={<ThankYouPage />} />
           <Route path="/admin" element={<AdminPage />} />
-          <Route path="/venues" element={<VenuesPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

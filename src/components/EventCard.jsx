@@ -1,17 +1,17 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiUser } from 'react-icons/fi';
+import {useNavigate} from 'react-router-dom';
+import {FiUser} from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
-const EventCard = ({ event, size = "large" }) => {
-  const navigate = useNavigate();
+const EventCard=({event,size="large"})=> {
+  const navigate=useNavigate();
 
-  const formatDate = (dateString) => {
-    const options = { day: '2-digit', month: 'long', year: 'numeric' };
-    return new Date(dateString).toLocaleDateString('ru-RU', options);
+  const formatDate=(dateString)=> {
+    const options={day: '2-digit',month: 'long',year: 'numeric'};
+    return new Date(dateString).toLocaleDateString('ru-RU',options);
   };
 
-  const getCategoryBadgeColor = (category) => {
+  const getCategoryBadgeColor=(category)=> {
     switch (category) {
       case 'concert': return 'bg-purple-100 text-purple-700';
       case 'party': return 'bg-pink-100 text-pink-700';
@@ -20,7 +20,7 @@ const EventCard = ({ event, size = "large" }) => {
     }
   };
 
-  const getGenreBadgeColor = (genre) => {
+  const getGenreBadgeColor=(genre)=> {
     switch (genre) {
       case 'pop': return 'bg-yellow-100 text-yellow-700';
       case 'dance': return 'bg-green-100 text-green-700';
@@ -29,7 +29,7 @@ const EventCard = ({ event, size = "large" }) => {
     }
   };
 
-  const getCategoryLabel = (category) => {
+  const getCategoryLabel=(category)=> {
     switch (category) {
       case 'concert': return 'Концерт';
       case 'party': return 'Вечеринка';
@@ -38,7 +38,7 @@ const EventCard = ({ event, size = "large" }) => {
     }
   };
 
-  const getGenreLabel = (genre) => {
+  const getGenreLabel=(genre)=> {
     switch (genre) {
       case 'pop': return 'Поп';
       case 'dance': return 'Танцы';
@@ -47,21 +47,23 @@ const EventCard = ({ event, size = "large" }) => {
     }
   };
 
-  const handleCardClick = () => {
+  const handleCardClick=()=> {
     navigate(`/event/${event.id}`);
   };
 
-  if (size === "large") {
+  // Format price with proper decimal places
+  const formatPrice=(price)=> {
+    return price ? Number(price).toFixed(2) : '0.00';
+  };
+
+  if (size==="large") {
     return (
-      <div
-        className="flex-shrink-0 flex-grow-0 w-60 min-w-[240px] mr-6 mb-3 cursor-pointer"
-        onClick={handleCardClick}
-      >
+      <div className="flex-shrink-0 flex-grow-0 w-60 min-w-[240px] mr-6 mb-3 cursor-pointer" onClick={handleCardClick}>
         <div className="relative h-44 w-full">
-          <img
-            src={event.image}
-            alt={event.title}
-            className="h-full w-full object-cover rounded-lg"
+          <img 
+            src={event.image} 
+            alt={event.title} 
+            className="h-full w-full object-cover rounded-lg" 
           />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black to-transparent opacity-70 rounded-bl-lg rounded-br-lg"></div>
           
@@ -75,21 +77,23 @@ const EventCard = ({ event, size = "large" }) => {
             </span>
           </div>
         </div>
-
+        
         <div className="mt-3 mb-1.5">
           <p className="text-zinc-900 dark:text-white leading-tight font-medium">{event.title}</p>
         </div>
-
+        
         <div className="flex items-center text-xs text-zinc-500 dark:text-neutral-500 mb-1">
           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400" />
           <span>{event.artist}</span>
         </div>
-
+        
         <div className="flex justify-between items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs">
             {formatDate(event.date)} • {event.location}
           </span>
-          <span className="text-xs font-bold text-zinc-900 dark:text-white">€{event.price}</span>
+          <span className="text-xs font-bold text-zinc-900 dark:text-white">
+            от €{formatPrice(event.price)}
+          </span>
         </div>
       </div>
     );
@@ -97,28 +101,29 @@ const EventCard = ({ event, size = "large" }) => {
 
   // Компактная версия карточки (для календарного грида) с фиксированным размером 256px × 96px
   return (
-    <div
-      className="flex w-[256px] h-[96px] cursor-pointer flex-shrink-0 bg-white dark:bg-zinc-900"
-      onClick={handleCardClick}
-    >
+    <div className="flex w-[256px] h-[96px] cursor-pointer flex-shrink-0 bg-white dark:bg-zinc-900" onClick={handleCardClick}>
       <div className="w-20 h-20 flex-shrink-0 relative">
-        <img
-          src={event.image}
-          alt={event.title}
-          className="h-20 w-20 object-cover rounded-xl"
+        <img 
+          src={event.image} 
+          alt={event.title} 
+          className="h-20 w-20 object-cover rounded-xl" 
         />
         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black to-transparent opacity-70 rounded-bl-lg rounded-br-lg"></div>
       </div>
-
+      
       <div className="pl-3 flex-1 overflow-hidden">
         <h6 className="font-medium mb-1 leading-tight truncate text-zinc-900 dark:text-white">{event.title}</h6>
+        
         <div className="flex items-center text-xs text-zinc-500 dark:text-neutral-500 mb-1">
           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400 text-xs" />
           <span className="truncate">{event.artist}</span>
         </div>
+        
         <div className="flex justify-between items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs block truncate">{formatDate(event.date)}</span>
-          <span className="text-xs font-bold text-zinc-900 dark:text-white">€{event.price}</span>
+          <span className="text-xs font-bold text-zinc-900 dark:text-white">
+            от €{formatPrice(event.price)}
+          </span>
         </div>
       </div>
     </div>

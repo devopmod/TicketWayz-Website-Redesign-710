@@ -1,48 +1,80 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiSearch } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { events } from '../assets/mockData';
+import { fetchEvents } from '../services/eventService';
 
 const SearchBar = () => {
   const [query, setQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Фильтрация событий при вводе
+  // Load events once
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        setLoading(true);
+        const eventsData = await fetchEvents();
+        
+        if (eventsData) {
+          setAllEvents(eventsData);
+        }
+      } catch (error) {
+        console.error('Error loading events for search:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadEvents();
+  }, []);
+
+  // Filter events on query change
   useEffect(() => {
     if (query.length > 0) {
-      const filtered = events.filter(event => 
+      const filtered = allEvents.filter(event => 
         event.title.toLowerCase().includes(query.toLowerCase()) || 
-        event.location.toLowerCase().includes(query.toLowerCase())
+        event.location?.toLowerCase().includes(query.toLowerCase()) ||
+        event.artist?.toLowerCase().includes(query.toLowerCase())
       );
-      setFilteredEvents(filtered.slice(0, 4)); // Максимум 4 события в выпадающем списке
+      
+      setFilteredEvents(filtered.slice(0, 4)); // Max 4 events in dropdown
       setIsDropdownOpen(true);
     } else {
       setIsDropdownOpen(false);
     }
-  }, [query]);
+  }, [query, allEvents]);
 
-  // Закрытие выпадающего списка при клике вне компонента
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
     };
-
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // Обработчик выбора события
+  // Handle event selection
   const handleSelectEvent = (event) => {
-    console.log('Selected event:', event);
+    navigate(`/event/${event.id}`);
     setIsDropdownOpen(false);
     setQuery('');
-    // Здесь будет переход на страницу события
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
   };
 
   return (
@@ -59,10 +91,12 @@ const SearchBar = () => {
           <SafeIcon icon={FiSearch} className="text-yellow-400 text-xl" />
         </div>
 
-        {/* Выпадающий список результатов */}
+        {/* Dropdown results */}
         {isDropdownOpen && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg z-10 max-h-64 overflow-auto">
-            {filteredEvents.length > 0 ? (
+            {loading ? (
+              <div className="px-4 py-2 text-zinc-900 dark:text-white">Загрузка...</div>
+            ) : filteredEvents.length > 0 ? (
               <ul>
                 {filteredEvents.map(event => (
                   <li
@@ -71,7 +105,9 @@ const SearchBar = () => {
                     onClick={() => handleSelectEvent(event)}
                   >
                     <div className="text-zinc-900 dark:text-white">{event.title}</div>
-                    <div className="text-zinc-600 dark:text-zinc-400 text-sm">{event.location}, {new Date(event.date).toLocaleDateString()}</div>
+                    <div className="text-zinc-600 dark:text-zinc-400 text-sm">
+                      {event.location}, {formatDate(event.event_date)}
+                    </div>
                   </li>
                 ))}
               </ul>

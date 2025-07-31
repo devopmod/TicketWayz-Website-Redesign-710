@@ -3,33 +3,45 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiMapPin, FiClock, FiUser, FiArrowLeft } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { events } from '../assets/mockData';
+import { fetchEventById } from '../services/eventService';
 
 const EventDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Имитация загрузки данных
-    setLoading(true);
-    // Находим событие по ID
-    const foundEvent = events.find(e => e.id === id);
-    setTimeout(() => {
-      setEvent(foundEvent);
-      setLoading(false);
-    }, 500);
+    const loadEvent = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const eventData = await fetchEventById(id);
+        setEvent(eventData);
+      } catch (err) {
+        console.error('Error loading event:', err);
+        setError('Не удалось загрузить событие');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadEvent();
   }, [id]);
 
   const handleBuyTickets = () => {
-    // Переход на страницу с выбором места
+    // Navigate to venue selection page
     navigate(`/venue/${id}`);
   };
 
   const formatDate = (dateString) => {
-    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-    return new Date(dateString).toLocaleDateString('ru-RU', options);
+    if (!dateString) return '';
+    try {
+      const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      return new Date(dateString).toLocaleDateString('ru-RU', options);
+    } catch (e) {
+      return dateString;
+    }
   };
 
   const getCategoryBadgeColor = (category) => {
@@ -60,12 +72,18 @@ const EventDetailPage = () => {
   };
 
   const getGenreLabel = (genre) => {
+    if (!genre) return '';
     switch (genre) {
       case 'pop': return 'Поп';
       case 'dance': return 'Танцы';
       case 'transport': return 'Транспорт';
       default: return genre;
     }
+  };
+
+  // Format price with proper decimal places
+  const formatPrice = (price) => {
+    return price ? Number(price).toFixed(2) : '0.00';
   };
 
   if (loading) {
@@ -83,12 +101,14 @@ const EventDetailPage = () => {
     );
   }
 
-  if (!event) {
+  if (error || !event) {
     return (
       <div className="container mx-auto max-w-[960px] px-4 py-16 text-center">
         <h1 className="text-2xl font-bold mb-4 text-zinc-900 dark:text-white">Событие не найдено</h1>
-        <p className="mb-6 text-zinc-600 dark:text-zinc-400">Запрошенное событие не существует или было удалено.</p>
-        <button
+        <p className="mb-6 text-zinc-600 dark:text-zinc-400">
+          {error || "Запрошенное событие не существует или было удалено."}
+        </p>
+        <button 
           onClick={() => navigate('/events')}
           className="px-6 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition"
         >
@@ -98,24 +118,36 @@ const EventDetailPage = () => {
     );
   }
 
+  // Get the lowest price from prices array
+  const getBasePrice = () => {
+    if (event.prices && event.prices.length > 0) {
+      return Math.min(...event.prices.map(p => p.price));
+    }
+    return event.price || 0;
+  };
+
   return (
     <>
       <div className="w-full h-64 md:h-80 relative max-w-[960px] mx-auto">
-        <img
-          src={event.image}
+        <img 
+          src={event.image || `https://placehold.co/600x400/333/FFF?text=${encodeURIComponent(event.title)}`}
           alt={event.title}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = `https://placehold.co/600x400/333/FFF?text=${encodeURIComponent(event.title)}`;
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-70"></div>
-
-        {/* Бейджи на изображении - обновлены стили */}
+        {/* Category & genre badges */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-1">
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryBadgeColor(event.category)}`}>
             {getCategoryLabel(event.category)}
           </span>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getGenreBadgeColor(event.genre)}`}>
-            {getGenreLabel(event.genre)}
-          </span>
+          {event.genre && (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getGenreBadgeColor(event.genre)}`}>
+              {getGenreLabel(event.genre)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -126,17 +158,19 @@ const EventDetailPage = () => {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white">{event.title}</h1>
-
-          {/* Артист с иконкой */}
+          
+          {/* Artist with icon */}
           <div className="mb-4 flex items-center">
             <SafeIcon icon={FiUser} className="text-yellow-400 mr-2" />
-            <span className="text-lg font-medium text-zinc-900 dark:text-white">{event.title}</span>
+            <span className="text-lg font-medium text-zinc-900 dark:text-white">
+              {event.artist || event.title}
+            </span>
           </div>
-
+          
           <div className="flex flex-wrap gap-4 mb-6">
             <div className="flex items-center gap-2">
               <SafeIcon icon={FiCalendar} className="text-yellow-400" />
-              <span className="text-zinc-900 dark:text-white">{formatDate(event.date)}</span>
+              <span className="text-zinc-900 dark:text-white">{formatDate(event.event_date)}</span>
             </div>
             <div className="flex items-center gap-2">
               <SafeIcon icon={FiMapPin} className="text-yellow-400" />
@@ -144,46 +178,27 @@ const EventDetailPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <SafeIcon icon={FiClock} className="text-yellow-400" />
-              <span className="text-zinc-900 dark:text-white">19:00</span>
+              <span className="text-zinc-900 dark:text-white">
+                {new Date(event.event_date).getHours()}:00
+              </span>
             </div>
           </div>
-
+          
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-3 text-zinc-900 dark:text-white">Описание события</h2>
             <p className="text-zinc-600 dark:text-zinc-300">
-              {event.genre === 'pop' ? (
-                <>
-                  Впервые в {event.location}! Долгожданный концерт {event.title}!
-                  Незабываемое шоу с лучшими хитами и новыми композициями.
-                  Не упустите шанс увидеть любимого исполнителя вживую!
-                </>
-              ) : event.genre === 'dance' ? (
-                <>
-                  Грандиозная вечеринка {event.title} в самом сердце {event.location}!
-                  Лучшие диджеи, невероятные световые шоу и атмосфера полного отрыва.
-                  Танцуем до утра!
-                </>
-              ) : event.genre === 'transport' ? (
-                <>
-                  Комфортабельный автобусный тур {event.title}. Отправление в 08:00 из центра города.
-                  Возвращение на следующий день. В стоимость входит трансфер в обе стороны и помощь в размещении.
-                </>
-              ) : (
-                <>
-                  {event.title} - уникальное событие, которое нельзя пропустить!
-                  Подробная информация будет доступна ближе к дате мероприятия. Следите за обновлениями.
-                </>
-              )}
+              {event.description || `${event.title} - уникальное событие, которое нельзя пропустить! Подробная информация будет доступна ближе к дате мероприятия. Следите за обновлениями.`}
             </p>
           </div>
-
+          
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <div>
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">от</span>
-                <span className="text-2xl font-bold ml-2 text-zinc-900 dark:text-white">€{event.price}</span>
+                <span className="text-2xl font-bold ml-2 text-zinc-900 dark:text-white">€{formatPrice(getBasePrice())}</span>
               </div>
             </div>
+            
             <button
               onClick={handleBuyTickets}
               className="w-full px-6 py-4 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition font-medium text-lg"

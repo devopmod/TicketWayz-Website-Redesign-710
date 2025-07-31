@@ -1,17 +1,17 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiUser } from 'react-icons/fi';
+import {useNavigate} from 'react-router-dom';
+import {FiUser} from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
-const EventListItem = ({ event }) => {
-  const navigate = useNavigate();
+const EventListItem=({event})=> {
+  const navigate=useNavigate();
 
-  const formatDate = (dateString) => {
-    const options = { day: '2-digit', month: 'long', year: 'numeric' };
-    return new Date(dateString).toLocaleDateString('ru-RU', options);
+  const formatDate=(dateString)=> {
+    const options={day: '2-digit',month: 'long',year: 'numeric'};
+    return new Date(dateString).toLocaleDateString('ru-RU',options);
   };
 
-  const getCategoryBadgeColor = (category) => {
+  const getCategoryBadgeColor=(category)=> {
     switch (category) {
       case 'concert': return 'bg-purple-100 text-purple-700';
       case 'party': return 'bg-pink-100 text-pink-700';
@@ -20,7 +20,7 @@ const EventListItem = ({ event }) => {
     }
   };
 
-  const getGenreBadgeColor = (genre) => {
+  const getGenreBadgeColor=(genre)=> {
     switch (genre) {
       case 'pop': return 'bg-yellow-100 text-yellow-700';
       case 'dance': return 'bg-green-100 text-green-700';
@@ -29,7 +29,7 @@ const EventListItem = ({ event }) => {
     }
   };
 
-  const getCategoryLabel = (category) => {
+  const getCategoryLabel=(category)=> {
     switch (category) {
       case 'concert': return 'Концерт';
       case 'party': return 'Вечеринка';
@@ -38,7 +38,7 @@ const EventListItem = ({ event }) => {
     }
   };
 
-  const getGenreLabel = (genre) => {
+  const getGenreLabel=(genre)=> {
     switch (genre) {
       case 'pop': return 'Поп';
       case 'dance': return 'Танцы';
@@ -47,38 +47,42 @@ const EventListItem = ({ event }) => {
     }
   };
 
-  const handleCardClick = () => {
+  const handleCardClick=()=> {
     navigate(`/event/${event.id}`);
   };
 
+  // Format price with proper decimal places
+  const formatPrice=(price)=> {
+    return price ? Number(price).toFixed(2) : '0.00';
+  };
+
   return (
-    <div
-      className="flex border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4 cursor-pointer hover:bg-zinc-100/30 dark:hover:bg-zinc-800/30 transition p-2 rounded-lg"
-      onClick={handleCardClick}
-    >
+    <div className="flex border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4 cursor-pointer hover:bg-zinc-100/30 dark:hover:bg-zinc-800/30 transition p-2 rounded-lg" onClick={handleCardClick}>
       <div className="w-20 h-20 flex-shrink-0">
-        <img
-          src={event.image}
-          alt={event.title}
-          className="h-full w-full object-cover rounded-lg"
+        <img 
+          src={event.image} 
+          alt={event.title} 
+          className="h-full w-full object-cover rounded-lg" 
         />
       </div>
-
+      
       <div className="ml-4 flex-1">
         <div className="flex justify-between">
           <h3 className="font-medium text-zinc-900 dark:text-white">{event.title}</h3>
-          <div className="text-sm font-bold text-zinc-900 dark:text-white">от €{event.price}</div>
+          <div className="text-sm font-bold text-zinc-900 dark:text-white">
+            от €{formatPrice(event.price)}
+          </div>
         </div>
-
+        
         <div className="flex items-center text-sm text-zinc-600 dark:text-zinc-400 mb-1">
           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400" />
           <span>{event.artist}</span>
         </div>
-
+        
         <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
           {formatDate(event.date)} • {event.location}
         </div>
-
+        
         <div className="flex flex-wrap gap-1">
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeColor(event.category)}`}>
             {getCategoryLabel(event.category)}
