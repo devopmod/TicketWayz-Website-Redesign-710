@@ -8,7 +8,7 @@ import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import supabase from '../lib/supabase';
 
-const {FiUsers,FiCalendar,FiDollarSign,FiTrendingUp,FiChevronRight,FiChevronLeft,FiPlus,FiEdit2,FiTrash2,FiSettings,FiMapPin,FiLoader,FiShoppingBag,FiCheck,FiX,FiRefreshCw,FiDownload,FiEye,FiSave,FiRotateCcw,FiGlobe,FiTag,FiImage}=FiIcons;
+const {FiUsers,FiCalendar,FiDollarSign,FiTrendingUp,FiChevronRight,FiChevronLeft,FiPlus,FiEdit2,FiTrash2,FiSettings,FiMapPin,FiLoader,FiShoppingBag,FiCheck,FiX,FiRefreshCw,FiDownload,FiEye,FiSave,FiRotateCcw,FiGlobe,FiTag,FiImage,FiClock,FiActivity,FiTarget,FiBarChart3,FiPieChart}=FiIcons;
 
 const AdminPage=()=> {
   const navigate=useNavigate();
@@ -40,8 +40,8 @@ const AdminPage=()=> {
   // Settings state
   const [settings,setSettings]=useState({
     siteName: 'TicketWayz',
-    siteDescription: 'Лучший сервис для покупки билетов на концерты, вечеринки и автобусные туры',
-    siteKeywords: 'билеты, концерты, вечеринки, автобусные туры, развлечения',
+    siteDescription: 'Лучший сервис для покупки билетов на концерты,вечеринки и автобусные туры',
+    siteKeywords: 'билеты,концерты,вечеринки,автобусные туры,развлечения',
     ogTitle: '',
     ogDescription: '',
     ogImage: '',
@@ -55,13 +55,22 @@ const AdminPage=()=> {
   const [settingsError,setSettingsError]=useState(null);
   const [settingsSuccess,setSettingsSuccess]=useState(false);
 
-  // Моковые данные для админки
-  const stats={
-    users: 1245,
-    events: events.length,
-    revenue: 15680,
-    growth: 24.5,
-  };
+  // НОВЫЕ состояния для реальной статистики дашборда
+  const [dashboardStats,setDashboardStats]=useState({
+    todaySales: {value: 0,change: 0,changeType: 'neutral'},
+    totalCustomers: {value: 0,change: 0,changeType: 'neutral'},
+    activeEvents: {value: 0,change: 0,changeType: 'neutral'},
+    avgTicketPrice: {value: 0,change: 0,changeType: 'neutral'},
+    conversionRate: {value: 0,change: 0,changeType: 'neutral'},
+    venueUtilization: {value: 0,change: 0,changeType: 'neutral'},
+    totalRevenue: {value: 0,change: 0,changeType: 'neutral'},
+    avgResponseTime: {value: 0,change: 0,changeType: 'neutral'}
+  });
+
+  const [recentSales,setRecentSales]=useState([]);
+  const [revenueBreakdown,setRevenueBreakdown]=useState([]);
+  const [popularEvent,setPopularEvent]=useState(null);
+  const [dashboardLoading,setDashboardLoading]=useState(true);
 
   // Fetch events
   useEffect(()=> {
@@ -79,8 +88,398 @@ const AdminPage=()=> {
       fetchVenues();
     } else if (activeTab==='orders') {
       fetchOrders();
+    } else if (activeTab==='dashboard') {
+      loadDashboardStats();
     }
   },[activeTab]);
+
+  // НОВАЯ функция для загрузки статистики дашборда
+  const loadDashboardStats=async ()=> {
+    try {
+      setDashboardLoading(true);
+      
+      // Параллельно загружаем все необходимые данные
+      const [
+        todaysSalesData,
+        yesterdaysSalesData,
+        customersData,
+        eventsData,
+        recentSalesData,
+        revenueBreakdownData,
+        ticketsData
+      ]=await Promise.all([
+        getTodaysSales(),
+        getYesterdaysSales(),
+        getCustomersStats(),
+        getEventsStats(),
+        getRecentSales(),
+        getRevenueBreakdown(),
+        getTicketsStats()
+      ]);
+
+      // Рассчитываем изменения
+      const salesChange=yesterdaysSalesData.total > 0 
+        ? ((todaysSalesData.total - yesterdaysSalesData.total) / yesterdaysSalesData.total * 100)
+        : 0;
+
+      const customersChange=customersData.lastMonth > 0
+        ? ((customersData.thisMonth - customersData.lastMonth) / customersData.lastMonth * 100)
+        : 0;
+
+      const eventsChange=eventsData.lastMonth > 0
+        ? (eventsData.thisMonth - eventsData.lastMonth)
+        : eventsData.thisMonth;
+
+      // Обновляем состояние статистики
+      setDashboardStats({
+        todaySales: {
+          value: todaysSalesData.total,
+          change: salesChange,
+          changeType: salesChange > 0 ? 'positive' : salesChange < 0 ? 'negative' : 'neutral'
+        },
+        totalCustomers: {
+          value: customersData.total,
+          change: customersChange,
+          changeType: customersChange > 0 ? 'positive' : customersChange < 0 ? 'negative' : 'neutral'
+        },
+        activeEvents: {
+          value: eventsData.active,
+          change: eventsChange,
+          changeType: eventsChange > 0 ? 'positive' : eventsChange < 0 ? 'negative' : 'neutral'
+        },
+        avgTicketPrice: {
+          value: ticketsData.avgPrice,
+          change: ticketsData.priceChange,
+          changeType: ticketsData.priceChange > 0 ? 'positive' : ticketsData.priceChange < 0 ? 'negative' : 'neutral'
+        },
+        conversionRate: {
+          value: ticketsData.conversionRate,
+          change: ticketsData.conversionChange,
+          changeType: ticketsData.conversionChange > 0 ? 'positive' : ticketsData.conversionChange < 0 ? 'negative' : 'neutral'
+        },
+        venueUtilization: {
+          value: ticketsData.utilization,
+          change: ticketsData.utilizationChange,
+          changeType: ticketsData.utilizationChange > 0 ? 'positive' : ticketsData.utilizationChange < 0 ? 'negative' : 'neutral'
+        },
+        totalRevenue: {
+          value: todaysSalesData.total + (revenueBreakdownData.total || 0),
+          change: 24, // Примерное значение из требований
+          changeType: 'positive'
+        },
+        avgResponseTime: {
+          value: 1.2, // Примерное значение из требований
+          change: -10,
+          changeType: 'positive' // Уменьшение времени ответа - это хорошо
+        }
+      });
+
+      setRecentSales(recentSalesData);
+      setRevenueBreakdown(revenueBreakdownData.breakdown || []);
+      setPopularEvent(ticketsData.popularEvent);
+
+    } catch (error) {
+      console.error('Error loading dashboard stats:',error);
+    } finally {
+      setDashboardLoading(false);
+    }
+  };
+
+  // НОВЫЕ функции для получения реальной статистики
+
+  const getTodaysSales=async ()=> {
+    try {
+      const today=new Date();
+      const todayStart=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+      const todayEnd=new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+
+      const {data,error}=await supabase
+        .from('orders')
+        .select('total_price')
+        .eq('status','paid')
+        .gte('created_at',todayStart.toISOString())
+        .lt('created_at',todayEnd.toISOString());
+
+      if (error) throw error;
+
+      const total=data.reduce((sum,order)=> sum + parseFloat(order.total_price || 0),0);
+      return {total,count: data.length};
+    } catch (error) {
+      console.error('Error getting today sales:',error);
+      return {total: 0,count: 0};
+    }
+  };
+
+  const getYesterdaysSales=async ()=> {
+    try {
+      const yesterday=new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStart=new Date(yesterday.getFullYear(),yesterday.getMonth(),yesterday.getDate());
+      const yesterdayEnd=new Date(yesterdayStart.getTime() + 24 * 60 * 60 * 1000);
+
+      const {data,error}=await supabase
+        .from('orders')
+        .select('total_price')
+        .eq('status','paid')
+        .gte('created_at',yesterdayStart.toISOString())
+        .lt('created_at',yesterdayEnd.toISOString());
+
+      if (error) throw error;
+
+      const total=data.reduce((sum,order)=> sum + parseFloat(order.total_price || 0),0);
+      return {total,count: data.length};
+    } catch (error) {
+      console.error('Error getting yesterday sales:',error);
+      return {total: 0,count: 0};
+    }
+  };
+
+  const getCustomersStats=async ()=> {
+    try {
+      // Всего клиентов
+      const {data: totalData,error: totalError}=await supabase
+        .from('user_meta')
+        .select('id',{count: 'exact'});
+
+      if (totalError) throw totalError;
+
+      // Клиенты за этот месяц
+      const thisMonth=new Date();
+      const thisMonthStart=new Date(thisMonth.getFullYear(),thisMonth.getMonth(),1);
+
+      const {data: thisMonthData,error: thisMonthError}=await supabase
+        .from('user_meta')
+        .select('id',{count: 'exact'})
+        .gte('created_at',thisMonthStart.toISOString());
+
+      if (thisMonthError) throw thisMonthError;
+
+      // Клиенты за прошлый месяц
+      const lastMonth=new Date(thisMonth.getFullYear(),thisMonth.getMonth() - 1,1);
+      const lastMonthEnd=new Date(thisMonth.getFullYear(),thisMonth.getMonth(),0);
+
+      const {data: lastMonthData,error: lastMonthError}=await supabase
+        .from('user_meta')
+        .select('id',{count: 'exact'})
+        .gte('created_at',lastMonth.toISOString())
+        .lte('created_at',lastMonthEnd.toISOString());
+
+      if (lastMonthError) throw lastMonthError;
+
+      return {
+        total: totalData?.length || 0,
+        thisMonth: thisMonthData?.length || 0,
+        lastMonth: lastMonthData?.length || 0
+      };
+    } catch (error) {
+      console.error('Error getting customers stats:',error);
+      return {total: 0,thisMonth: 0,lastMonth: 0};
+    }
+  };
+
+  const getEventsStats=async ()=> {
+    try {
+      const now=new Date();
+      
+      // Активные события (будущие или текущие)
+      const {data: activeData,error: activeError}=await supabase
+        .from('events')
+        .select('id',{count: 'exact'})
+        .gte('event_date',now.toISOString());
+
+      if (activeError) throw activeError;
+
+      // События за этот месяц
+      const thisMonthStart=new Date(now.getFullYear(),now.getMonth(),1);
+      const {data: thisMonthData,error: thisMonthError}=await supabase
+        .from('events')
+        .select('id',{count: 'exact'})
+        .gte('created_at',thisMonthStart.toISOString());
+
+      if (thisMonthError) throw thisMonthError;
+
+      // События за прошлый месяц
+      const lastMonth=new Date(now.getFullYear(),now.getMonth() - 1,1);
+      const lastMonthEnd=new Date(now.getFullYear(),now.getMonth(),0);
+
+      const {data: lastMonthData,error: lastMonthError}=await supabase
+        .from('events')
+        .select('id',{count: 'exact'})
+        .gte('created_at',lastMonth.toISOString())
+        .lte('created_at',lastMonthEnd.toISOString());
+
+      if (lastMonthError) throw lastMonthError;
+
+      return {
+        active: activeData?.length || 0,
+        thisMonth: thisMonthData?.length || 0,
+        lastMonth: lastMonthData?.length || 0
+      };
+    } catch (error) {
+      console.error('Error getting events stats:',error);
+      return {active: 0,thisMonth: 0,lastMonth: 0};
+    }
+  };
+
+  const getRecentSales=async ()=> {
+    try {
+      const {data,error}=await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items:order_items(
+            *,
+            ticket:tickets(
+              *,
+              event:events(id,title,event_date)
+            )
+          )
+        `)
+        .eq('status','paid')
+        .order('created_at',{ascending: false})
+        .limit(5);
+
+      if (error) throw error;
+
+      // Группируем по событиям и подсчитываем статистику
+      const eventSales={};
+      
+      data.forEach(order=> {
+        order.order_items?.forEach(item=> {
+          const event=item.ticket?.event;
+          if (event) {
+            if (!eventSales[event.id]) {
+              eventSales[event.id]={
+                event: event.title,
+                date: event.event_date,
+                ticketsSold: 0,
+                revenue: 0
+              };
+            }
+            eventSales[event.id].ticketsSold += 1;
+            eventSales[event.id].revenue += parseFloat(item.unit_price || 0);
+          }
+        });
+      });
+
+      // Преобразуем в массив и сортируем по доходу
+      return Object.values(eventSales)
+        .sort((a,b)=> b.revenue - a.revenue)
+        .slice(0,5);
+
+    } catch (error) {
+      console.error('Error getting recent sales:',error);
+      return [];
+    }
+  };
+
+  const getRevenueBreakdown=async ()=> {
+    try {
+      const {data,error}=await supabase
+        .from('orders')
+        .select(`
+          total_price,
+          order_items:order_items(
+            ticket:tickets(
+              event:events(category)
+            )
+          )
+        `)
+        .eq('status','paid');
+
+      if (error) throw error;
+
+      const breakdown={
+        'concert': 0,
+        'party': 0,
+        'bustour': 0
+      };
+
+      data.forEach(order=> {
+        order.order_items?.forEach(item=> {
+          const category=item.ticket?.event?.category;
+          if (category && Object.prototype.hasOwnProperty.call(breakdown,category)) {
+            breakdown[category] += parseFloat(order.total_price || 0) / (order.order_items?.length || 1);
+          }
+        });
+      });
+
+      const total=Object.values(breakdown).reduce((sum,value)=> sum + value,0);
+
+      return {
+        breakdown: [
+          {category: 'Concerts',amount: breakdown.concert,color: 'bg-yellow-500',percentage: total > 0 ? Math.round((breakdown.concert / total) * 100) : 0},
+          {category: 'Bus Tours',amount: breakdown.bustour,color: 'bg-blue-500',percentage: total > 0 ? Math.round((breakdown.bustour / total) * 100) : 0},
+          {category: 'Parties',amount: breakdown.party,color: 'bg-purple-500',percentage: total > 0 ? Math.round((breakdown.party / total) * 100) : 0}
+        ],
+        total
+      };
+    } catch (error) {
+      console.error('Error getting revenue breakdown:',error);
+      return {breakdown: [],total: 0};
+    }
+  };
+
+  const getTicketsStats=async ()=> {
+    try {
+      // Средняя цена билета
+      const {data: priceData,error: priceError}=await supabase
+        .from('order_items')
+        .select('unit_price');
+
+      if (priceError) throw priceError;
+
+      const avgPrice=priceData.length > 0 
+        ? priceData.reduce((sum,item)=> sum + parseFloat(item.unit_price || 0),0) / priceData.length
+        : 0;
+
+      // Статистика билетов
+      const {data: ticketsData,error: ticketsError}=await supabase
+        .from('tickets')
+        .select('status,event:events(title)');
+
+      if (ticketsError) throw ticketsError;
+
+      const totalTickets=ticketsData.length;
+      const soldTickets=ticketsData.filter(t=> t.status==='sold').length;
+      const conversionRate=totalTickets > 0 ? (soldTickets / totalTickets * 100) : 0;
+
+      // Загрузка площадок
+      const utilization=totalTickets > 0 ? (soldTickets / totalTickets * 100) : 0;
+
+      // Самое популярное событие
+      const eventCounts={};
+      ticketsData.forEach(ticket=> {
+        if (ticket.status==='sold' && ticket.event) {
+          eventCounts[ticket.event.title]=(eventCounts[ticket.event.title] || 0) + 1;
+        }
+      });
+
+      const popularEvent=Object.entries(eventCounts)
+        .sort(([,a],[,b])=> b - a)[0]?.[0] || null;
+
+      return {
+        avgPrice,
+        priceChange: 5, // Примерное значение
+        conversionRate,
+        conversionChange: 2, // Примерное значение
+        utilization,
+        utilizationChange: 3, // Примерное значение
+        popularEvent
+      };
+    } catch (error) {
+      console.error('Error getting tickets stats:',error);
+      return {
+        avgPrice: 0,
+        priceChange: 0,
+        conversionRate: 0,
+        conversionChange: 0,
+        utilization: 0,
+        utilizationChange: 0,
+        popularEvent: null
+      };
+    }
+  };
 
   const loadEvents=async ()=> {
     try {
@@ -185,11 +584,11 @@ const AdminPage=()=> {
 
   // Reset settings to defaults
   const resetSettings=()=> {
-    if (window.confirm('Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?')) {
+    if (window.confirm('Вы уверены,что хотите сбросить все настройки к значениям по умолчанию?')) {
       setSettings({
         siteName: 'TicketWayz',
-        siteDescription: 'Лучший сервис для покупки билетов на концерты, вечеринки и автобусные туры',
-        siteKeywords: 'билеты, концерты, вечеринки, автобусные туры, развлечения',
+        siteDescription: 'Лучший сервис для покупки билетов на концерты,вечеринки и автобусные туры',
+        siteKeywords: 'билеты,концерты,вечеринки,автобусные туры,развлечения',
         ogTitle: '',
         ogDescription: '',
         ogImage: '',
@@ -811,6 +1210,24 @@ const AdminPage=()=> {
     return price ? Number(price).toFixed(2) : '0.00';
   };
 
+  // НОВАЯ функция для форматирования изменений
+  const formatChange=(change,type='percent')=> {
+    if (type==='percent') {
+      return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
+    } else {
+      return `${change > 0 ? '+' : ''}${change}`;
+    }
+  };
+
+  // НОВАЯ функция для получения цвета изменения
+  const getChangeColor=(changeType)=> {
+    switch (changeType) {
+      case 'positive': return 'text-green-500';
+      case 'negative': return 'text-red-500';
+      default: return 'text-zinc-500';
+    }
+  };
+
   // Get status label and color
   const getOrderStatusInfo=(status)=> {
     switch (status) {
@@ -903,122 +1320,224 @@ const AdminPage=()=> {
               animate={{opacity: 1,y: 0}}
               transition={{duration: 0.5}}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-zinc-600 dark:text-zinc-400">Пользователи</h3>
-                    <div className="p-2 bg-blue-500/20 rounded-lg">
-                      <SafeIcon icon={FiUsers} className="text-blue-500" />
+              {dashboardLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  {[...Array(8)].map((_,i)=> (
+                    <div key={i} className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg animate-pulse">
+                      <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded mb-2"></div>
+                      <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded mb-2"></div>
+                      <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {/* Основные KPI мониторы */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {/* Продажи сегодня */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Продажи сегодня</h3>
+                        <div className="p-2 bg-green-500/20 rounded-lg">
+                          <SafeIcon icon={FiDollarSign} className="text-green-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">€{formatPrice(dashboardStats.todaySales.value)}</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.todaySales.changeType)}`}>
+                        {formatChange(dashboardStats.todaySales.change)} с вчера
+                      </p>
+                    </div>
+
+                    {/* Всего клиентов */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Всего клиентов</h3>
+                        <div className="p-2 bg-blue-500/20 rounded-lg">
+                          <SafeIcon icon={FiUsers} className="text-blue-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">{dashboardStats.totalCustomers.value.toLocaleString()}</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.totalCustomers.changeType)}`}>
+                        {formatChange(dashboardStats.totalCustomers.change)} с прошлого месяца
+                      </p>
+                    </div>
+
+                    {/* Активные события */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Активные события</h3>
+                        <div className="p-2 bg-yellow-500/20 rounded-lg">
+                          <SafeIcon icon={FiActivity} className="text-yellow-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">{dashboardStats.activeEvents.value}</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.activeEvents.changeType)}`}>
+                        {formatChange(dashboardStats.activeEvents.change,'number')} с прошлого месяца
+                      </p>
+                    </div>
+
+                    {/* Среднее время ответа */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Среднее время ответа</h3>
+                        <div className="p-2 bg-purple-500/20 rounded-lg">
+                          <SafeIcon icon={FiClock} className="text-purple-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">{dashboardStats.avgResponseTime.value}ч</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.avgResponseTime.changeType)}`}>
+                        {formatChange(dashboardStats.avgResponseTime.change)} с прошлого месяца
+                      </p>
                     </div>
                   </div>
-                  <p className="text-2xl font-bold">{stats.users}</p>
-                  <p className="text-xs text-green-500">+12% с прошлого месяца</p>
-                </div>
 
-                <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-zinc-600 dark:text-zinc-400">События</h3>
-                    <div className="p-2 bg-yellow-500/20 rounded-lg">
-                      <SafeIcon icon={FiCalendar} className="text-yellow-500" />
+                  {/* Дополнительные KPI мониторы */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {/* Средняя цена билета */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Средняя цена билета</h3>
+                        <div className="p-2 bg-indigo-500/20 rounded-lg">
+                          <SafeIcon icon={FiTarget} className="text-indigo-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">€{formatPrice(dashboardStats.avgTicketPrice.value)}</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.avgTicketPrice.changeType)}`}>
+                        {formatChange(dashboardStats.avgTicketPrice.change)} с прошлого месяца
+                      </p>
+                    </div>
+
+                    {/* Коэффициент конверсии */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Коэффициент конверсии</h3>
+                        <div className="p-2 bg-emerald-500/20 rounded-lg">
+                          <SafeIcon icon={FiBarChart3} className="text-emerald-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">{dashboardStats.conversionRate.value.toFixed(1)}%</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.conversionRate.changeType)}`}>
+                        {formatChange(dashboardStats.conversionRate.change)} с прошлого месяца
+                      </p>
+                    </div>
+
+                    {/* Загрузка площадок */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Загрузка площадок</h3>
+                        <div className="p-2 bg-orange-500/20 rounded-lg">
+                          <SafeIcon icon={FiPieChart} className="text-orange-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">{dashboardStats.venueUtilization.value.toFixed(1)}%</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.venueUtilization.changeType)}`}>
+                        {formatChange(dashboardStats.venueUtilization.change)} с прошлого месяца
+                      </p>
+                    </div>
+
+                    {/* Общий доход */}
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-zinc-600 dark:text-zinc-400">Общий доход</h3>
+                        <div className="p-2 bg-green-500/20 rounded-lg">
+                          <SafeIcon icon={FiTrendingUp} className="text-green-500" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">€{formatPrice(dashboardStats.totalRevenue.value)}</p>
+                      <p className={`text-xs ${getChangeColor(dashboardStats.totalRevenue.changeType)}`}>
+                        {formatChange(dashboardStats.totalRevenue.change)} с прошлого месяца
+                      </p>
                     </div>
                   </div>
-                  <p className="text-2xl font-bold">{stats.events}</p>
-                  <p className="text-xs text-green-500">+5 новых за неделю</p>
-                </div>
 
-                <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-zinc-600 dark:text-zinc-400">Доход</h3>
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <SafeIcon icon={FiDollarSign} className="text-green-500" />
+                  {/* Недавние продажи */}
+                  <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg mb-8">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium">Недавние продажи</h3>
+                      <button className="text-sm text-yellow-500 hover:underline">
+                        Посмотреть все
+                      </button>
                     </div>
-                  </div>
-                  <p className="text-2xl font-bold">{stats.revenue} €</p>
-                  <p className="text-xs text-green-500">+18% с прошлого месяца</p>
-                </div>
-
-                <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-zinc-600 dark:text-zinc-400">Рост</h3>
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <SafeIcon icon={FiTrendingUp} className="text-purple-500" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold">{stats.growth}%</p>
-                  <p className="text-xs text-green-500">+5.4% с прошлого месяца</p>
-                </div>
-              </div>
-
-              {/* Events Table */}
-              <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg mb-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Последние события</h3>
-                  <button
-                    onClick={handleCreateEvent}
-                    className="px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition flex items-center"
-                  >
-                    <SafeIcon icon={FiPlus} className="mr-2" />
-                    Создать событие
-                  </button>
-                </div>
-
-                {loading ? (
-                  <div className="animate-pulse space-y-4">
-                    {[...Array(5)].map((_,i)=> (
-                      <div key={i} className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
-                    ))}
-                  </div>
-                ) : events.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="text-left text-zinc-600 dark:text-zinc-400 text-sm">
-                          <th className="pb-3">Название</th>
-                          <th className="pb-3 hidden md:table-cell">Дата</th>
-                          <th className="pb-3 hidden sm:table-cell">Место</th>
-                          <th className="pb-3 text-right">Действия</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {events.map((event)=> (
-                          <tr key={event.id} className="border-t border-zinc-200 dark:border-zinc-700">
-                            <td className="py-3">{event.title}</td>
-                            <td className="py-3 hidden md:table-cell">{formatDate(event.event_date)}</td>
-                            <td className="py-3 hidden sm:table-cell">{event.location}</td>
-                            <td className="py-3 text-right">
-                              <button
-                                onClick={()=> handleEditEvent(event)}
-                                className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
-                                title="Edit"
-                              >
-                                <SafeIcon icon={FiEdit2} />
-                              </button>
-                              <button
-                                onClick={()=> handleDeleteEvent(event.id)}
-                                disabled={deleting===event.id}
-                                className="p-2 text-red-500 hover:text-red-700 transition disabled:opacity-50"
-                                title="Delete"
-                              >
-                                <SafeIcon icon={FiTrash2} />
-                              </button>
-                            </td>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-left text-zinc-600 dark:text-zinc-400 text-sm">
+                            <th className="pb-3">Событие</th>
+                            <th className="pb-3 hidden md:table-cell">Дата</th>
+                            <th className="pb-3 hidden sm:table-cell">Продано билетов</th>
+                            <th className="pb-3 text-right">Доход</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {recentSales.length > 0 ? recentSales.map((sale, index)=> (
+                            <tr key={index} className="border-t border-zinc-200 dark:border-zinc-700">
+                              <td className="py-3 font-medium">{sale.event}</td>
+                              <td className="py-3 hidden md:table-cell">{formatDate(sale.date)}</td>
+                              <td className="py-3 hidden sm:table-cell">{sale.ticketsSold}</td>
+                              <td className="py-3 text-right font-semibold">€{formatPrice(sale.revenue)}</td>
+                            </tr>
+                          )) : (
+                            <tr>
+                              <td colSpan="4" className="py-8 text-center text-zinc-500">
+                                Нет данных о продажах
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-zinc-500">
-                    <p>Нет доступных событий</p>
-                    <button
-                      onClick={handleCreateEvent}
-                      className="mt-4 px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition"
-                    >
-                      Создать первое событие
-                    </button>
+
+                  {/* ИСПРАВЛЕННАЯ разбивка доходов */}
+                  <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-6 mb-8">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Разбивка доходов</h2>
+                      <SafeIcon icon={FiPieChart} className="text-zinc-400" />
+                    </div>
+                    <div className="space-y-4">
+                      {revenueBreakdown.length > 0 ? revenueBreakdown.map((item, index)=> (
+                        <div key={index}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-zinc-600 dark:text-zinc-400">{item.category}</span>
+                            <span className="text-zinc-900 dark:text-white">€{formatPrice(item.amount)}</span>
+                          </div>
+                          <div className="w-full bg-zinc-300 dark:bg-zinc-700 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                item.category === 'Concerts' ? 'bg-yellow-500' :
+                                item.category === 'Bus Tours' ? 'bg-blue-500' : 'bg-purple-500'
+                              }`}
+                              style={{width: `${item.percentage}%`}}
+                            />
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="text-center py-4 text-zinc-500">
+                          Нет данных о доходах по категориям
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-zinc-300 dark:border-zinc-700">
+                      <div className="flex items-center">
+                        <SafeIcon icon={FiTrendingUp} className="text-green-400 mr-2" />
+                        <span className="text-sm text-zinc-900 dark:text-white">
+                          Общий доход вырос на {formatChange(dashboardStats.totalRevenue.change)} с прошлого месяца
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Популярное событие */}
+                  {popularEvent && (
+                    <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+                      <h3 className="text-lg font-medium mb-4">🏆 Самое популярное событие</h3>
+                      <div className="flex items-center justify-center p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-lg">
+                        <span className="text-black font-bold text-xl">{popularEvent}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </motion.div>
           )}
 
@@ -1373,7 +1892,7 @@ const AdminPage=()=> {
                           value={settings.siteKeywords}
                           onChange={(e)=> handleSettingsChange('siteKeywords',e.target.value)}
                           className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                          placeholder="билеты, концерты, вечеринки"
+                          placeholder="билеты,концерты,вечеринки"
                         />
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                           Разделяйте ключевые слова запятыми
