@@ -72,7 +72,10 @@ type: seat.type || 'seat',
 
 // Для совместимости с существующим кодом
 number: seat.number || seat.label || `Место ${seat.id.substring(0,4)}`,
-price: actualUnitPrice * quantity
+price: actualUnitPrice * quantity,
+// ДОБАВЛЯЕМ поля для отображения в корзине
+section: seat.section || 'A',
+row: seat.row || 1
 };
 };
 
@@ -811,6 +814,12 @@ className="lg:hidden p-2 hover:bg-zinc-300 dark:hover:bg-zinc-700 rounded-full"
 {seat.label}
 </p>
 <p className="text-xs text-zinc-600 dark:text-zinc-400">
+{/* Добавляем отображение информации о ряде, секторе и номере кресла */}
+{seat.section && <span>Сектор: {seat.section}</span>}
+{seat.row && <span>{seat.section ? ' • ' : ''}Ряд: {seat.row}</span>}
+{seat.number && <span>{(seat.section || seat.row) ? ' • ' : ''}Место: {seat.number}</span>}
+{!seat.section && !seat.row && !seat.number && seat.label}
+<br />
 {/* ИСПРАВЛЕННОЕ отображение цены БЕЗ ФОРМУЛ */}
 {seat.quantity > 1 ? (
 <>
