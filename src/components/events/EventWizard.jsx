@@ -1,12 +1,260 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import supabase from '../../lib/supabase';
 import { createEventTickets } from '../../services/ticketService';
+import { fetchEventCategories, ensureEventCategory } from '../../services/eventService';
 
-const { FiSave, FiX, FiAlertCircle, FiCheck, FiCalendar, FiMapPin, FiDollarSign, FiImage, FiInfo } = FiIcons;
+const { FiSave, FiX, FiAlertCircle, FiCheck, FiCalendar, FiMapPin, FiDollarSign, FiImage, FiInfo, FiChevronDown, FiUpload, FiTrash2 } = FiIcons;
+
+// НОВЫЙ КОМПОНЕНТ: CategoryAutocomplete
+const CategoryAutocomplete = ({ value, onChange, error }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [filteredCategories, setFilteredCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Загружаем категории при монтировании
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Обновляем inputValue когда меняется value извне
+  useEffect(() => {
+    if (value) {
+      const category = categories.find(cat => cat.value === value);
+      setInputValue(category ? category.label : value);
+    } else {
+      setInputValue('');
+    }
+  }, [value, categories]);
+
+  // Фильтруем категории при изменении inputValue
+  useEffect(() => {
+    if (inputValue.trim() === '') {
+      setFilteredCategories(categories);
+    } else {
+      const filtered = categories.filter(category =>
+        category.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+        category.originalLabel.toLowerCase().includes(inputValue.toLowerCase())
+      );
+      setFilteredCategories(filtered);
+    }
+  }, [inputValue, categories]);
+
+  // Закрываем дропдаун при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        !inputRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const categoriesData = await fetchEventCategories();
+      setCategories(categoriesData);
+      setFilteredCategories(categoriesData);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      // Fallback к стандартным категориям
+      const defaultCategories = [
+        { value: 'concert', label: 'Концерт', originalLabel: 'concert' },
+        { value: 'party', label: 'Вечеринка', originalLabel: 'party' },
+        { value: 'bustour', label: 'Автобусный тур', originalLabel: 'bustour' },
+        { value: 'theater', label: 'Театр', originalLabel: 'theater' },
+        { value: 'sport', label: 'Спорт', originalLabel: 'sport' },
+        { value: 'other', label: 'Другое', originalLabel: 'other' }
+      ];
+      setCategories(defaultCategories);
+      setFilteredCategories(defaultCategories);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    setIsOpen(true);
+    
+    // Если пользователь очистил поле, сбрасываем выбранное значение
+    if (newValue.trim() === '') {
+      onChange('');
+    }
+  };
+
+  const handleInputFocus = () => {
+    setIsOpen(true);
+  };
+
+  const handleCategorySelect = async (category) => {
+    setInputValue(category.label);
+    setIsOpen(false);
+    
+    try {
+      // Убеждаемся что категория существует в базе
+      await ensureEventCategory(category.value);
+      onChange(category.value);
+    } catch (error) {
+      console.error('Error ensuring category:', error);
+      onChange(category.value); // Все равно устанавливаем значение
+    }
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Если есть точное совпадение, выбираем его
+      const exactMatch = filteredCategories.find(cat => 
+        cat.label.toLowerCase() === inputValue.toLowerCase() ||
+        cat.originalLabel.toLowerCase() === inputValue.toLowerCase()
+      );
+      
+      if (exactMatch) {
+        handleCategorySelect(exactMatch);
+      } else if (inputValue.trim()) {
+        // Создаем новую категорию
+        const newCategoryValue = inputValue.trim().toLowerCase().replace(/\s+/g, '_');
+        const newCategory = {
+          value: newCategoryValue,
+          label: inputValue.trim(),
+          originalLabel: newCategoryValue
+        };
+        
+        // Добавляем в локальный список
+        setCategories(prev => [...prev, newCategory]);
+        
+        handleCategorySelect(newCategory);
+      }
+      
+      setIsOpen(false);
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onKeyDown={handleInputKeyDown}
+          className={`w-full px-4 py-2 bg-zinc-700 border rounded-lg text-white focus:outline-none pr-10 ${
+            error ? 'border-red-500 focus:border-red-500' : 'border-zinc-600 focus:border-yellow-400'
+          }`}
+          placeholder="Выберите или введите категорию..."
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-400 hover:text-white"
+        >
+          <SafeIcon 
+            icon={FiChevronDown} 
+            className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute z-50 w-full mt-1 bg-zinc-700 border border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          >
+            {loading ? (
+              <div className="px-4 py-3 text-zinc-400 text-center">
+                Загрузка категорий...
+              </div>
+            ) : filteredCategories.length > 0 ? (
+              <>
+                {filteredCategories.map((category) => (
+                  <button
+                    key={category.value}
+                    type="button"
+                    onClick={() => handleCategorySelect(category)}
+                    className="w-full px-4 py-3 text-left hover:bg-zinc-600 text-white transition-colors"
+                  >
+                    <div className="font-medium">{category.label}</div>
+                    {category.originalLabel !== category.label && (
+                      <div className="text-xs text-zinc-400">{category.originalLabel}</div>
+                    )}
+                  </button>
+                ))}
+                {inputValue.trim() && !filteredCategories.some(cat => 
+                  cat.label.toLowerCase() === inputValue.toLowerCase() ||
+                  cat.originalLabel.toLowerCase() === inputValue.toLowerCase()
+                ) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newCategoryValue = inputValue.trim().toLowerCase().replace(/\s+/g, '_');
+                      const newCategory = {
+                        value: newCategoryValue,
+                        label: inputValue.trim(),
+                        originalLabel: newCategoryValue
+                      };
+                      handleCategorySelect(newCategory);
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-zinc-600 text-yellow-400 transition-colors border-t border-zinc-600"
+                  >
+                    <div className="font-medium">+ Создать "{inputValue.trim()}"</div>
+                    <div className="text-xs text-zinc-400">Новая категория</div>
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="px-4 py-3 text-zinc-400 text-center">
+                {inputValue.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newCategoryValue = inputValue.trim().toLowerCase().replace(/\s+/g, '_');
+                      const newCategory = {
+                        value: newCategoryValue,
+                        label: inputValue.trim(),
+                        originalLabel: newCategoryValue
+                      };
+                      handleCategorySelect(newCategory);
+                    }}
+                    className="text-yellow-400 hover:text-yellow-300"
+                  >
+                    + Создать "{inputValue.trim()}"
+                  </button>
+                ) : (
+                  'Категории не найдены'
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 // Main Event Wizard Component
 const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
@@ -18,6 +266,11 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   const [venues, setVenues] = useState([]);
   const [categories, setCategories] = useState([]);
   const [ticketsInfo, setTicketsInfo] = useState(null);
+
+  // НОВЫЕ состояния для загрузки изображений
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [imageUploadError, setImageUploadError] = useState('');
+  const fileInputRef = useRef(null);
 
   // Form data
   const [eventData, setEventData] = useState({
@@ -46,6 +299,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   useEffect(() => {
     fetchVenues();
     fetchCategories();
+
     // Load event data if editing
     if (eventToEdit) {
       loadEventData(eventToEdit);
@@ -89,7 +343,10 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   // Scroll to section when activeSection changes
   const scrollToSection = (sectionId) => {
     setActiveSection(sectionId);
-    sectionRefs[sectionId].current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sectionRefs[sectionId].current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
   };
 
   // Fetch venues from database
@@ -101,6 +358,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
         .order('name');
 
       if (error) throw error;
+
       setVenues(data || []);
     } catch (err) {
       console.error('Error fetching venues:', err);
@@ -117,6 +375,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
         .order('name');
 
       if (error) throw error;
+
       setCategories(data || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -128,12 +387,14 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   const loadEventData = async (event) => {
     try {
       console.log("Loading event data for editing:", event);
-      
+
       // Set basic event data with proper date formatting
       const formattedEventData = {
         ...event,
         // Ensure date is properly formatted for datetime-local input
-        event_date: event.event_date ? new Date(event.event_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+        event_date: event.event_date 
+          ? new Date(event.event_date).toISOString().slice(0, 16) 
+          : new Date().toISOString().slice(0, 16),
         // Ensure all fields have default values
         title: event.title || '',
         description: event.description || '',
@@ -180,6 +441,71 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // НОВАЯ функция для обработки загрузки изображения
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Очищаем предыдущие ошибки
+    setImageUploadError('');
+
+    // Валидация типа файла
+    if (!file.type.startsWith('image/')) {
+      setImageUploadError('Пожалуйста, выберите файл изображения');
+      return;
+    }
+
+    // Валидация размера файла (5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB в байтах
+    if (file.size > maxSize) {
+      setImageUploadError('Размер файла не должен превышать 5MB');
+      return;
+    }
+
+    // Создаем FileReader для конвертации в base64
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      const base64Image = event.target.result;
+      
+      // Обновляем состояние с новым изображением
+      setEventData(prev => ({
+        ...prev,
+        image: base64Image
+      }));
+      
+      // Сохраняем имя файла для отображения
+      setUploadedFileName(file.name);
+    };
+
+    reader.onerror = () => {
+      setImageUploadError('Ошибка при чтении файла');
+    };
+
+    // Читаем файл как base64
+    reader.readAsDataURL(file);
+  };
+
+  // НОВАЯ функция для удаления загруженного изображения
+  const handleRemoveUploadedImage = () => {
+    setEventData(prev => ({
+      ...prev,
+      image: 'https://placehold.co/600x400/333/FFF?text=Event'
+    }));
+    setUploadedFileName('');
+    setImageUploadError('');
+    
+    // Очищаем input file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // НОВАЯ функция для проверки, является ли изображение загруженным файлом
+  const isUploadedImage = () => {
+    return eventData.image.startsWith('data:image/');
   };
 
   // Handle venue selection
@@ -230,7 +556,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
           : selectedVenue.geometry_data;
 
         const venueCategories = Object.keys(venueData.categories || {});
-        
+
         // Get category IDs from database that match the venue category names
         const requiredCategoryIds = categories
           .filter(c => venueCategories.includes(c.name))
@@ -355,7 +681,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             console.log('Creating tickets for event:', eventId);
             const ticketsResult = await createEventTickets(eventId);
             console.log('Tickets creation result:', ticketsResult);
-            
+
             if (ticketsResult && ticketsResult.length > 0) {
               setTicketsInfo(ticketsResult);
             } else {
@@ -366,7 +692,6 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             setError(`Event updated but failed to recreate tickets: ${ticketError.message}`);
           }
         }
-
       } else {
         // Insert new event
         const { data: newEvent, error: insertError } = await supabase
@@ -390,6 +715,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
           .single();
 
         if (insertError) throw insertError;
+
         eventId = newEvent.id;
         savedEvent = newEvent;
 
@@ -417,7 +743,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             console.log('Creating tickets for new event:', eventId);
             const ticketsResult = await createEventTickets(eventId);
             console.log('Tickets creation result:', ticketsResult);
-            
+
             if (ticketsResult && ticketsResult.length > 0) {
               setTicketsInfo(ticketsResult);
             } else {
@@ -530,8 +856,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
                   className={`w-full flex items-center p-3 rounded-lg transition-colors ${
-                    activeSection === item.id 
-                      ? 'bg-yellow-500 text-black' 
+                    activeSection === item.id
+                      ? 'bg-yellow-500 text-black'
                       : 'text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
@@ -546,14 +872,15 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                 onClick={handleSave}
                 disabled={saving}
                 className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors ${
-                  saving 
-                    ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed' 
+                  saving
+                    ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
                     : 'bg-yellow-500 hover:bg-yellow-600 text-black'
                 }`}
               >
                 <SafeIcon icon={FiSave} className="w-5 h-5 mr-2" />
                 {saving ? 'Publishing...' : 'Publish Event'}
               </button>
+
               {eventData.venue_id && (
                 <p className="text-xs text-zinc-400 mt-2 text-center">
                   This will create tickets automatically
@@ -645,23 +972,16 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                   </div>
                 </div>
 
-                {/* Category */}
+                {/* Category - ЗАМЕНЕНО НА АВТОКОМПЛИТ */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Category
+                    Category *
                   </label>
-                  <select
+                  <CategoryAutocomplete
                     value={eventData.category}
-                    onChange={(e) => handleChange('category', e.target.value)}
-                    className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
-                  >
-                    <option value="concert">Concert</option>
-                    <option value="party">Party</option>
-                    <option value="bustour">Bus Tour</option>
-                    <option value="theater">Theater</option>
-                    <option value="sport">Sport</option>
-                    <option value="other">Other</option>
-                  </select>
+                    onChange={(value) => handleChange('category', value)}
+                    error={null}
+                  />
                 </div>
 
                 {/* Artist */}
@@ -707,39 +1027,103 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                   />
                 </div>
 
-                {/* Image URL */}
+                {/* ОБНОВЛЕННЫЙ блок изображения с возможностью загрузки */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Cover Image URL
+                    Cover Image
                   </label>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <SafeIcon icon={FiImage} className="absolute left-3 top-3 text-gray-400" />
-                        <input
-                          type="text"
-                          value={eventData.image}
-                          onChange={(e) => handleChange('image', e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
-                          placeholder="https://example.com/image.jpg"
-                        />
+                  
+                  {/* Скрытый input для загрузки файлов */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
+                  <div className="space-y-4">
+                    {/* URL Input */}
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <div className="relative">
+                          <SafeIcon icon={FiImage} className="absolute left-3 top-3 text-gray-400" />
+                          <input
+                            type="text"
+                            value={isUploadedImage() ? '' : eventData.image}
+                            onChange={(e) => handleChange('image', e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
+                            placeholder="https://example.com/image.jpg"
+                            disabled={isUploadedImage()}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Enter URL for event cover image or upload from computer
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Enter URL for event cover image or use a placeholder
-                      </p>
+                      {eventData.image && (
+                        <div className="w-24 h-24 flex-shrink-0">
+                          <img
+                            src={eventData.image}
+                            alt="Preview"
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={(e) => {
+                              e.target.src = 'https://placehold.co/600x400/333/FFF?text=Error';
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    {eventData.image && (
-                      <div className="w-24 h-24 flex-shrink-0">
-                        <img
-                          src={eventData.image}
-                          alt="Preview"
-                          className="w-full h-full object-cover rounded-lg"
-                          onError={(e) => {
-                            e.target.src = 'https://placehold.co/600x400/333/FFF?text=Error';
-                          }}
-                        />
+
+                    {/* Кнопки управления изображением */}
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                      >
+                        <SafeIcon icon={FiUpload} className="w-4 h-4 mr-2" />
+                        Загрузить с компьютера
+                      </button>
+
+                      {isUploadedImage() && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveUploadedImage}
+                          className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                        >
+                          <SafeIcon icon={FiTrash2} className="w-4 h-4 mr-2" />
+                          Удалить файл
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Отображение загруженного файла */}
+                    {uploadedFileName && (
+                      <div className="flex items-center p-3 bg-green-600/20 border border-green-600 rounded-lg">
+                        <SafeIcon icon={FiCheck} className="w-4 h-4 text-green-400 mr-2" />
+                        <span className="text-green-200 text-sm">
+                          Загружен файл: {uploadedFileName}
+                        </span>
                       </div>
                     )}
+
+                    {/* Ошибки загрузки */}
+                    {imageUploadError && (
+                      <div className="flex items-center p-3 bg-red-600/20 border border-red-600 rounded-lg">
+                        <SafeIcon icon={FiAlertCircle} className="w-4 h-4 text-red-400 mr-2" />
+                        <span className="text-red-200 text-sm">
+                          {imageUploadError}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Информация о требованиях */}
+                    <div className="text-xs text-gray-500">
+                      <p>• Поддерживаемые форматы: JPG, PNG, GIF, WebP</p>
+                      <p>• Максимальный размер: 5MB</p>
+                      <p>• Рекомендуемое разрешение: 600x400 пикселей</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -759,8 +1143,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                 {/* No Venue Option */}
                 <div
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    !eventData.venue_id 
-                      ? 'border-yellow-500 bg-yellow-500/10' 
+                    !eventData.venue_id
+                      ? 'border-yellow-500 bg-yellow-500/10'
                       : 'border-zinc-600 hover:border-zinc-500'
                   }`}
                   onClick={() => handleVenueSelect(null)}
@@ -777,8 +1161,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                     <div
                       key={venue.id}
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        eventData.venue_id === venue.id 
-                          ? 'border-yellow-500 bg-yellow-500/10' 
+                        eventData.venue_id === venue.id
+                          ? 'border-yellow-500 bg-yellow-500/10'
                           : 'border-zinc-600 hover:border-zinc-500'
                       }`}
                       onClick={() => handleVenueSelect(venue.id)}
@@ -873,6 +1257,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                         />
                       </div>
                     </div>
+
                     {/* Optional: Add more general ticket types */}
                     <div className="flex items-center justify-between p-4 bg-zinc-800 rounded-lg border border-zinc-700">
                       <div>
@@ -995,8 +1380,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                   onClick={handleSave}
                   disabled={saving}
                   className={`flex items-center px-6 py-3 rounded-lg transition-colors ${
-                    saving 
-                      ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed' 
+                    saving
+                      ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
                       : 'bg-yellow-500 hover:bg-yellow-600 text-black'
                   }`}
                 >
