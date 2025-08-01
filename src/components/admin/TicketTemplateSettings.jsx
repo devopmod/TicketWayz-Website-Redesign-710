@@ -1,3 +1,4 @@
+// Patched version – added FiInfo import
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
@@ -5,7 +6,23 @@ import SafeIcon from '../../common/SafeIcon';
 import TicketPreview from './TicketPreview';
 import supabase from '../../lib/supabase';
 
-const { FiUpload, FiTrash2, FiSave, FiRotateCcw, FiImage, FiSettings, FiMail, FiServer, FiLock, FiEye, FiEyeOff, FiCheck, FiX } = FiIcons;
+// 🛠  Added FiInfo below to satisfy ESLint no-undef
+const {
+  FiUpload,
+  FiTrash2,
+  FiSave,
+  FiRotateCcw,
+  FiImage,
+  FiSettings,
+  FiMail,
+  FiServer,
+  FiLock,
+  FiEye,
+  FiEyeOff,
+  FiCheck,
+  FiX,
+  FiInfo, // ← NEW
+} = FiIcons;
 
 const TicketTemplateSettings = () => {
   const [activeTab, setActiveTab] = useState('template');
