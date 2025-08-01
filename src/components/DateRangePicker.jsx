@@ -4,17 +4,21 @@ import {
   startOfMonth,
   endOfMonth,
   addMonths,
+  setMonth,
+  setYear,
   eachDayOfInterval,
   isSameDay,
   isWithinInterval,
   isBefore,
-  isAfter,
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { FiCalendar, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
 const WEEK_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const MONTH_NAMES = [...Array(12).keys()].map((i) =>
+  format(new Date(2025, i, 1), 'LLLL', { locale: ru })
+);
 
 const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,22 +28,18 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const triggerRef = useRef(null);
   const modalRef = useRef(null);
 
-  // ───────────────────────── helpers ─────────────────────────
+  // ──────────────────────── helpers ────────────────────────
   const months = useMemo(() => {
-    const makeMonth = (offset) => {
+    const createMonth = (offset) => {
       const monthStart = startOfMonth(addMonths(displayMonth, offset));
       const monthEnd = endOfMonth(monthStart);
       const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-      const prefix = (monthStart.getDay() + 6) % 7; // понедельник — 0
-      return {
-        monthStart,
-        days: Array(prefix).fill(null).concat(days),
-      };
+      const prefix = (monthStart.getDay() + 6) % 7; // shift for Monday start
+      return { monthStart, days: Array(prefix).fill(null).concat(days) };
     };
-    return [makeMonth(0), makeMonth(1)];
+    return [createMonth(0), createMonth(1)];
   }, [displayMonth]);
 
-  // ───────────────────────── range utils ─────────────────────────
   const isInRange = (d) => {
     if (!d || !startDate) return false;
     if (endDate) return isWithinInterval(d, { start: startDate, end: endDate });
@@ -53,7 +53,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const isBoundary = (d) =>
     d && ((startDate && isSameDay(d, startDate)) || (endDate && isSameDay(d, endDate)));
 
-  // ───────────────────────── handlers ─────────────────────────
+  // ──────────────────────── handlers ────────────────────────
   const clear = () => {
     setStartDate(null);
     setEndDate(null);
@@ -62,55 +62,56 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
 
   const handleDateClick = (d) => {
     if (!d) return;
-
-    // первый клик или «сброс»
     if (!startDate || endDate) {
       setStartDate(d);
       setEndDate(null);
-      return; // остаёмся открытыми для выбора конца
+      return;
     }
-
-    // второй клик
     if (isBefore(d, startDate)) {
       setEndDate(startDate);
       setStartDate(d);
     } else if (!isSameDay(d, startDate)) {
       setEndDate(d);
     }
-
     setIsOpen(false);
   };
 
-  // ───────── закрытие по Esc / клику вне календаря ─────────
+  // close on Esc / outside
   useEffect(() => {
     if (!isOpen) return;
-
-    const handleEsc = (e) => e.key === 'Escape' && setIsOpen(false);
-    const handleOutside = (e) => {
+    const esc = (e) => e.key === 'Escape' && setIsOpen(false);
+    const out = (e) => {
       if (
         modalRef.current &&
         !modalRef.current.contains(e.target) &&
         triggerRef.current &&
         !triggerRef.current.contains(e.target)
-      ) {
+      )
         setIsOpen(false);
-      }
     };
-
-    document.addEventListener('keydown', handleEsc);
-    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', esc);
+    document.addEventListener('mousedown', out);
     return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', esc);
+      document.removeEventListener('mousedown', out);
     };
   }, [isOpen]);
 
+  // month/year select options
+  const years = useMemo(() => {
+    const y = displayMonth.getFullYear();
+    return Array.from({ length: 11 }, (_, i) => y - 5 + i);
+  }, [displayMonth]);
+
+  const changeMonth = (m) => setDisplayMonth((prev) => setMonth(prev, m));
+  const changeYear = (y) => setDisplayMonth((prev) => setYear(prev, y));
+
   const fmt = (d) => (d ? format(d, 'dd.MM.yyyy') : '');
 
-  // ───────────────────────── render ─────────────────────────
+  // ──────────────────────── render ────────────────────────
   return (
     <>
-      {/* Триггер */}
+      {/* Trigger */}
       <div
         ref={triggerRef}
         onClick={() => setIsOpen((o) => !o)}
@@ -142,38 +143,60 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
         )}
       </div>
 
-      {/* Модалка */}
+      {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" />
 
           <div
             ref={modalRef}
-            className="relative z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[90vw] max-w-[640px] p-4"
+            className="relative z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[95vw] max-w-[640px] p-4"
           >
-            {/* навигация */}
-            <div className="flex items-center justify-between mb-3">
-              <button
-                className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
-              >
-                <FiChevronLeft />
-              </button>
-              <span className="text-sm font-medium text-zinc-900 dark:text-white capitalize">
-                {format(displayMonth, 'LLLL yyyy', { locale: ru })} —{' '}
-                {format(addMonths(displayMonth, 1), 'LLLL yyyy', { locale: ru })}
-              </span>
-              <button
-                className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
-              >
-                <FiChevronRight />
-              </button>
+            {/* navigation */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
+                >
+                  <FiChevronLeft />
+                </button>
+                <button
+                  className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
+                >
+                  <FiChevronRight />
+                </button>
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <select
+                  value={displayMonth.getMonth()}
+                  onChange={(e) => changeMonth(parseInt(e.target.value, 10))}
+                  className="px-2 py-1 bg-zinc-100 dark:bg-zinc-700 rounded"
+                >
+                  {MONTH_NAMES.map((m, idx) => (
+                    <option key={idx} value={idx} className="capitalize">
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={displayMonth.getFullYear()}
+                  onChange={(e) => changeYear(parseInt(e.target.value, 10))}
+                  className="px-2 py-1 bg-zinc-100 dark:bg-zinc-700 rounded"
+                >
+                  {years.map((y) => (
+                    <option key={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* months grid: vertical stack on xs */}
+            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
               {months.map(({ monthStart, days }, idx) => (
-                <div key={idx}>
+                <div key={idx} className="w-full">
                   <div className="text-center font-medium mb-2 capitalize text-zinc-900 dark:text-white">
                     {format(monthStart, 'LLLL yyyy', { locale: ru })}
                   </div>
