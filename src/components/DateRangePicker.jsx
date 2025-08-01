@@ -24,6 +24,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoverDate, setHoverDate] = useState(null);
   const [displayMonth, setDisplayMonth] = useState(startOfMonth(new Date()));
+  const [awaitingEnd, setAwaitingEnd] = useState(false); // ← добавлено
 
   const triggerRef = useRef(null);
   const modalRef = useRef(null);
@@ -34,7 +35,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
       const monthStart = startOfMonth(addMonths(displayMonth, offset));
       const monthEnd = endOfMonth(monthStart);
       const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-      const prefix = (monthStart.getDay() + 6) % 7; // shift for Monday start
+      const prefix = (monthStart.getDay() + 6) % 7;
       return { monthStart, days: Array(prefix).fill(null).concat(days) };
     };
     return [createMonth(0), createMonth(1)];
@@ -58,21 +59,28 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
     setStartDate(null);
     setEndDate(null);
     setHoverDate(null);
+    setAwaitingEnd(false);
   };
 
   const handleDateClick = (d) => {
     if (!d) return;
+
+    // первый клик / перезапуск выбора
     if (!startDate || endDate) {
       setStartDate(d);
       setEndDate(null);
-      return;
+      setAwaitingEnd(true);
+      return; // не закрываем модалку
     }
+
+    // второй клик
     if (isBefore(d, startDate)) {
       setEndDate(startDate);
       setStartDate(d);
     } else if (!isSameDay(d, startDate)) {
       setEndDate(d);
     }
+    setAwaitingEnd(false);
     setIsOpen(false);
   };
 
@@ -81,6 +89,10 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
     if (!isOpen) return;
     const esc = (e) => e.key === 'Escape' && setIsOpen(false);
     const out = (e) => {
+      if (
+        awaitingEnd // ← блокируем закрытие, ждём конец диапазона
+      )
+        return;
       if (
         modalRef.current &&
         !modalRef.current.contains(e.target) &&
@@ -95,16 +107,15 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
       document.removeEventListener('keydown', esc);
       document.removeEventListener('mousedown', out);
     };
-  }, [isOpen]);
+  }, [isOpen, awaitingEnd]);
 
-  // month/year select options
+  // month/year select
   const years = useMemo(() => {
     const y = displayMonth.getFullYear();
     return Array.from({ length: 11 }, (_, i) => y - 5 + i);
   }, [displayMonth]);
-
-  const changeMonth = (m) => setDisplayMonth((prev) => setMonth(prev, m));
-  const changeYear = (y) => setDisplayMonth((prev) => setYear(prev, y));
+  const changeMonth = (m) => setDisplayMonth((p) => setMonth(p, m));
+  const changeYear = (y) => setDisplayMonth((p) => setYear(p, y));
 
   const fmt = (d) => (d ? format(d, 'dd.MM.yyyy') : '');
 
@@ -173,7 +184,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
                 <select
                   value={displayMonth.getMonth()}
                   onChange={(e) => changeMonth(parseInt(e.target.value, 10))}
-                  className="px-2 py-1 bg-zinc-100 dark:bg-zinc-700 rounded"
+                  className="px-2 py-1 bg-zinc-100 dark:bg-zinc-700 rounded capitalize"
                 >
                   {MONTH_NAMES.map((m, idx) => (
                     <option key={idx} value={idx} className="capitalize">
@@ -193,8 +204,8 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
               </div>
             </div>
 
-            {/* months grid: vertical stack on xs */}
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
+            {/* months grid */}
+            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
               {months.map(({ monthStart, days }, idx) => (
                 <div key={idx} className="w-full">
                   <div className="text-center font-medium mb-2 capitalize text-zinc-900 dark:text-white">
