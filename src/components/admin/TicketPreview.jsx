@@ -33,19 +33,15 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
       'top-right': { top: 16, right: 16 },
       'bottom-left': { bottom: 16, left: 16 },
       'bottom-right': { bottom: 16, right: 16 },
-      'center': { 
-        top: '50%', 
-        left: '50%', 
-        transform: 'translate(-50%, -50%)' 
-      }
+      'center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     };
     return positions[settings.qrCode.position] || positions['bottom-right'];
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
       className="space-y-4"
     >
       {/* Preview Controls */}
@@ -54,15 +50,15 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
           Предпросмотр билета
         </h3>
         <div className="flex gap-2">
-          <button
-            onClick={onRefresh}
+          <button 
+            onClick={onRefresh} 
             className="flex items-center gap-2 px-3 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-300 dark:hover:bg-zinc-600 transition text-sm"
           >
             <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
             Обновить
           </button>
-          <button
-            onClick={onDownload}
+          <button 
+            onClick={onDownload} 
             className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
           >
             <SafeIcon icon={FiDownload} className="w-4 h-4" />
@@ -70,7 +66,7 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
           </button>
         </div>
       </div>
-
+      
       {/* Ticket Preview */}
       <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
         <div 
@@ -85,17 +81,17 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
           {/* Company Logo */}
           {settings.design.showCompanyLogo && settings.companyLogo && (
             <div className="absolute top-4 left-4">
-              <img
-                src={settings.companyLogo}
-                alt="Company Logo"
-                className="h-8 w-auto object-contain"
+              <img 
+                src={settings.companyLogo} 
+                alt="Company Logo" 
+                className="h-8 w-auto object-contain" 
               />
             </div>
           )}
 
           {/* QR Code */}
           {settings.design.showQRCode && (
-            <div
+            <div 
               className="absolute"
               style={{
                 ...getQRPosition(),
@@ -103,7 +99,7 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
                 height: getQRSize()
               }}
             >
-              <div
+              <div 
                 className="w-full h-full bg-black flex items-center justify-center text-white text-xs"
                 style={{ backgroundColor: settings.colorScheme.text }}
               >
@@ -119,20 +115,17 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
                 className="font-bold mb-2"
                 style={{ 
                   color: settings.colorScheme.primary,
-                  fontSize: settings.design.fontSize === 'large' ? '24px' : 
-                           settings.design.fontSize === 'small' ? '16px' : '20px'
+                  fontSize: settings.design.fontSize === 'large' ? '24px' : settings.design.fontSize === 'small' ? '16px' : '20px'
                 }}
               >
                 {sampleTicketData.eventTitle}
               </h1>
-              
               {settings.ticketContent.showDateTime && (
                 <div className="mb-2">
                   <div className="font-medium">{sampleTicketData.eventDate}</div>
                   <div className="text-sm opacity-75">{sampleTicketData.eventTime}</div>
                 </div>
               )}
-
               {settings.ticketContent.showVenueInfo && (
                 <div className="mb-2 text-sm opacity-75">
                   {sampleTicketData.eventLocation}
@@ -150,21 +143,21 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
                 <span>Билет №:</span>
                 <span className="font-mono">{sampleTicketData.ticketNumber}</span>
               </div>
-              
               <div className="flex justify-between">
                 <span>Заказ №:</span>
                 <span className="font-mono">{sampleTicketData.orderNumber}</span>
               </div>
-              
               <div className="flex justify-between">
                 <span>Место:</span>
                 <span>{sampleTicketData.seatInfo}</span>
               </div>
-
               {settings.ticketContent.showPrice && (
                 <div className="flex justify-between">
                   <span>Цена:</span>
-                  <span className="font-bold" style={{ color: settings.colorScheme.accent }}>
+                  <span 
+                    className="font-bold"
+                    style={{ color: settings.colorScheme.accent }}
+                  >
                     {sampleTicketData.price}
                   </span>
                 </div>
@@ -173,7 +166,10 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
 
             {/* Company Info */}
             {settings.companyInfo.name && (
-              <div className="mt-4 pt-4 border-t text-xs opacity-50" style={{ borderColor: settings.colorScheme.secondary }}>
+              <div 
+                className="mt-4 pt-4 border-t text-xs opacity-50"
+                style={{ borderColor: settings.colorScheme.secondary }}
+              >
                 <div>{settings.companyInfo.name}</div>
                 {settings.companyInfo.phone && <div>{settings.companyInfo.phone}</div>}
                 {settings.companyInfo.website && <div>{settings.companyInfo.website}</div>}

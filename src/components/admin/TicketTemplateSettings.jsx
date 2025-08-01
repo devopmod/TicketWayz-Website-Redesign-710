@@ -1,23 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
+import TicketPreview from './TicketPreview';
+import supabase from '../../lib/supabase';
 
-const { 
-  FiUpload, 
-  FiTrash2, 
-  FiSave, 
-  FiRotateCcw, 
-  FiImage, 
-  FiSettings, 
-  FiMail,
-  FiServer,
-  FiLock,
-  FiEye,
-  FiEyeOff,
-  FiCheck,
-  FiX
-} = FiIcons;
+const { FiUpload, FiTrash2, FiSave, FiRotateCcw, FiImage, FiSettings, FiMail, FiServer, FiLock, FiEye, FiEyeOff, FiCheck, FiX } = FiIcons;
 
 const TicketTemplateSettings = () => {
   const [activeTab, setActiveTab] = useState('template');
@@ -26,6 +14,8 @@ const TicketTemplateSettings = () => {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const logoInputRef = useRef(null);
+  const [lastSoldTicket, setLastSoldTicket] = useState(null);
+  const [refreshingPreview, setRefreshingPreview] = useState(false);
 
   // Настройки шаблона билета
   const [templateSettings, setTemplateSettings] = useState({
@@ -126,6 +116,41 @@ const TicketTemplateSettings = () => {
     }
   });
 
+  // Загрузка данных последнего проданного билета при монтировании компонента
+  useEffect(() => {
+    const fetchLastSoldTicket = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select(`
+            *,
+            event:events(title, event_date, location),
+            zone:zones(name),
+            seat:single_seats(row_number, seat_number, section),
+            order_item:order_items(
+              unit_price,
+              order:orders(id, user_id, total_price)
+            )
+          `)
+          .eq('status', 'sold')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching last sold ticket:', error);
+        } else if (data) {
+          console.log('Last sold ticket:', data);
+          setLastSoldTicket(data);
+        }
+      } catch (err) {
+        console.error('Error fetching ticket data:', err);
+      }
+    };
+
+    fetchLastSoldTicket();
+  }, []);
+
   const colorSchemePresets = [
     {
       name: 'Желтый (по умолчанию)',
@@ -202,13 +227,15 @@ const TicketTemplateSettings = () => {
         const savedTemplate = localStorage.getItem('ticketTemplateSettings');
         const savedSMTP = localStorage.getItem('smtpSettings');
         const savedEmail = localStorage.getItem('emailSettings');
-
+        
         if (savedTemplate) {
           setTemplateSettings(prev => ({ ...prev, ...JSON.parse(savedTemplate) }));
         }
+        
         if (savedSMTP) {
           setSmtpSettings(prev => ({ ...prev, ...JSON.parse(savedSMTP) }));
         }
+        
         if (savedEmail) {
           setEmailSettings(prev => ({ ...prev, ...JSON.parse(savedEmail) }));
         }
@@ -228,13 +255,13 @@ const TicketTemplateSettings = () => {
       setError('Пожалуйста, выберите файл изображения');
       return;
     }
-
+    
     const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
       setError('Размер файла не должен превышать 2MB');
       return;
     }
-
+    
     const reader = new FileReader();
     reader.onload = (event) => {
       setTemplateSettings(prev => ({
@@ -327,7 +354,7 @@ const TicketTemplateSettings = () => {
       ...prev,
       ticketContent: {
         ...prev.ticketContent,
-        additionalFields: prev.ticketContent.additionalFields.map((item, i) =>
+        additionalFields: prev.ticketContent.additionalFields.map((item, i) => 
           i === index ? { ...item, [field]: value } : item
         )
       }
@@ -337,7 +364,6 @@ const TicketTemplateSettings = () => {
   const testSMTPConnection = async () => {
     setSaving(true);
     setError(null);
-    
     try {
       // Здесь будет логика тестирования SMTP соединения
       // Пока что имитируем успешное подключение
@@ -354,12 +380,10 @@ const TicketTemplateSettings = () => {
   const saveSettings = async () => {
     setSaving(true);
     setError(null);
-
     try {
       localStorage.setItem('ticketTemplateSettings', JSON.stringify(templateSettings));
       localStorage.setItem('smtpSettings', JSON.stringify(smtpSettings));
       localStorage.setItem('emailSettings', JSON.stringify(emailSettings));
-
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
@@ -412,7 +436,7 @@ const TicketTemplateSettings = () => {
           layout: 'vertical'
         }
       });
-
+      
       setSmtpSettings({
         enabled: false,
         host: '',
@@ -424,7 +448,7 @@ const TicketTemplateSettings = () => {
         senderName: 'TicketWayz',
         replyTo: ''
       });
-
+      
       setEmailSettings({
         purchaseConfirmation: {
           enabled: true,
@@ -469,6 +493,45 @@ const TicketTemplateSettings = () => {
     }
   };
 
+  const handleRefreshPreview = async () => {
+    setRefreshingPreview(true);
+    try {
+      // Перезагрузка данных последнего проданного билета
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          event:events(title, event_date, location),
+          zone:zones(name),
+          seat:single_seats(row_number, seat_number, section),
+          order_item:order_items(
+            unit_price,
+            order:orders(id, user_id, total_price)
+          )
+        `)
+        .eq('status', 'sold')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('Error refreshing ticket data:', error);
+      } else if (data) {
+        console.log('Refreshed ticket data:', data);
+        setLastSoldTicket(data);
+      }
+    } catch (err) {
+      console.error('Error refreshing ticket data:', err);
+    } finally {
+      setRefreshingPreview(false);
+    }
+  };
+
+  const handleDownloadPreview = () => {
+    // Здесь будет логика скачивания билета в формате PDF
+    alert('Функция скачивания будет доступна в следующих обновлениях.');
+  };
+
   const tabs = [
     { id: 'template', label: 'Шаблон билета', icon: FiImage },
     { id: 'smtp', label: 'SMTP настройки', icon: FiServer },
@@ -510,476 +573,666 @@ const TicketTemplateSettings = () => {
 
       {/* Template Settings Tab */}
       {activeTab === 'template' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Company Logo */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
-              Логотип компании
-            </h3>
-            
-            <div className="space-y-4">
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-              
-              <div className="flex items-center gap-4">
-                {templateSettings.companyLogo ? (
-                  <div className="relative">
-                    <img
-                      src={templateSettings.companyLogo}
-                      alt="Company Logo"
-                      className="w-24 h-24 object-contain border rounded-lg"
-                    />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Settings */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* Company Logo */}
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
+                Логотип компании
+              </h3>
+              <div className="space-y-4">
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <div className="flex items-center gap-4">
+                  {templateSettings.companyLogo ? (
+                    <div className="relative">
+                      <img
+                        src={templateSettings.companyLogo}
+                        alt="Company Logo"
+                        className="w-24 h-24 object-contain border rounded-lg"
+                      />
+                      <button
+                        onClick={handleRemoveLogo}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <SafeIcon icon={FiX} className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg flex items-center justify-center">
+                      <SafeIcon icon={FiImage} className="w-8 h-8 text-zinc-400" />
+                    </div>
+                  )}
+                  <div className="space-y-2">
                     <button
-                      onClick={handleRemoveLogo}
-                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      onClick={() => logoInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                     >
-                      <SafeIcon icon={FiX} className="w-3 h-3" />
+                      <SafeIcon icon={FiUpload} className="w-4 h-4" />
+                      Загрузить логотип
+                    </button>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Поддерживаемые форматы: JPG, PNG, SVG<br />
+                      Максимальный размер: 2MB<br />
+                      Рекомендуемое разрешение: 200x200 пикселей
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Color Scheme */}
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
+                Цветовая схема
+              </h3>
+              <div className="space-y-4">
+                {/* Preset Color Schemes */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Готовые схемы
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {colorSchemePresets.map((preset, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleColorSchemeChange(preset.colors)}
+                        className="flex items-center gap-3 p-3 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+                      >
+                        <div className="flex gap-1">
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.colors.primary }} />
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.colors.secondary }} />
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.colors.accent }} />
+                        </div>
+                        <span className="text-sm text-zinc-900 dark:text-white">
+                          {preset.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Colors */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                      Основной цвет
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={templateSettings.colorScheme.primary}
+                        onChange={(e) => handleNestedChange('colorScheme', 'primary', e.target.value)}
+                        className="w-10 h-10 rounded border"
+                      />
+                      <input
+                        type="text"
+                        value={templateSettings.colorScheme.primary}
+                        onChange={(e) => handleNestedChange('colorScheme', 'primary', e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                      Вторичный цвет
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={templateSettings.colorScheme.secondary}
+                        onChange={(e) => handleNestedChange('colorScheme', 'secondary', e.target.value)}
+                        className="w-10 h-10 rounded border"
+                      />
+                      <input
+                        type="text"
+                        value={templateSettings.colorScheme.secondary}
+                        onChange={(e) => handleNestedChange('colorScheme', 'secondary', e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                      Акцентный цвет
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={templateSettings.colorScheme.accent}
+                        onChange={(e) => handleNestedChange('colorScheme', 'accent', e.target.value)}
+                        className="w-10 h-10 rounded border"
+                      />
+                      <input
+                        type="text"
+                        value={templateSettings.colorScheme.accent}
+                        onChange={(e) => handleNestedChange('colorScheme', 'accent', e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                      Фон
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={templateSettings.colorScheme.background}
+                        onChange={(e) => handleNestedChange('colorScheme', 'background', e.target.value)}
+                        className="w-10 h-10 rounded border"
+                      />
+                      <input
+                        type="text"
+                        value={templateSettings.colorScheme.background}
+                        onChange={(e) => handleNestedChange('colorScheme', 'background', e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                      Текст
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={templateSettings.colorScheme.text}
+                        onChange={(e) => handleNestedChange('colorScheme', 'text', e.target.value)}
+                        className="w-10 h-10 rounded border"
+                      />
+                      <input
+                        type="text"
+                        value={templateSettings.colorScheme.text}
+                        onChange={(e) => handleNestedChange('colorScheme', 'text', e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* QR Code Settings */}
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
+                Настройки QR-кода
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Размер QR-кода
+                  </label>
+                  <select
+                    value={templateSettings.qrCode.size}
+                    onChange={(e) => handleNestedChange('qrCode', 'size', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                  >
+                    {qrSizeOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Позиция QR-кода
+                  </label>
+                  <select
+                    value={templateSettings.qrCode.position}
+                    onChange={(e) => handleNestedChange('qrCode', 'position', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                  >
+                    {qrPositionOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Информация в QR-коде
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={templateSettings.qrCode.includeEventInfo}
+                      onChange={(e) => handleNestedChange('qrCode', 'includeEventInfo', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Информация о событии
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={templateSettings.qrCode.includeSeatInfo}
+                      onChange={(e) => handleNestedChange('qrCode', 'includeSeatInfo', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Информация о месте
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={templateSettings.qrCode.includeOrderInfo}
+                      onChange={(e) => handleNestedChange('qrCode', 'includeOrderInfo', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Информация о заказе
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Company Information */}
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
+                Информация о компании
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Название компании
+                  </label>
+                  <input
+                    type="text"
+                    value={templateSettings.companyInfo.name}
+                    onChange={(e) => handleNestedChange('companyInfo', 'name', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="TicketWayz"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={templateSettings.companyInfo.email}
+                    onChange={(e) => handleNestedChange('companyInfo', 'email', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="info@ticketwayz.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Телефон
+                  </label>
+                  <input
+                    type="tel"
+                    value={templateSettings.companyInfo.phone}
+                    onChange={(e) => handleNestedChange('companyInfo', 'phone', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="+7 (999) 123-45-67"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Веб-сайт
+                  </label>
+                  <input
+                    type="url"
+                    value={templateSettings.companyInfo.website}
+                    onChange={(e) => handleNestedChange('companyInfo', 'website', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="https://ticketwayz.com"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Адрес
+                  </label>
+                  <textarea
+                    value={templateSettings.companyInfo.address}
+                    onChange={(e) => handleNestedChange('companyInfo', 'address', e.target.value)}
+                    rows="2"
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="г. Москва, ул. Примерная, д. 123"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Settings */}
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
+                Дополнительные настройки
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Шаблон дизайна
+                  </label>
+                  <select
+                    value={templateSettings.design.template}
+                    onChange={(e) => handleNestedChange('design', 'template', e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                  >
+                    {templateOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Инструкции для посетителей
+                  </label>
+                  <textarea
+                    value={templateSettings.ticketContent.customInstructions}
+                    onChange={(e) => handleNestedChange('ticketContent', 'customInstructions', e.target.value)}
+                    rows="3"
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="Дополнительные инструкции для посетителей..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Условия использования билета
+                  </label>
+                  <textarea
+                    value={templateSettings.ticketContent.termsAndConditions}
+                    onChange={(e) => handleNestedChange('ticketContent', 'termsAndConditions', e.target.value)}
+                    rows="4"
+                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
+                    placeholder="Условия использования билета, правила возврата и т.д."
+                  />
+                </div>
+
+                {/* Custom Fields */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Дополнительные поля
+                    </label>
+                    <button
+                      onClick={addCustomField}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded"
+                    >
+                      Добавить поле
                     </button>
                   </div>
-                ) : (
-                  <div className="w-24 h-24 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg flex items-center justify-center">
-                    <SafeIcon icon={FiImage} className="w-8 h-8 text-zinc-400" />
+                  <div className="space-y-3">
+                    {templateSettings.ticketContent.additionalFields.map((field, index) => (
+                      <div
+                        key={index}
+                        className="flex gap-3 items-center p-3 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
+                      >
+                        <input
+                          type="text"
+                          value={field.name}
+                          onChange={(e) => updateCustomField(index, 'name', e.target.value)}
+                          placeholder="Название поля"
+                          className="flex-1 px-2 py-1 bg-zinc-300 dark:bg-zinc-600 rounded"
+                        />
+                        <input
+                          type="text"
+                          value={field.value}
+                          onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                          placeholder="Значение"
+                          className="flex-1 px-2 py-1 bg-zinc-300 dark:bg-zinc-600 rounded"
+                        />
+                        <label className="flex items-center text-sm">
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => updateCustomField(index, 'required', e.target.checked)}
+                            className="mr-1"
+                          />
+                          Обязательное
+                        </label>
+                        <button
+                          onClick={() => removeCustomField(index)}
+                          className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
+                        >
+                          <SafeIcon icon={FiTrash2} className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                )}
-                
-                <div className="space-y-2">
-                  <button
-                    onClick={() => logoInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                  >
-                    <SafeIcon icon={FiUpload} className="w-4 h-4" />
-                    Загрузить логотип
-                  </button>
-                  
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right Column - Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <TicketPreview 
+              settings={templateSettings} 
+              onDownload={handleDownloadPreview} 
+              onRefresh={handleRefreshPreview}
+            />
+
+            {/* Ticket Content Options */}
+            <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
+                Настройки содержимого билета
+              </h3>
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={templateSettings.design.showCompanyLogo}
+                    onChange={(e) => handleNestedChange('design', 'showCompanyLogo', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    Показывать логотип компании
+                  </span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={templateSettings.design.showQRCode}
+                    onChange={(e) => handleNestedChange('design', 'showQRCode', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    Показывать QR-код
+                  </span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={templateSettings.ticketContent.showDateTime}
+                    onChange={(e) => handleNestedChange('ticketContent', 'showDateTime', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    Показывать дату и время
+                  </span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={templateSettings.ticketContent.showVenueInfo}
+                    onChange={(e) => handleNestedChange('ticketContent', 'showVenueInfo', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    Показывать информацию о месте проведения
+                  </span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={templateSettings.ticketContent.showPrice}
+                    onChange={(e) => handleNestedChange('ticketContent', 'showPrice', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    Показывать цену
+                  </span>
+                </label>
+              </div>
+              
+              <div className="mt-4 space-y-3">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Размер шрифта
+                </label>
+                <div className="flex gap-3">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="fontSize"
+                      value="small"
+                      checked={templateSettings.design.fontSize === 'small'}
+                      onChange={() => handleNestedChange('design', 'fontSize', 'small')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Маленький
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="fontSize"
+                      value="medium"
+                      checked={templateSettings.design.fontSize === 'medium'}
+                      onChange={() => handleNestedChange('design', 'fontSize', 'medium')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Средний
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="fontSize"
+                      value="large"
+                      checked={templateSettings.design.fontSize === 'large'}
+                      onChange={() => handleNestedChange('design', 'fontSize', 'large')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Большой
+                    </span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="mt-4 space-y-3">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Ориентация билета
+                </label>
+                <div className="flex gap-3">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="layout"
+                      value="vertical"
+                      checked={templateSettings.design.layout === 'vertical'}
+                      onChange={() => handleNestedChange('design', 'layout', 'vertical')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Вертикальная
+                    </span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="layout"
+                      value="horizontal"
+                      checked={templateSettings.design.layout === 'horizontal'}
+                      onChange={() => handleNestedChange('design', 'layout', 'horizontal')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      Горизонтальная
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Last Sold Ticket Info */}
+            {lastSoldTicket && (
+              <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white flex items-center">
+                  <SafeIcon icon={FiInfo} className="mr-2" />
+                  Данные последнего проданного билета
+                </h3>
+                <div className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+                  <div>
+                    <span className="font-medium">Событие:</span> {lastSoldTicket.event?.title || 'Н/Д'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Дата события:</span> {lastSoldTicket.event?.event_date 
+                      ? new Date(lastSoldTicket.event.event_date).toLocaleDateString('ru-RU', { 
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric' 
+                        }) 
+                      : 'Н/Д'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Место:</span> {lastSoldTicket.event?.location || 'Н/Д'}
+                  </div>
+                  {lastSoldTicket.seat && (
+                    <div>
+                      <span className="font-medium">Информация о месте:</span> Секция {lastSoldTicket.seat.section || 'Н/Д'}, 
+                      ряд {lastSoldTicket.seat.row_number || 'Н/Д'}, 
+                      место {lastSoldTicket.seat.seat_number || 'Н/Д'}
+                    </div>
+                  )}
+                  {lastSoldTicket.zone && (
+                    <div>
+                      <span className="font-medium">Зона:</span> {lastSoldTicket.zone.name || 'Н/Д'}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Цена:</span> {lastSoldTicket.order_item?.unit_price 
+                      ? `€${parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)}` 
+                      : 'Н/Д'}
+                  </div>
+                  <div>
+                    <span className="font-medium">ID заказа:</span> {lastSoldTicket.order_item?.order?.id 
+                      ? `TW-${lastSoldTicket.order_item.order.id.substring(0, 6)}` 
+                      : 'Н/Д'}
+                  </div>
+                  <div>
+                    <span className="font-medium">ID билета:</span> {lastSoldTicket.id 
+                      ? `T-${lastSoldTicket.id.substring(0, 8)}` 
+                      : 'Н/Д'}
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-zinc-700">
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Поддерживаемые форматы: JPG, PNG, SVG<br />
-                    Максимальный размер: 2MB<br />
-                    Рекомендуемое разрешение: 200x200 пикселей
+                    Данные используются для предпросмотра билета. Обновите предпросмотр, чтобы получить последние данные.
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Color Scheme */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
-              Цветовая схема
-            </h3>
-            
-            <div className="space-y-4">
-              {/* Preset Color Schemes */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Готовые схемы
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {colorSchemePresets.map((preset, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleColorSchemeChange(preset.colors)}
-                      className="flex items-center gap-3 p-3 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
-                    >
-                      <div className="flex gap-1">
-                        <div
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: preset.colors.primary }}
-                        />
-                        <div
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: preset.colors.secondary }}
-                        />
-                        <div
-                          className="w-4 h-4 rounded"
-                          style={{ backgroundColor: preset.colors.accent }}
-                        />
-                      </div>
-                      <span className="text-sm text-zinc-900 dark:text-white">
-                        {preset.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Colors */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                    Основной цвет
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={templateSettings.colorScheme.primary}
-                      onChange={(e) => handleNestedChange('colorScheme', 'primary', e.target.value)}
-                      className="w-10 h-10 rounded border"
-                    />
-                    <input
-                      type="text"
-                      value={templateSettings.colorScheme.primary}
-                      onChange={(e) => handleNestedChange('colorScheme', 'primary', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                    Вторичный цвет
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={templateSettings.colorScheme.secondary}
-                      onChange={(e) => handleNestedChange('colorScheme', 'secondary', e.target.value)}
-                      className="w-10 h-10 rounded border"
-                    />
-                    <input
-                      type="text"
-                      value={templateSettings.colorScheme.secondary}
-                      onChange={(e) => handleNestedChange('colorScheme', 'secondary', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                    Акцентный цвет
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={templateSettings.colorScheme.accent}
-                      onChange={(e) => handleNestedChange('colorScheme', 'accent', e.target.value)}
-                      className="w-10 h-10 rounded border"
-                    />
-                    <input
-                      type="text"
-                      value={templateSettings.colorScheme.accent}
-                      onChange={(e) => handleNestedChange('colorScheme', 'accent', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                    Фон
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={templateSettings.colorScheme.background}
-                      onChange={(e) => handleNestedChange('colorScheme', 'background', e.target.value)}
-                      className="w-10 h-10 rounded border"
-                    />
-                    <input
-                      type="text"
-                      value={templateSettings.colorScheme.background}
-                      onChange={(e) => handleNestedChange('colorScheme', 'background', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                    Текст
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={templateSettings.colorScheme.text}
-                      onChange={(e) => handleNestedChange('colorScheme', 'text', e.target.value)}
-                      className="w-10 h-10 rounded border"
-                    />
-                    <input
-                      type="text"
-                      value={templateSettings.colorScheme.text}
-                      onChange={(e) => handleNestedChange('colorScheme', 'text', e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs bg-zinc-200 dark:bg-zinc-700 rounded"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* QR Code Settings */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
-              Настройки QR-кода
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Размер QR-кода
-                </label>
-                <select
-                  value={templateSettings.qrCode.size}
-                  onChange={(e) => handleNestedChange('qrCode', 'size', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                >
-                  {qrSizeOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Позиция QR-кода
-                </label>
-                <select
-                  value={templateSettings.qrCode.position}
-                  onChange={(e) => handleNestedChange('qrCode', 'position', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                >
-                  {qrPositionOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Информация в QR-коде
-              </label>
-              
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={templateSettings.qrCode.includeEventInfo}
-                    onChange={(e) => handleNestedChange('qrCode', 'includeEventInfo', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                    Информация о событии
-                  </span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={templateSettings.qrCode.includeSeatInfo}
-                    onChange={(e) => handleNestedChange('qrCode', 'includeSeatInfo', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                    Информация о месте
-                  </span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={templateSettings.qrCode.includeOrderInfo}
-                    onChange={(e) => handleNestedChange('qrCode', 'includeOrderInfo', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                    Информация о заказе
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Company Information */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
-              Информация о компании
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Название компании
-                </label>
-                <input
-                  type="text"
-                  value={templateSettings.companyInfo.name}
-                  onChange={(e) => handleNestedChange('companyInfo', 'name', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="TicketWayz"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={templateSettings.companyInfo.email}
-                  onChange={(e) => handleNestedChange('companyInfo', 'email', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="info@ticketwayz.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Телефон
-                </label>
-                <input
-                  type="tel"
-                  value={templateSettings.companyInfo.phone}
-                  onChange={(e) => handleNestedChange('companyInfo', 'phone', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="+7 (999) 123-45-67"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Веб-сайт
-                </label>
-                <input
-                  type="url"
-                  value={templateSettings.companyInfo.website}
-                  onChange={(e) => handleNestedChange('companyInfo', 'website', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="https://ticketwayz.com"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Адрес
-                </label>
-                <textarea
-                  value={templateSettings.companyInfo.address}
-                  onChange={(e) => handleNestedChange('companyInfo', 'address', e.target.value)}
-                  rows="2"
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="г. Москва, ул. Примерная, д. 123"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Settings */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">
-              Дополнительные настройки
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Шаблон дизайна
-                </label>
-                <select
-                  value={templateSettings.design.template}
-                  onChange={(e) => handleNestedChange('design', 'template', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                >
-                  {templateOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Инструкции для посетителей
-                </label>
-                <textarea
-                  value={templateSettings.ticketContent.customInstructions}
-                  onChange={(e) => handleNestedChange('ticketContent', 'customInstructions', e.target.value)}
-                  rows="3"
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="Дополнительные инструкции для посетителей..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Условия использования билета
-                </label>
-                <textarea
-                  value={templateSettings.ticketContent.termsAndConditions}
-                  onChange={(e) => handleNestedChange('ticketContent', 'termsAndConditions', e.target.value)}
-                  rows="4"
-                  className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  placeholder="Условия использования билета, правила возврата и т.д."
-                />
-              </div>
-
-              {/* Custom Fields */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Дополнительные поля
-                  </label>
-                  <button
-                    onClick={addCustomField}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded"
-                  >
-                    Добавить поле
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  {templateSettings.ticketContent.additionalFields.map((field, index) => (
-                    <div key={index} className="flex gap-3 items-center p-3 bg-zinc-200 dark:bg-zinc-700 rounded-lg">
-                      <input
-                        type="text"
-                        value={field.name}
-                        onChange={(e) => updateCustomField(index, 'name', e.target.value)}
-                        placeholder="Название поля"
-                        className="flex-1 px-2 py-1 bg-zinc-300 dark:bg-zinc-600 rounded"
-                      />
-                      <input
-                        type="text"
-                        value={field.value}
-                        onChange={(e) => updateCustomField(index, 'value', e.target.value)}
-                        placeholder="Значение"
-                        className="flex-1 px-2 py-1 bg-zinc-300 dark:bg-zinc-600 rounded"
-                      />
-                      <label className="flex items-center text-sm">
-                        <input
-                          type="checkbox"
-                          checked={field.required}
-                          onChange={(e) => updateCustomField(index, 'required', e.target.checked)}
-                          className="mr-1"
-                        />
-                        Обязательное
-                      </label>
-                      <button
-                        onClick={() => removeCustomField(index)}
-                        className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                      >
-                        <SafeIcon icon={FiTrash2} className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+            )}
+          </motion.div>
+        </div>
       )}
 
       {/* SMTP Settings Tab */}
@@ -1022,7 +1275,6 @@ const TicketTemplateSettings = () => {
                       placeholder="smtp.gmail.com"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Порт
@@ -1035,7 +1287,6 @@ const TicketTemplateSettings = () => {
                       placeholder="587"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Имя пользователя
@@ -1048,7 +1299,6 @@ const TicketTemplateSettings = () => {
                       placeholder="your-email@gmail.com"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Пароль
@@ -1070,7 +1320,6 @@ const TicketTemplateSettings = () => {
                       </button>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Безопасность
@@ -1087,7 +1336,6 @@ const TicketTemplateSettings = () => {
                       ))}
                     </select>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Email отправителя
@@ -1100,7 +1348,6 @@ const TicketTemplateSettings = () => {
                       placeholder="noreply@ticketwayz.com"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Имя отправителя
@@ -1113,7 +1360,6 @@ const TicketTemplateSettings = () => {
                       placeholder="TicketWayz"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                       Ответить на (Reply-To)
@@ -1304,7 +1550,6 @@ const TicketTemplateSettings = () => {
           <SafeIcon icon={FiRotateCcw} className="w-4 h-4" />
           Сбросить
         </button>
-
         <button
           onClick={saveSettings}
           disabled={saving}
