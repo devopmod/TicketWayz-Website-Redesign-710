@@ -205,7 +205,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
             </div>
 
             {/* months grid */}
-            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex flex-col md:grid md:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
               {months.map(({ monthStart, days }, idx) => (
                 <div key={idx} className="w-full">
                   <div className="text-center font-medium mb-2 capitalize text-zinc-900 dark:text-white">
