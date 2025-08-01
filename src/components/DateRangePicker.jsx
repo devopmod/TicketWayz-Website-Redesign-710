@@ -24,21 +24,20 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoverDate, setHoverDate] = useState(null);
   const [displayMonth, setDisplayMonth] = useState(startOfMonth(new Date()));
-  const [awaitingEnd, setAwaitingEnd] = useState(false); // ← добавлено
+  const [awaitingEnd, setAwaitingEnd] = useState(false);
 
   const triggerRef = useRef(null);
   const modalRef = useRef(null);
 
-  // ──────────────────────── helpers ────────────────────────
+  // ────────────────────────── helpers ──────────────────────────
   const months = useMemo(() => {
-    const createMonth = (offset) => {
+    const makeMonth = (offset) => {
       const monthStart = startOfMonth(addMonths(displayMonth, offset));
-      const monthEnd = endOfMonth(monthStart);
-      const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+      const days = eachDayOfInterval({ start: monthStart, end: endOfMonth(monthStart) });
       const prefix = (monthStart.getDay() + 6) % 7;
       return { monthStart, days: Array(prefix).fill(null).concat(days) };
     };
-    return [createMonth(0), createMonth(1)];
+    return [makeMonth(0), makeMonth(1)];
   }, [displayMonth]);
 
   const isInRange = (d) => {
@@ -54,7 +53,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const isBoundary = (d) =>
     d && ((startDate && isSameDay(d, startDate)) || (endDate && isSameDay(d, endDate)));
 
-  // ──────────────────────── handlers ────────────────────────
+  // ────────────────────────── handlers ──────────────────────────
   const clear = () => {
     setStartDate(null);
     setEndDate(null);
@@ -65,15 +64,13 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const handleDateClick = (d) => {
     if (!d) return;
 
-    // первый клик / перезапуск выбора
     if (!startDate || endDate) {
       setStartDate(d);
       setEndDate(null);
       setAwaitingEnd(true);
-      return; // не закрываем модалку
+      return;
     }
 
-    // второй клик
     if (isBefore(d, startDate)) {
       setEndDate(startDate);
       setStartDate(d);
@@ -84,32 +81,29 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
     setIsOpen(false);
   };
 
-  // close on Esc / outside
+  // close on Esc / outside (use *click* to wait until handleDateClick updates state)
   useEffect(() => {
     if (!isOpen) return;
     const esc = (e) => e.key === 'Escape' && setIsOpen(false);
-    const out = (e) => {
-      if (
-        awaitingEnd // ← блокируем закрытие, ждём конец диапазона
-      )
-        return;
+    const outside = (e) => {
+      if (awaitingEnd) return;
       if (
         modalRef.current &&
         !modalRef.current.contains(e.target) &&
         triggerRef.current &&
         !triggerRef.current.contains(e.target)
-      )
+      ) {
         setIsOpen(false);
+      }
     };
     document.addEventListener('keydown', esc);
-    document.addEventListener('mousedown', out);
+    document.addEventListener('click', outside);
     return () => {
       document.removeEventListener('keydown', esc);
-      document.removeEventListener('mousedown', out);
+      document.removeEventListener('click', outside);
     };
   }, [isOpen, awaitingEnd]);
 
-  // month/year select
   const years = useMemo(() => {
     const y = displayMonth.getFullYear();
     return Array.from({ length: 11 }, (_, i) => y - 5 + i);
@@ -119,7 +113,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
 
   const fmt = (d) => (d ? format(d, 'dd.MM.yyyy') : '');
 
-  // ──────────────────────── render ────────────────────────
+  // ────────────────────────── render ──────────────────────────
   return (
     <>
       {/* Trigger */}
@@ -154,18 +148,16 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
         )}
       </div>
 
-      {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" />
-
           <div
             ref={modalRef}
             className="relative z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[95vw] max-w-[640px] p-4"
           >
-            {/* navigation */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2 self-start sm:self-auto">
+            {/* nav */}
+            <div className="flex flex-col md:flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 self-start lg:self-auto">
                 <button
                   className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
@@ -179,7 +171,6 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
                   <FiChevronRight />
                 </button>
               </div>
-
               <div className="flex gap-2 flex-wrap">
                 <select
                   value={displayMonth.getMonth()}
@@ -204,8 +195,8 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
               </div>
             </div>
 
-            {/* months grid */}
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
+            {/* months */}
+            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
               {months.map(({ monthStart, days }, idx) => (
                 <div key={idx} className="w-full">
                   <div className="text-center font-medium mb-2 capitalize text-zinc-900 dark:text-white">
