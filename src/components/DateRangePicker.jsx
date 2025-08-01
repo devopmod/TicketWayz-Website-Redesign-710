@@ -1,151 +1,117 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { format } from 'date-fns';
-import { FiCalendar, FiX } from 'react-icons/fi';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  eachDayOfInterval,
+  isSameDay,
+  isWithinInterval,
+  isBefore,
+  isAfter,
+} from 'date-fns';
+import { ru } from 'date-fns/locale';
+import { FiCalendar, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+
+const WEEK_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoverDate, setHoverDate] = useState(null);
-  const [selectingStart, setSelectingStart] = useState(true);
-  const calendarRef = useRef(null);
+  const [displayMonth, setDisplayMonth] = useState(startOfMonth(new Date()));
+  const pickerRef = useRef(null);
 
-  // Генерируем календарь на текущий и следующий месяц
-  const generateCalendar = () => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Возвращаем данные для двух месяцев
-    return [
-      generateMonthData(currentMonth, currentYear),
-      generateMonthData(currentMonth + 1, currentYear)
-    ];
-  };
-
-  // Генерирует данные для одного месяца
-  const generateMonthData = (month, year) => {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-
-    // Получаем название месяца
-    const monthName = new Date(year, month).toLocaleString('ru-RU', { month: 'long' });
-
-    // Создаем массив для дней
-    const days = [];
-
-    // Добавляем пустые ячейки для дней до начала месяца
-    // Воскресенье - 0, поэтому для российского календаря (где понедельник - 1)
-    // нужно скорректировать индекс
-    const startOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-    for (let i = 0; i < startOffset; i++) {
-      days.push(null);
-    }
-
-    // Добавляем дни месяца
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
-    }
-
-    return { month: monthName, year, days };
-  };
-
-  const [calendar, setCalendar] = useState(generateCalendar());
-
-  // Обработчик клика вне календаря
+  // Закрыть при клике снаружи
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+    const handle = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
   }, []);
 
-  // Функция для выбора даты
+  // Данные для двух последовательных месяцев
+  const months = useMemo(() => {
+    return [0, 1].map((offset) => {
+      const monthStart = startOfMonth(addMonths(displayMonth, offset));
+      const monthEnd = endOfMonth(monthStart);
+      const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+      const prefix = (monthStart.getDay() + 6) % 7; // сдвиг, чтобы Пн был первым
+      const padded = Array(prefix).fill(null).concat(days);
+      return { monthStart, days: padded };
+    });
+  }, [displayMonth]);
+
+  // Проверки диапазона
+  const isInRange = (date) => {
+    if (!date || !startDate) return false;
+    if (endDate) return isWithinInterval(date, { start: startDate, end: endDate });
+    if (hoverDate) {
+      const start = isBefore(hoverDate, startDate) ? hoverDate : startDate;
+      const end = isAfter(hoverDate, startDate) ? hoverDate : startDate;
+      return isWithinInterval(date, { start, end });
+    }
+    return isSameDay(date, startDate);
+  };
+
+  const isBoundary = (date) =>
+    date && ((startDate && isSameDay(date, startDate)) || (endDate && isSameDay(date, endDate)));
+
   const handleDateClick = (date) => {
     if (!date) return;
-
-    if (selectingStart || !startDate) {
-      // Выбираем начальную дату
+    if (!startDate || (startDate && endDate)) {
       setStartDate(date);
       setEndDate(null);
-      setSelectingStart(false);
+    } else if (isBefore(date, startDate)) {
+      setEndDate(startDate);
+      setStartDate(date);
+      setIsOpen(false);
+    } else if (isSameDay(date, startDate)) {
+      setStartDate(null);
+      setEndDate(null);
     } else {
-      // Выбираем конечную дату
-      if (date < startDate) {
-        // Если конечная дата раньше начальной, меняем их местами
-        setEndDate(startDate);
-        setStartDate(date);
-      } else {
-        setEndDate(date);
-      }
-      setSelectingStart(true);
+      setEndDate(date);
       setIsOpen(false);
     }
   };
 
-  // Функция для отображения выбранного диапазона
-  const isInRange = (date) => {
-    if (!date || !startDate) return false;
-    if (!endDate && hoverDate) {
-      return date >= startDate && date <= hoverDate;
-    }
-    return date >= startDate && date <= (endDate || startDate);
-  };
-
-  // Функция для отображения начала/конца диапазона
-  const isStartOrEnd = (date) => {
-    if (!date) return false;
-    return (
-      (startDate && date.getTime() === startDate.getTime()) ||
-      (endDate && date.getTime() === endDate.getTime())
-    );
-  };
-
-  // Функция для форматирования отображаемой даты
-  const formatDateDisplay = (date) => {
-    if (!date) return '';
-    return format(date, 'dd.MM.yyyy');
-  };
-
-  // Функция для сброса выбранных дат
-  const clearDates = () => {
+  const clear = () => {
     setStartDate(null);
     setEndDate(null);
-    setSelectingStart(true);
+    setHoverDate(null);
   };
 
-  // Функция для обработки наведения на дату
-  const handleDateHover = (date) => {
-    if (!selectingStart && startDate && date) {
-      setHoverDate(date);
-    }
-  };
+  const formatDisplay = (d) => (d ? format(d, 'dd.MM.yyyy') : '');
 
   return (
-    <div className="relative" ref={calendarRef}>
-      <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-700 rounded-lg p-2">
-        <div className="flex-1 flex items-center" onClick={() => setIsOpen(!isOpen)}>
+    <div className="relative" ref={pickerRef}>
+      {/* Поле ввода */}
+      <div
+        className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-700 rounded-lg p-2 cursor-pointer"
+        onClick={() => setIsOpen((o) => !o)}
+      >
+        <div className="flex items-center">
           <SafeIcon icon={FiCalendar} className="text-zinc-600 dark:text-zinc-400 mr-2" />
           <span className="text-sm text-zinc-900 dark:text-white">
             {startDate ? (
               <>
-                {formatDateDisplay(startDate)}
-                {endDate ? ` - ${formatDateDisplay(endDate)}` : ''}
+                {formatDisplay(startDate)}
+                {endDate && ` - ${formatDisplay(endDate)}`}
               </>
             ) : (
               'Выберите даты'
             )}
           </span>
         </div>
-
         {(startDate || endDate) && (
           <button
-            onClick={clearDates}
+            onClick={(e) => {
+              e.stopPropagation();
+              clear();
+            }}
             className="p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-600 transition"
           >
             <SafeIcon icon={FiX} className="text-zinc-600 dark:text-zinc-400" />
@@ -153,46 +119,63 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
         )}
       </div>
 
+      {/* Календарь */}
       {isOpen && (
-        <div className="absolute z-10 mt-2 p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[300px]">
-          <div className="mb-2 text-center">
+        <div className="absolute z-20 mt-2 p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[640px]">
+          {/* Навигация */}
+          <div className="flex items-center justify-between mb-3">
+            <button
+              className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+              onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
+            >
+              <FiChevronLeft />
+            </button>
             <span className="text-sm font-medium text-zinc-900 dark:text-white">
-              {selectingStart ? 'Выберите начальную дату' : 'Выберите конечную дату'}
+              {format(displayMonth, 'LLLL yyyy', { locale: ru })} —{' '}
+              {format(addMonths(displayMonth, 1), 'LLLL yyyy', { locale: ru })}
             </span>
+            <button
+              className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+              onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
+            >
+              <FiChevronRight />
+            </button>
           </div>
 
-          {calendar.map((month, monthIndex) => (
-            <div key={monthIndex} className="mb-4">
-              <div className="text-center font-medium mb-2 text-zinc-900 dark:text-white">
-                {month.month} {month.year}
+          <div className="grid grid-cols-2 gap-4">
+            {months.map(({ monthStart, days }, idx) => (
+              <div key={idx}>
+                <div className="text-center font-medium mb-2 capitalize text-zinc-900 dark:text-white">
+                  {format(monthStart, 'LLLL yyyy', { locale: ru })}
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {WEEK_LABELS.map((l) => (
+                    <div key={l} className="text-xs text-zinc-600 dark:text-zinc-400 py-1">
+                      {l}
+                    </div>
+                  ))}
+                  {days.map((d, i) => (
+                    <div
+                      key={i}
+                      onClick={() => handleDateClick(d)}
+                      onMouseEnter={() => setHoverDate(d)}
+                      className={`p-1 text-sm rounded-md ${
+                        !d ? 'invisible' : 'cursor-pointer'
+                      } ${
+                        isBoundary(d)
+                          ? 'bg-yellow-500 text-black'
+                          : isInRange(d)
+                          ? 'bg-yellow-500/20'
+                          : 'hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white'
+                      }`}
+                    >
+                      {d ? format(d, 'd') : ''}
+                    </div>
+                  ))}
+                </div>
               </div>
-
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
-                  <div key={day} className="text-xs text-zinc-600 dark:text-zinc-400 py-1">
-                    {day}
-                  </div>
-                ))}
-
-                {month.days.map((date, index) => (
-                  <div
-                    key={index}
-                    className={`
-                      p-1 text-center text-sm rounded-md cursor-pointer
-                      ${!date ? 'invisible' : ''}
-                      ${isStartOrEnd(date) ? 'bg-yellow-500 text-black' : ''}
-                      ${isInRange(date) && !isStartOrEnd(date) ? 'bg-yellow-500/20' : ''}
-                      ${date && !isInRange(date) && !isStartOrEnd(date) ? 'hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white' : ''}
-                    `}
-                    onClick={() => handleDateClick(date)}
-                    onMouseEnter={() => handleDateHover(date)}
-                  >
-                    {date ? date.getDate() : ''}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
