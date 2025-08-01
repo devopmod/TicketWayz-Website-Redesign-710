@@ -16,17 +16,13 @@ import SafeIcon from '../common/SafeIcon';
 
 const WEEK_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-/**
- * Адаптивный DateRangePicker
- * • width: 100%/90vw на мобилке, max-w 640 px на desktop
- * • Листаем месяцы ←/→; на xs (<640 px) показывается 1 месяц, на sm + — 2 месяца
- * • Окно открывается модальным слоем по центру, закрывается кликом вне области или по Esc
- */
 const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hoverDate, setHoverDate] = useState(null);
   const [displayMonth, setDisplayMonth] = useState(startOfMonth(new Date()));
+
   const triggerRef = useRef(null);
+  const modalRef = useRef(null);
 
   // ───────────────────────── helpers ─────────────────────────
   const months = useMemo(() => {
@@ -43,20 +39,21 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
     return [makeMonth(0), makeMonth(1)];
   }, [displayMonth]);
 
-  const isInRange = (date) => {
-    if (!date || !startDate) return false;
-    if (endDate) return isWithinInterval(date, { start: startDate, end: endDate });
+  // ───────────────────────── range utils ─────────────────────────
+  const isInRange = (d) => {
+    if (!d || !startDate) return false;
+    if (endDate) return isWithinInterval(d, { start: startDate, end: endDate });
     if (hoverDate) {
-      const [start, end] = isBefore(hoverDate, startDate)
-        ? [hoverDate, startDate]
-        : [startDate, hoverDate];
-      return isWithinInterval(date, { start, end });
+      const [s, e] = isBefore(hoverDate, startDate) ? [hoverDate, startDate] : [startDate, hoverDate];
+      return isWithinInterval(d, { start: s, end: e });
     }
-    return isSameDay(date, startDate);
+    return isSameDay(d, startDate);
   };
 
-  const isBoundary = (d) => d && ((startDate && isSameDay(d, startDate)) || (endDate && isSameDay(d, endDate)));
+  const isBoundary = (d) =>
+    d && ((startDate && isSameDay(d, startDate)) || (endDate && isSameDay(d, endDate)));
 
+  // ───────────────────────── handlers ─────────────────────────
   const clear = () => {
     setStartDate(null);
     setEndDate(null);
@@ -66,14 +63,14 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
   const handleDateClick = (d) => {
     if (!d) return;
 
-    // 1-й клик или «начинаем заново»
+    // первый клик или «сброс»
     if (!startDate || endDate) {
       setStartDate(d);
       setEndDate(null);
-      return; // остаёмся открытыми до второго клика
+      return; // остаёмся открытыми для выбора конца
     }
 
-    // 2-й клик
+    // второй клик
     if (isBefore(d, startDate)) {
       setEndDate(startDate);
       setStartDate(d);
@@ -81,24 +78,30 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
       setEndDate(d);
     }
 
-    setIsOpen(false); // теперь можно закрыть
+    setIsOpen(false);
   };
 
-  // ───────────────────────── close on esc / outside ─────────────────────────
+  // ───────── закрытие по Esc / клику вне календаря ─────────
   useEffect(() => {
     if (!isOpen) return;
 
+    const handleEsc = (e) => e.key === 'Escape' && setIsOpen(false);
     const handleOutside = (e) => {
-      if (triggerRef.current && !triggerRef.current.contains(e.target)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(e.target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     };
-    const handleEsc = (e) => e.key === 'Escape' && setIsOpen(false);
-    document.addEventListener('mousedown', handleOutside);
+
     document.addEventListener('keydown', handleEsc);
+    document.addEventListener('mousedown', handleOutside);
     return () => {
-      document.removeEventListener('mousedown', handleOutside);
       document.removeEventListener('keydown', handleEsc);
+      document.removeEventListener('mousedown', handleOutside);
     };
   }, [isOpen]);
 
@@ -139,14 +142,15 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
         )}
       </div>
 
-      {/* Модальное окно */}
+      {/* Модалка */}
       {isOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center">
-          {/* затемнение */}
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" />
 
-          {/* календарь */}
-          <div className="relative z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[90vw] max-w-[640px] p-4">
+          <div
+            ref={modalRef}
+            className="relative z-50 bg-white dark:bg-zinc-800 rounded-lg shadow-lg w-[90vw] max-w-[640px] p-4"
+          >
             {/* навигация */}
             <div className="flex items-center justify-between mb-3">
               <button
@@ -156,8 +160,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
                 <FiChevronLeft />
               </button>
               <span className="text-sm font-medium text-zinc-900 dark:text-white capitalize">
-                {format(displayMonth, 'LLLL yyyy', { locale: ru })}
-                {' — '}
+                {format(displayMonth, 'LLLL yyyy', { locale: ru })} —{' '}
                 {format(addMonths(displayMonth, 1), 'LLLL yyyy', { locale: ru })}
               </span>
               <button
@@ -185,9 +188,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate }) => {
                         key={i}
                         onClick={() => handleDateClick(d)}
                         onMouseEnter={() => setHoverDate(d)}
-                        className={`p-1 text-sm rounded-md ${
-                          !d ? 'invisible' : 'cursor-pointer'
-                        } ${
+                        className={`p-1 text-sm rounded-md ${!d ? 'invisible' : 'cursor-pointer'} ${
                           isBoundary(d)
                             ? 'bg-yellow-500 text-black'
                             : isInRange(d)
