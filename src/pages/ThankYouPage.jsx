@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCheck, FiDownload, FiHome } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { downloadTicketsPDF } from '../utils/pdfGenerator';
 
 const ThankYouPage = () => {
   const navigate = useNavigate();
@@ -44,6 +45,12 @@ const ThankYouPage = () => {
     }, 60000); // 1 минута
     return () => clearTimeout(timer);
   }, [navigate]);
+
+  const handleDownload = () => {
+    if (orderSummary) {
+      downloadTicketsPDF(orderSummary, `tickets-${orderNumber}.pdf`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-900 flex flex-col items-center justify-center px-4">
@@ -102,7 +109,7 @@ const ThankYouPage = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition font-medium">
+          <button onClick={handleDownload} className="flex-1 flex items-center justify-center gap-2 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition font-medium">
             <SafeIcon icon={FiDownload} />
             <span>Скачать билеты</span>
           </button>
