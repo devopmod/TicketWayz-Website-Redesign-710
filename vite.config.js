@@ -10,8 +10,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
-   build: {
+  build: {
     outDir: 'dist',
     sourcemap: true
   },
+  test: {
+    environment: 'jsdom'
+  }
 });
