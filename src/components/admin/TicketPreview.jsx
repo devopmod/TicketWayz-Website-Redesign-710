@@ -5,7 +5,7 @@ import SafeIcon from '../../common/SafeIcon';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
-const TicketPreview = ({ settings, onDownload, onRefresh }) => {
+const TicketPreview = ({ settings, onDownload, onRefresh, ticketData }) => {
   const sampleTicketData = {
     eventTitle: 'Концерт группы "Пример"',
     eventDate: '15 декабря 2024',
@@ -17,6 +17,9 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
     customerName: 'Иван Петров',
     ticketNumber: 'T-001'
   };
+
+  // Используем реальные данные билета, если они переданы из родительского компонента
+  const data = ticketData || sampleTicketData;
 
   const getQRSize = () => {
     switch (settings.qrCode.size) {
@@ -118,17 +121,17 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
                   fontSize: settings.design.fontSize === 'large' ? '24px' : settings.design.fontSize === 'small' ? '16px' : '20px'
                 }}
               >
-                {sampleTicketData.eventTitle}
+                {data.eventTitle}
               </h1>
               {settings.ticketContent.showDateTime && (
                 <div className="mb-2">
-                  <div className="font-medium">{sampleTicketData.eventDate}</div>
-                  <div className="text-sm opacity-75">{sampleTicketData.eventTime}</div>
+                  <div className="font-medium">{data.eventDate}</div>
+                  <div className="text-sm opacity-75">{data.eventTime}</div>
                 </div>
               )}
               {settings.ticketContent.showVenueInfo && (
                 <div className="mb-2 text-sm opacity-75">
-                  {sampleTicketData.eventLocation}
+                  {data.eventLocation}
                 </div>
               )}
             </div>
@@ -141,24 +144,24 @@ const TicketPreview = ({ settings, onDownload, onRefresh }) => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Билет №:</span>
-                <span className="font-mono">{sampleTicketData.ticketNumber}</span>
+                <span className="font-mono">{data.ticketNumber}</span>
               </div>
               <div className="flex justify-between">
                 <span>Заказ №:</span>
-                <span className="font-mono">{sampleTicketData.orderNumber}</span>
+                <span className="font-mono">{data.orderNumber}</span>
               </div>
               <div className="flex justify-between">
                 <span>Место:</span>
-                <span>{sampleTicketData.seatInfo}</span>
+                <span>{data.seatInfo}</span>
               </div>
               {settings.ticketContent.showPrice && (
                 <div className="flex justify-between">
                   <span>Цена:</span>
-                  <span 
+                  <span
                     className="font-bold"
                     style={{ color: settings.colorScheme.accent }}
                   >
-                    {sampleTicketData.price}
+                    {data.price}
                   </span>
                 </div>
               )}
