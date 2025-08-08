@@ -1,5 +1,5 @@
 // Patched version – added FiInfo import
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
@@ -34,6 +34,39 @@ const TicketTemplateSettings = () => {
   const logoInputRef = useRef(null);
   const [lastSoldTicket, setLastSoldTicket] = useState(null);
   const [refreshingPreview, setRefreshingPreview] = useState(false);
+
+  // Формируем данные билета для предпросмотра на основе последнего проданного билета
+  const previewTicketData = useMemo(() => {
+    if (!lastSoldTicket) return null;
+    const eventDateRaw = lastSoldTicket.event?.event_date;
+    let eventDate = '';
+    let eventTime = '';
+    if (eventDateRaw) {
+      const dateObj = new Date(eventDateRaw);
+      eventDate = dateObj.toLocaleDateString('ru-RU');
+      eventTime = dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+    return {
+      eventTitle: lastSoldTicket.event?.title || '',
+      eventDate,
+      eventTime,
+      eventLocation: lastSoldTicket.event?.location || '',
+      orderNumber: lastSoldTicket.order_item?.order?.id
+        ? `TW-${lastSoldTicket.order_item.order.id.substring(0, 6)}`
+        : '',
+      seatInfo: lastSoldTicket.seat
+        ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
+        : lastSoldTicket.zone
+          ? `Зона "${lastSoldTicket.zone.name}"`
+          : 'Общий вход',
+      price: lastSoldTicket.order_item?.unit_price
+        ? `€${parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)}`
+        : '',
+      ticketNumber: lastSoldTicket.id
+        ? `T-${lastSoldTicket.id.substring(0, 8)}`
+        : ''
+    };
+  }, [lastSoldTicket]);
 
   // Настройки шаблона билета
   const [templateSettings, setTemplateSettings] = useState({
@@ -1058,9 +1091,10 @@ const TicketTemplateSettings = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <TicketPreview 
-              settings={templateSettings} 
-              onDownload={handleDownloadPreview} 
+            <TicketPreview
+              settings={templateSettings}
+              ticketData={previewTicketData}
+              onDownload={handleDownloadPreview}
               onRefresh={handleRefreshPreview}
             />
 
