@@ -8,6 +8,7 @@ import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import TicketTemplateSettings from '../components/admin/TicketTemplateSettings';
 import supabase from '../lib/supabase';
+import { downloadTicketsPDF } from '../utils/pdfGenerator';
 
 const {
   FiUsers,
@@ -778,6 +779,31 @@ const AdminPage = () => {
   const viewOrderDetails = (order) => {
     setOrderDetails(order);
     setShowOrderDetails(true);
+  };
+
+  const handleDownloadTickets = () => {
+    if (!orderDetails) return;
+    const event = orderDetails.order_items[0]?.ticket?.event;
+    const seats = orderDetails.order_items.map(item => {
+      const seat = item.ticket?.seat;
+      const zone = item.ticket?.zone;
+      if (seat) {
+        return { label: `${seat.section} ряд ${seat.row_number} место ${seat.seat_number}` };
+      }
+      if (zone) {
+        return { label: `Зона "${zone.name}"` };
+      }
+      return { label: 'Общий вход' };
+    });
+    downloadTicketsPDF({
+      orderNumber: orderDetails.id,
+      event: {
+        title: event?.title,
+        date: event?.event_date,
+        location: event?.location
+      },
+      seats
+    }, `order-${orderDetails.id}.pdf`);
   };
 
   const handleOrderAction = async (action, orderId, ticketIds = []) => {
@@ -2217,7 +2243,7 @@ const AdminPage = () => {
                             <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
                             {processingOrderAction ? 'Обработка...' : 'Вернуть деньги'}
                           </button>
-                          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                          <button onClick={handleDownloadTickets} className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
                             <SafeIcon icon={FiDownload} className="w-4 h-4" />
                             Скачать билеты
                           </button>

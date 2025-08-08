@@ -5,6 +5,7 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import TicketPreview from './TicketPreview';
 import supabase from '../../lib/supabase';
+import { downloadTicketsPDF } from '../../utils/pdfGenerator';
 
 // 🛠  Added FiInfo below to satisfy ESLint no-undef
 const {
@@ -545,8 +546,26 @@ const TicketTemplateSettings = () => {
   };
 
   const handleDownloadPreview = () => {
-    // Здесь будет логика скачивания билета в формате PDF
-    alert('Функция скачивания будет доступна в следующих обновлениях.');
+    if (lastSoldTicket) {
+      const orderData = {
+        orderNumber: lastSoldTicket.order_item?.order?.id,
+        event: {
+          title: lastSoldTicket.event?.title,
+          date: lastSoldTicket.event?.event_date,
+          location: lastSoldTicket.event?.location
+        },
+        seats: [
+          {
+            label: lastSoldTicket.seat
+              ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
+              : lastSoldTicket.zone
+                ? `Зона "${lastSoldTicket.zone.name}"`
+                : 'Общий вход'
+          }
+        ]
+      };
+      downloadTicketsPDF(orderData, 'ticket-preview.pdf');
+    }
   };
 
   const tabs = [
