@@ -1,3 +1,6 @@
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+
 export function escapePdfString(str) {
   return String(str)
     .replace(/\\/g, '\\\\')
@@ -41,12 +44,27 @@ function createPdf(textLines) {
 
 export function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   if (!order) return;
+
+  // Загружаем настройки шаблона, чтобы применить их при генерации PDF
+  let settings = {};
+  try {
+    const stored = localStorage.getItem('ticketTemplateSettings');
+    if (stored) settings = JSON.parse(stored);
+  } catch {
+    // игнорируем ошибки парсинга и используем настройки по умолчанию
+  }
+
   const lines = [];
+  if (settings.companyInfo?.name) lines.push(settings.companyInfo.name);
   if (order.orderNumber) lines.push(`Order: ${order.orderNumber}`);
   if (order.event) {
     if (order.event.title) lines.push(`Event: ${order.event.title}`);
-    if (order.event.date) lines.push(`Date: ${order.event.date}`);
-    if (order.event.location) lines.push(`Location: ${order.event.location}`);
+    if (settings.ticketContent?.showDateTime && order.event.date) {
+      lines.push(`Date: ${order.event.date}`);
+    }
+    if (settings.ticketContent?.showVenueInfo && order.event.location) {
+      lines.push(`Location: ${order.event.location}`);
+    }
   }
   if (Array.isArray(order.seats)) {
     order.seats.forEach((seat, idx) => {
@@ -54,6 +72,16 @@ export function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
       lines.push(`Seat ${idx + 1}: ${label}`);
     });
   }
+  if (settings.ticketContent?.showPrice && order.totalPrice) {
+    lines.push(`Total: ${order.totalPrice}`);
+  }
+  if (settings.ticketContent?.customInstructions) {
+    lines.push(settings.ticketContent.customInstructions);
+  }
+  if (settings.companyInfo?.website) {
+    lines.push(settings.companyInfo.website);
+  }
+
   const pdfString = createPdf(lines);
   const blob = new Blob([pdfString], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
@@ -64,4 +92,19 @@ export function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+export async function downloadTicketTemplatePDF(element, fileName = 'ticket.pdf') {
+  if (!element) return;
+
+  const canvas = await html2canvas(element, { scale: 2 });
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({
+    orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+    unit: 'px',
+    format: [canvas.width, canvas.height]
+  });
+
+  pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+  pdf.save(fileName);
 }
