@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 import fontkit from '@pdf-lib/fontkit';
+import fontBase64 from './fonts/dejavu-sans.base64?raw';
 
 function hexToRgb(hex) {
   const value = hex?.replace('#', '') || '000000';
@@ -225,8 +226,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', settin
 
   let font;
   try {
-    const fontUrl = 'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37/ttf/DejaVuSans.ttf';
-    const fontBytes = await fetch(fontUrl).then((res) => res.arrayBuffer());
+    const fontBytes = Uint8Array.from(atob(fontBase64.trim()), (c) => c.charCodeAt(0));
     font = await pdfDoc.embedFont(fontBytes);
   } catch {
     font = await pdfDoc.embedFont(StandardFonts.Helvetica);
