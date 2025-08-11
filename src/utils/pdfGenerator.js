@@ -11,31 +11,18 @@ function hexToRgb(hex) {
   return rgb(r / 255, g / 255, b / 255);
 }
 
-export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
-  if (!order) return;
-
-  let settings = {};
-  try {
-    const stored = localStorage.getItem('ticketTemplateSettings');
-    if (stored) settings = JSON.parse(stored);
-  } catch {
-    // ignore
-  }
-
-  const pdfDoc = await PDFDocument.create();
-  pdfDoc.registerFontkit(fontkit);
+async function drawTicketPage(pdfDoc, font, order, seatLabel, settings) {
+  const { colorScheme = {}, design = {}, qrCode = {}, ticketContent = {}, companyInfo = {} } = settings;
 
   let pageWidth = 400;
   let pageHeight = 600;
-  if (settings.design?.layout === 'horizontal') {
+  if (design.layout === 'horizontal') {
     pageWidth = 600;
     pageHeight = 400;
   }
   const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
-  const { colorScheme = {}, design = {}, qrCode = {}, ticketContent = {}, companyInfo = {} } = settings;
-
-  // Background
+  // background
   page.drawRectangle({
     x: 0,
     y: 0,
@@ -44,14 +31,6 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     color: hexToRgb(colorScheme.background || '#FFFFFF')
   });
 
-  let font;
-  try {
-    const fontUrl = 'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37/ttf/DejaVuSans.ttf';
-    const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-    font = await pdfDoc.embedFont(fontBytes);
-  } catch {
-    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  }
   let fontSize = 12;
   if (design.fontSize === 'small') fontSize = 10;
   else if (design.fontSize === 'large') fontSize = 16;
@@ -59,10 +38,10 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   const textColor = hexToRgb(colorScheme.text || '#000000');
   let cursorY = pageHeight - 40;
 
-  // Company Logo
+  // logo
   if (design.showCompanyLogo && settings.companyLogo) {
     try {
-      const bytes = await fetch(settings.companyLogo).then((res) => res.arrayBuffer());
+      const bytes = await fetch(settings.companyLogo).then((r) => r.arrayBuffer());
       let logo;
       if (settings.companyLogo.startsWith('data:image/png')) logo = await pdfDoc.embedPng(bytes);
       else logo = await pdfDoc.embedJpg(bytes);
@@ -75,25 +54,30 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
       });
       cursorY = pageHeight - scaled.height - 60;
     } catch {
-      // ignore logo errors
+      // ignore
     }
   }
 
-  // Event Title
+  // title
   if (order.event?.title) {
-    page.drawText(order.event.title, {
-      x: 40,
+    const title = order.event.title;
+    const size = fontSize + 4;
+    const width = font.widthOfTextAtSize(title, size);
+    page.drawText(title, {
+      x: (pageWidth - width) / 2,
       y: cursorY,
-      size: fontSize + 4,
+      size,
       font,
       color: hexToRgb(colorScheme.primary || '#000000')
     });
-    cursorY -= fontSize + 14;
+    cursorY -= size + 10;
   }
 
   if (ticketContent.showDateTime && order.event?.date) {
-    page.drawText(String(order.event.date), {
-      x: 40,
+    const dateStr = String(order.event.date);
+    const width = font.widthOfTextAtSize(dateStr, fontSize);
+    page.drawText(dateStr, {
+      x: (pageWidth - width) / 2,
       y: cursorY,
       size: fontSize,
       font,
@@ -103,8 +87,10 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   }
 
   if (ticketContent.showVenueInfo && order.event?.location) {
-    page.drawText(String(order.event.location), {
-      x: 40,
+    const loc = String(order.event.location);
+    const width = font.widthOfTextAtSize(loc, fontSize);
+    page.drawText(loc, {
+      x: (pageWidth - width) / 2,
       y: cursorY,
       size: fontSize,
       font,
@@ -113,18 +99,28 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     cursorY -= fontSize + 8;
   }
 
-  // Separator
-  page.drawRectangle({
-    x: 40,
-    y: cursorY,
-    width: pageWidth - 80,
-    height: 1,
-    color: hexToRgb(colorScheme.secondary || '#000000')
+  // separator
+  page.drawLine({
+    start: { x: 40, y: cursorY },
+    end: { x: pageWidth - 40, y: cursorY },
+    thickness: 1,
+    color: hexToRgb(colorScheme.secondary || '#000000'),
+    dashArray: [3, 3]
   });
   cursorY -= fontSize + 8;
 
+  const ticketNumber = order.ticketNumber || `T-${order.orderNumber || ''}`;
+  page.drawText(`Билет №: ${ticketNumber}`, {
+    x: 40,
+    y: cursorY,
+    size: fontSize,
+    font,
+    color: textColor
+  });
+  cursorY -= fontSize + 4;
+
   if (order.orderNumber) {
-    page.drawText(`Order: ${order.orderNumber}`, {
+    page.drawText(`Заказ №: ${order.orderNumber}`, {
       x: 40,
       y: cursorY,
       size: fontSize,
@@ -134,22 +130,18 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     cursorY -= fontSize + 4;
   }
 
-  if (Array.isArray(order.seats)) {
-    order.seats.forEach((seat, idx) => {
-      const label = seat?.label || seat?.number || seat?.id || `Seat ${idx + 1}`;
-      page.drawText(`Seat ${idx + 1}: ${label}`, {
-        x: 40,
-        y: cursorY,
-        size: fontSize,
-        font,
-        color: textColor
-      });
-      cursorY -= fontSize + 4;
-    });
-  }
+  page.drawText(`Место: ${seatLabel}`, {
+    x: 40,
+    y: cursorY,
+    size: fontSize,
+    font,
+    color: textColor
+  });
+  cursorY -= fontSize + 4;
 
-  if (ticketContent.showPrice && order.totalPrice) {
-    page.drawText(`Total: ${order.totalPrice}`, {
+  if (ticketContent.showPrice && (order.totalPrice || order.price)) {
+    const price = order.price || order.totalPrice;
+    page.drawText(`Цена: ${price}`, {
       x: 40,
       y: cursorY,
       size: fontSize,
@@ -168,15 +160,15 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
       color: textColor,
       maxWidth: pageWidth - 80
     });
-    cursorY -= fontSize + 10;
+    cursorY -= fontSize + 8;
   }
 
-  // Company Info footer
-  const footerLines = [];
-  if (companyInfo.name) footerLines.push(companyInfo.name);
-  if (companyInfo.phone) footerLines.push(companyInfo.phone);
-  if (companyInfo.website) footerLines.push(companyInfo.website);
-  footerLines.forEach((line, idx) => {
+  // footer company info
+  const footer = [];
+  if (companyInfo.name) footer.push(companyInfo.name);
+  if (companyInfo.phone) footer.push(companyInfo.phone);
+  if (companyInfo.website) footer.push(companyInfo.website);
+  footer.forEach((line, idx) => {
     page.drawText(line, {
       x: 40,
       y: 20 + idx * (fontSize - 2),
@@ -186,19 +178,17 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     });
   });
 
-  // QR Code
+  // QR code
   if (design.showQRCode) {
     try {
       const qrData = [];
       if (qrCode.includeEventInfo && order.event?.title) qrData.push(order.event.title);
-      if (qrCode.includeSeatInfo && Array.isArray(order.seats)) {
-        qrData.push(order.seats.map((s, i) => s?.label || s?.number || `Seat ${i + 1}`).join(','));
-      }
+      if (qrCode.includeSeatInfo) qrData.push(seatLabel);
       if (qrCode.includeOrderInfo && order.orderNumber) qrData.push(order.orderNumber);
       if (companyInfo.name) qrData.push(companyInfo.name);
       const qrString = qrData.join('|') || 'TicketWayz';
-      const qrDataUrl = await QRCode.toDataURL(qrString);
-      const qrBytes = await fetch(qrDataUrl).then((res) => res.arrayBuffer());
+      const dataUrl = await QRCode.toDataURL(qrString);
+      const qrBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
       const qrImage = await pdfDoc.embedPng(qrBytes);
       const sizeMap = { small: 64, medium: 96, large: 128 };
       const qrSize = sizeMap[qrCode.size] || 96;
@@ -212,8 +202,40 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
       const pos = positions[qrCode.position] || positions['bottom-right'];
       page.drawImage(qrImage, { x: pos.x, y: pos.y, width: qrSize, height: qrSize });
     } catch {
-      // ignore QR errors
+      // ignore
     }
+  }
+}
+
+export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
+  if (!order) return;
+
+  let settings = {};
+  try {
+    const stored = localStorage.getItem('ticketTemplateSettings');
+    if (stored) settings = JSON.parse(stored);
+  } catch {
+    // ignore
+  }
+
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
+
+  let font;
+  try {
+    const fontUrl = 'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37/ttf/DejaVuSans.ttf';
+    const fontBytes = await fetch(fontUrl).then((res) => res.arrayBuffer());
+    font = await pdfDoc.embedFont(fontBytes);
+  } catch {
+    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  }
+
+  const seats = Array.isArray(order.seats) && order.seats.length ? order.seats : [{ label: '' }];
+
+  for (let i = 0; i < seats.length; i++) {
+    const seat = seats[i];
+    const label = seat?.label || seat?.number || seat?.id || `Seat ${i + 1}`;
+    await drawTicketPage(pdfDoc, font, order, label, settings);
   }
 
   const pdfBytes = await pdfDoc.save();
@@ -227,4 +249,5 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
 
