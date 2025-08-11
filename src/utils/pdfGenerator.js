@@ -207,15 +207,17 @@ async function drawTicketPage(pdfDoc, font, order, seatLabel, settings) {
   }
 }
 
-export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
+export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', settingsOverride) {
   if (!order) return;
 
-  let settings = {};
-  try {
-    const stored = localStorage.getItem('ticketTemplateSettings');
-    if (stored) settings = JSON.parse(stored);
-  } catch {
-    // ignore
+  let settings = settingsOverride || {};
+  if (!settingsOverride) {
+    try {
+      const stored = localStorage.getItem('ticketTemplateSettings');
+      if (stored) settings = JSON.parse(stored);
+    } catch {
+      // ignore
+    }
   }
 
   const pdfDoc = await PDFDocument.create();

@@ -597,7 +597,7 @@ const TicketTemplateSettings = () => {
           }
         ]
       };
-      downloadTicketsPDF(orderData, 'ticket-preview.pdf');
+      downloadTicketsPDF(orderData, 'ticket-preview.pdf', templateSettings);
     }
   };
 
