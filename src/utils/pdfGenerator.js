@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
+import fontkit from '@pdf-lib/fontkit';
 
 function hexToRgb(hex) {
   const value = hex?.replace('#', '') || '000000';
@@ -22,6 +23,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   }
 
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
 
   let pageWidth = 400;
   let pageHeight = 600;
