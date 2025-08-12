@@ -356,7 +356,7 @@ const AdminPage = () => {
           *,
           order_items:order_items(
             *,
-            ticket:tickets(
+            ticket:tickets!fk_order_items_ticket_id(
               *,
               event:events(id, title, event_date)
             )
@@ -405,7 +405,7 @@ const AdminPage = () => {
         .select(`
           total_price,
           order_items(
-            tickets!fk_order_items_ticket_id(
+            ticket:tickets!fk_order_items_ticket_id(
               event:events(category)
             )
           )
@@ -422,7 +422,7 @@ const AdminPage = () => {
 
       data.forEach(order => {
         order.order_items?.forEach(item => {
-          const category = item.tickets?.event?.category;
+          const category = item.ticket?.event?.category;
           if (category && Object.prototype.hasOwnProperty.call(breakdown, category)) {
             breakdown[category] += parseFloat(order.total_price || 0) / (order.order_items?.length || 1);
           }

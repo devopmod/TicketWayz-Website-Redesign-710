@@ -226,9 +226,17 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', settin
 
   let font;
   try {
-    const fontBytes = Uint8Array.from(atob(fontBase64.trim()), (c) => c.charCodeAt(0));
+    let fontBytes;
+    if (typeof window !== 'undefined' && window.atob) {
+      fontBytes = Uint8Array.from(window.atob(fontBase64.trim()), (c) => c.charCodeAt(0));
+    } else if (typeof Buffer !== 'undefined') {
+      fontBytes = Uint8Array.from(Buffer.from(fontBase64.trim(), 'base64'));
+    } else {
+      throw new Error('No base64 decoder available');
+    }
     font = await pdfDoc.embedFont(fontBytes);
-  } catch {
+  } catch (err) {
+    console.error('Failed to load custom font, falling back to Helvetica:', err);
     font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   }
 
