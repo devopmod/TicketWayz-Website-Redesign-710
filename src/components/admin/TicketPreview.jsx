@@ -2,14 +2,16 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
+import { formatDateTime } from '../../utils/formatDateTime';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
 const TicketPreview = ({ settings, onDownload, onRefresh, ticketData }) => {
+  const { date: sampleDate, time: sampleTime } = formatDateTime('2024-12-15T20:00:00');
   const sampleTicketData = {
     eventTitle: 'Концерт группы "Пример"',
-    eventDate: '15 декабря 2024',
-    eventTime: '20:00',
+    eventDate: sampleDate,
+    eventTime: sampleTime,
     eventLocation: 'Концертный зал "Олимпийский"',
     orderNumber: 'TW-123456',
     seatInfo: 'Партер, ряд 5, место 12',

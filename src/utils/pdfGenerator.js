@@ -2,6 +2,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
 import fontkit from '@pdf-lib/fontkit';
 import DejaVuSansBase64 from '../assets/DejaVuSansBase64.js';
+import { formatDateTime } from './formatDateTime.js';
 
 function base64ToUint8Array(base64) {
   const binaryString =
@@ -153,7 +154,8 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
     cursorY -= fontSize + 8;
   }
   if (ticketContent.showDateTime && order.event?.date) {
-    page.drawText(String(order.event.date), {
+    const { dateTime } = formatDateTime(order.event.date);
+    page.drawText(dateTime, {
       x: cardX + padding,
       y: cursorY,
       size: fontSize,

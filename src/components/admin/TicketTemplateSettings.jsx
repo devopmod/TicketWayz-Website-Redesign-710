@@ -6,6 +6,7 @@ import SafeIcon from '../../common/SafeIcon';
 import TicketPreview from './TicketPreview';
 import supabase from '../../lib/supabase';
 import { downloadTicketsPDF } from '../../utils/pdfGenerator';
+import { formatDateTime } from '../../utils/formatDateTime';
 
 // 🛠  Added FiInfo below to satisfy ESLint no-undef
 const {
@@ -42,9 +43,9 @@ const TicketTemplateSettings = () => {
     let eventDate = '';
     let eventTime = '';
     if (eventDateRaw) {
-      const dateObj = new Date(eventDateRaw);
-      eventDate = dateObj.toLocaleDateString('ru-RU');
-      eventTime = dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      const { date, time } = formatDateTime(eventDateRaw);
+      eventDate = date;
+      eventTime = time;
     }
     return {
       eventTitle: lastSoldTicket.event?.title || '',
