@@ -1,21 +1,6 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
-import fontkit from '@pdf-lib/fontkit';
-import DejaVuSansBase64 from '../assets/DejaVuSansBase64.js';
 import { formatDateTime } from './formatDateTime.js';
-
-function base64ToUint8Array(base64) {
-  const binaryString =
-    typeof atob === 'function'
-      ? atob(base64)
-      : Buffer.from(base64, 'base64').toString('binary');
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 function hexToRgb(hex) {
   const value = hex?.replace('#', '') || '000000';
@@ -305,15 +290,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   }
 
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.registerFontkit(fontkit);
-  let font;
-  try {
-    const fontBytes = base64ToUint8Array(DejaVuSansBase64);
-    font = await pdfDoc.embedFont(fontBytes);
-  } catch (err) {
-    console.error('Failed to load bundled DejaVuSans font:', err);
-    font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  }
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   if (Array.isArray(order.seats) && order.seats.length > 0) {
     for (const seat of order.seats) {
