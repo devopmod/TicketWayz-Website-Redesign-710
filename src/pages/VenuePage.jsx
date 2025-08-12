@@ -428,12 +428,13 @@ console.log('🚀 Proceeding to checkout with seats:',seatsForCheckout);
 
 // Store selected seats in sessionStorage to access them in checkout
 sessionStorage.setItem('selectedSeats',JSON.stringify(seatsForCheckout));
-sessionStorage.setItem('eventDetails',JSON.stringify({
-id: event.id,
-title: event.title,
-date: event.event_date,
-location: event.location,
-venue: venue?.name
+  sessionStorage.setItem('eventDetails',JSON.stringify({
+  id: event.id,
+  title: event.title,
+  date: event.event_date,
+  location: event.location,
+  venue: venue?.name,
+  note: event.note
 }));
 
 navigate('/checkout');

@@ -358,7 +358,7 @@ const AdminPage = () => {
             *,
             ticket:tickets!fk_order_items_ticket_id(
               *,
-              event:events(id, title, event_date)
+              event:events(id, title, event_date, note)
             )
           )
         `)
@@ -406,7 +406,7 @@ const AdminPage = () => {
           total_price,
           order_items:order_items(
             ticket:tickets!fk_order_items_ticket_id(
-              event:events(category)
+              event:events(category, note)
             )
           )
         `)
@@ -476,7 +476,7 @@ const AdminPage = () => {
       // Статистика билетов
       const { data: ticketsData, error: ticketsError } = await supabase
         .from('tickets')
-        .select('status, event:events(title)');
+        .select('status, event:events(title, note)');
 
       if (ticketsError) throw ticketsError;
 
@@ -740,7 +740,7 @@ const AdminPage = () => {
           .from('tickets')
           .select(`
             *,
-            event:events(id, title, event_date),
+            event:events(id, title, event_date, note),
             zone:zones(id, name),
             seat:single_seats(id, row_number, seat_number, section)
           `)
@@ -808,7 +808,8 @@ const AdminPage = () => {
       event: {
         title: event?.title,
         date: event?.event_date,
-        location: event?.location
+        location: event?.location,
+        note: event?.note
       },
       seats
     }, `order-${orderDetails.id}.pdf`, templateSettings);
