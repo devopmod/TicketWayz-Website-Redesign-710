@@ -8,6 +8,7 @@ import { downloadTicketsPDF } from '../utils/pdfGenerator';
 const ThankYouPage = () => {
   const navigate = useNavigate();
   const [orderSummary, setOrderSummary] = useState(null);
+  const [templateSettings, setTemplateSettings] = useState(null);
   const orderNumber = orderSummary?.orderNumber || `TW-${Math.floor(100000 + Math.random() * 900000)}`;
 
   // Load order summary from sessionStorage
@@ -18,6 +19,18 @@ const ThankYouPage = () => {
         setOrderSummary(JSON.parse(storedOrderSummary));
       } catch (error) {
         console.error('Error parsing order summary:', error);
+      }
+    }
+  }, []);
+
+  // Load template settings from localStorage
+  useEffect(() => {
+    const storedSettings = localStorage.getItem('ticketTemplateSettings');
+    if (storedSettings) {
+      try {
+        setTemplateSettings(JSON.parse(storedSettings));
+      } catch (error) {
+        console.error('Error parsing template settings:', error);
       }
     }
   }, []);
@@ -48,7 +61,7 @@ const ThankYouPage = () => {
 
   const handleDownload = () => {
     if (orderSummary) {
-      downloadTicketsPDF(orderSummary, `tickets-${orderNumber}.pdf`);
+      downloadTicketsPDF(orderSummary, `tickets-${orderNumber}.pdf`, templateSettings);
     }
   };
 

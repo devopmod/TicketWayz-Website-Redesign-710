@@ -578,27 +578,31 @@ const TicketTemplateSettings = () => {
     }
   };
 
-  const handleDownloadPreview = () => {
-    if (lastSoldTicket) {
-      const orderData = {
-        orderNumber: lastSoldTicket.order_item?.order?.id,
-        event: {
-          title: lastSoldTicket.event?.title,
-          date: lastSoldTicket.event?.event_date,
-          location: lastSoldTicket.event?.location
-        },
-        seats: [
-          {
-            label: lastSoldTicket.seat
-              ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
-              : lastSoldTicket.zone
-                ? `Зона "${lastSoldTicket.zone.name}"`
-                : 'Общий вход'
-          }
-        ]
-      };
-      downloadTicketsPDF(orderData, 'ticket-preview.pdf');
-    }
+  const handleDownloadPreview = async () => {
+    if (!lastSoldTicket) return;
+
+    // Ensure current settings are saved before generating preview
+    await saveSettings();
+
+    const orderData = {
+      orderNumber: lastSoldTicket.order_item?.order?.id,
+      event: {
+        title: lastSoldTicket.event?.title,
+        date: lastSoldTicket.event?.event_date,
+        location: lastSoldTicket.event?.location
+      },
+      seats: [
+        {
+          label: lastSoldTicket.seat
+            ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
+            : lastSoldTicket.zone
+              ? `Зона "${lastSoldTicket.zone.name}"`
+              : 'Общий вход'
+        }
+      ]
+    };
+
+    downloadTicketsPDF(orderData, 'ticket-preview.pdf', templateSettings);
   };
 
   const tabs = [
