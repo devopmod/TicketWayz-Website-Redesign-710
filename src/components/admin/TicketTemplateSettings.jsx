@@ -178,7 +178,7 @@ const TicketTemplateSettings = () => {
             event:events(title, event_date, location),
             zone:zones(name),
             seat:single_seats(row_number, seat_number, section),
-            order_item:order_items(
+            order_item:order_items!tickets_order_item_id_fkey(
               unit_price,
               order:orders(id, user_id, total_price)
             )
@@ -597,7 +597,7 @@ const TicketTemplateSettings = () => {
           }
         ]
       };
-      downloadTicketsPDF(orderData, 'ticket-preview.pdf');
+      downloadTicketsPDF(orderData, 'ticket-preview.pdf', templateSettings);
     }
   };
 
