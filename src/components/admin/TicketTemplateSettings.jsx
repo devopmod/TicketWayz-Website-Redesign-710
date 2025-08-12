@@ -175,7 +175,7 @@ const TicketTemplateSettings = () => {
           .from('tickets')
           .select(`
             *,
-            event:events(title, event_date, location),
+            event:events(title, event_date, location, note),
             zone:zones(name),
             seat:single_seats(row_number, seat_number, section),
             order_item:order_items!tickets_order_item_id_fkey(
@@ -552,7 +552,7 @@ const TicketTemplateSettings = () => {
         .from('tickets')
         .select(`
           *,
-          event:events(title, event_date, location),
+          event:events(title, event_date, location, note),
           zone:zones(name),
           seat:single_seats(row_number, seat_number, section),
           order_item:order_items(
@@ -589,7 +589,8 @@ const TicketTemplateSettings = () => {
       event: {
         title: lastSoldTicket.event?.title,
         date: lastSoldTicket.event?.event_date,
-        location: lastSoldTicket.event?.location
+        location: lastSoldTicket.event?.location,
+        note: lastSoldTicket.event?.note
       },
       seats: [
         {

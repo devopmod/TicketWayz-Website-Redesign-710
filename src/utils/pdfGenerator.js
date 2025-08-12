@@ -205,10 +205,11 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   if (design.showQRCode && ['bottom-left', 'bottom-right'].includes(qrCode.position)) {
     termsY += qrSize + 10;
   }
-  const termsText = [
-    ticketContent.customInstructions,
-    ticketContent.termsAndConditions
-  ].filter(Boolean).join(' ');
+  const termsText =
+    order.event?.note ||
+    [ticketContent.customInstructions, ticketContent.termsAndConditions]
+      .filter(Boolean)
+      .join(' ');
   if (termsText) {
     page.drawText(termsText, {
       x: cardX + padding,

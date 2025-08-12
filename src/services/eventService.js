@@ -173,6 +173,7 @@ export const createEvent = async (eventData) => {
         event_date: eventData.event_date,
         image: eventData.image,
         venue_id: eventData.venue_id,
+        note: eventData.note || null,
         status: 'draft', // Start as draft
         published_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -260,6 +261,7 @@ export const updateEvent = async (eventId, eventData) => {
         event_date: eventData.event_date,
         image: eventData.image,
         venue_id: eventData.venue_id,
+        note: eventData.note || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', eventId)

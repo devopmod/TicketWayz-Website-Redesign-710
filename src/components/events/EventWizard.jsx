@@ -283,7 +283,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
     event_date: new Date().toISOString().slice(0, 16), // Format for datetime-local
     image: 'https://placehold.co/600x400/333/FFF?text=Event',
     venue_id: null,
-    prices: {}
+    prices: {},
+    note: ''
   });
 
   // References for sections
@@ -404,7 +405,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
         location: event.location || '',
         image: event.image || 'https://placehold.co/600x400/333/FFF?text=Event',
         venue_id: event.venue_id || null,
-        prices: {}
+        prices: {},
+        note: event.note || ''
       };
 
       console.log("Formatted event data:", formattedEventData);
@@ -612,6 +614,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
         event_date: formattedDate,
         image: eventData.image,
         venue_id: eventData.venue_id || null,
+        note: eventData.note || '',
         published_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         prices: eventData.prices
@@ -639,6 +642,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             event_date: eventPayload.event_date,
             image: eventPayload.image,
             venue_id: eventPayload.venue_id,
+            note: eventPayload.note,
             updated_at: eventPayload.updated_at,
             status: 'draft' // Set to draft before creating tickets
           })
@@ -706,6 +710,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             event_date: eventPayload.event_date,
             image: eventPayload.image,
             venue_id: eventPayload.venue_id,
+            note: eventPayload.note,
             status: 'draft', // Start as draft
             published_at: eventPayload.published_at,
             created_at: eventPayload.created_at,
@@ -1027,6 +1032,20 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                   />
                 </div>
 
+                {/* Note */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Note
+                  </label>
+                  <textarea
+                    value={eventData.note}
+                    onChange={(e) => handleChange('note', e.target.value)}
+                    rows="3"
+                    className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
+                    placeholder="Additional notes or terms (optional)"
+                  />
+                </div>
+
                 {/* ОБНОВЛЕННЫЙ блок изображения с возможностью загрузки */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-400 mb-1">
@@ -1318,6 +1337,12 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                       <div>
                         <span className="text-gray-400">Genre:</span>
                         <span className="text-white ml-2">{eventData.genre}</span>
+                      </div>
+                    )}
+                    {eventData.note && (
+                      <div className="md:col-span-2">
+                        <span className="text-gray-400">Note:</span>
+                        <span className="text-white ml-2">{eventData.note}</span>
                       </div>
                     )}
                   </div>
