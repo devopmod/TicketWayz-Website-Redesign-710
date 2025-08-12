@@ -13,6 +13,21 @@ function hexToRgb(hex) {
   const b = int & 255;
   return rgb(r / 255, g / 255, b / 255);
 }
+function drawRoundedRect(page, x, y, width, height, radius, options = {}) {
+  const path = [
+    `M ${x + radius} ${y}`,
+    `H ${x + width - radius}`,
+    `Q ${x + width} ${y} ${x + width} ${y + radius}`,
+    `V ${y + height - radius}`,
+    `Q ${x + width} ${y + height} ${x + width - radius} ${y + height}`,
+    `H ${x + radius}`,
+    `Q ${x} ${y + height} ${x} ${y + height - radius}`,
+    `V ${y + radius}`,
+    `Q ${x} ${y} ${x + radius} ${y}`,
+    'Z'
+  ].join(' ');
+  page.drawSvgPath(path, options);
+}
 
 async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   let pageWidth = 400;
@@ -25,68 +40,120 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
 
   const { colorScheme = {}, design = {}, qrCode = {}, ticketContent = {}, companyInfo = {} } = settings;
 
-  // Background
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: pageWidth,
-    height: pageHeight,
-    color: hexToRgb(colorScheme.background || '#FFFFFF')
-  });
+  const backgroundColor = hexToRgb(colorScheme.background || '#FFFFFF');
+  const textColor = hexToRgb(colorScheme.text || '#000000');
+  const primaryColor = hexToRgb(colorScheme.primary || '#000000');
+  const secondaryColor = hexToRgb(colorScheme.secondary || '#000000');
+  const accentColor = hexToRgb(colorScheme.accent || '#000000');
+
+  // Page background
+  page.drawRectangle({ x: 0, y: 0, width: pageWidth, height: pageHeight, color: backgroundColor });
 
   let fontSize = 12;
   if (design.fontSize === 'small') fontSize = 10;
   else if (design.fontSize === 'large') fontSize = 16;
 
-  const textColor = hexToRgb(colorScheme.text || '#000000');
-  let cursorY = pageHeight - 40;
+  const margin = 20;
+  const cardX = margin;
+  const cardY = margin;
+  const cardWidth = pageWidth - margin * 2;
+  const cardHeight = pageHeight - margin * 2;
+  const radius = 12;
+  const padding = 20;
 
-  // Company Logo
-  if (design.showCompanyLogo && settings.companyLogo) {
+  // Shadow and card background
+  drawRoundedRect(page, cardX + 4, cardY - 4, cardWidth, cardHeight, radius, {
+    color: rgb(0, 0, 0),
+    opacity: 0.1
+  });
+  drawRoundedRect(page, cardX, cardY, cardWidth, cardHeight, radius, {
+    color: backgroundColor
+  });
+
+  // Header banner
+  const headerHeight = 120;
+  const bannerY = cardY + cardHeight - headerHeight;
+  if (order.event?.image) {
     try {
-      const bytes = await fetch(settings.companyLogo).then((res) => res.arrayBuffer());
-      let logo;
-      if (settings.companyLogo.startsWith('data:image/png')) logo = await pdfDoc.embedPng(bytes);
-      else logo = await pdfDoc.embedJpg(bytes);
-      const scaled = logo.scale(80 / logo.width);
-      page.drawImage(logo, {
-        x: 40,
-        y: pageHeight - scaled.height - 40,
-        width: scaled.width,
-        height: scaled.height
+      const imgBytes = await fetch(order.event.image).then((r) => r.arrayBuffer());
+      let img;
+      if (order.event.image.startsWith('data:image/png')) img = await pdfDoc.embedPng(imgBytes);
+      else img = await pdfDoc.embedJpg(imgBytes);
+      page.drawImage(img, {
+        x: cardX,
+        y: bannerY,
+        width: cardWidth,
+        height: headerHeight
       });
-      cursorY = pageHeight - scaled.height - 60;
     } catch {
-      // ignore logo errors
+      page.drawRectangle({
+        x: cardX,
+        y: bannerY,
+        width: cardWidth,
+        height: headerHeight,
+        color: secondaryColor
+      });
     }
+  } else {
+    page.drawRectangle({
+      x: cardX,
+      y: bannerY,
+      width: cardWidth,
+      height: headerHeight,
+      color: secondaryColor
+    });
   }
 
-  // Event Title
-  if (order.event?.title) {
-    page.drawText(order.event.title, {
-      x: 40,
+  // Brand badge
+  const brandName = companyInfo.name || 'TicketWayz';
+  const badgeFont = fontSize - 2;
+  const badgePadding = 6;
+  const brandWidth = font.widthOfTextAtSize(brandName, badgeFont);
+  const badgeWidth = brandWidth + badgePadding * 2;
+  const badgeHeight = badgeFont + badgePadding;
+  const badgeX = cardX + padding;
+  const badgeY = cardY + cardHeight - badgeHeight - padding / 2;
+  page.drawRectangle({
+    x: badgeX,
+    y: badgeY,
+    width: badgeWidth,
+    height: badgeHeight,
+    color: accentColor
+  });
+  page.drawText(brandName, {
+    x: badgeX + badgePadding,
+    y: badgeY + badgePadding / 2,
+    size: badgeFont,
+    font,
+    color: backgroundColor
+  });
+
+  // Body content
+  let cursorY = bannerY - padding / 2;
+  const artist = order.event?.artist || order.event?.title;
+  if (artist) {
+    page.drawText(String(artist), {
+      x: cardX + padding,
       y: cursorY,
       size: fontSize + 4,
       font,
-      color: hexToRgb(colorScheme.primary || '#000000')
+      color: primaryColor
     });
-    cursorY -= fontSize + 14;
+    cursorY -= fontSize + 8;
   }
-
   if (ticketContent.showDateTime && order.event?.date) {
     page.drawText(String(order.event.date), {
-      x: 40,
+      x: cardX + padding,
       y: cursorY,
       size: fontSize,
       font,
-      color: textColor
+      color: accentColor
     });
     cursorY -= fontSize + 4;
   }
-
   if (ticketContent.showVenueInfo && order.event?.location) {
     page.drawText(String(order.event.location), {
-      x: 40,
+      x: cardX + padding,
       y: cursorY,
       size: fontSize,
       font,
@@ -95,100 +162,115 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
     cursorY -= fontSize + 8;
   }
 
-  // Separator
-  page.drawRectangle({
-    x: 40,
-    y: cursorY,
-    width: pageWidth - 80,
-    height: 1,
-    color: hexToRgb(colorScheme.secondary || '#000000')
+  // Info grid
+  cursorY -= 10;
+  const gridItems = [];
+  if (seat?.section) gridItems.push({ label: 'Section', value: seat.section });
+  if (seat?.gate) gridItems.push({ label: 'Gate', value: seat.gate });
+  if (seat?.row_number || seat?.row) gridItems.push({ label: 'Row', value: seat.row_number || seat.row });
+  if (seat?.seat_number || seat?.number) gridItems.push({ label: 'Seat', value: seat.seat_number || seat.number });
+  if (gridItems.length === 0) gridItems.push({ label: 'Admission', value: 'General' });
+  if (ticketContent.showPrice && order.totalPrice)
+    gridItems.push({ label: 'Price', value: order.totalPrice, accent: true });
+
+  const colWidth = (cardWidth - padding * 2) / 2;
+  const rowHeight = fontSize * 2 + 8;
+  gridItems.forEach((item, idx) => {
+    const col = idx % 2;
+    const row = Math.floor(idx / 2);
+    const x = cardX + padding + col * colWidth;
+    const y = cursorY - row * rowHeight;
+    page.drawText(item.label.toUpperCase(), {
+      x,
+      y,
+      size: fontSize - 2,
+      font,
+      color: secondaryColor
+    });
+    page.drawText(String(item.value), {
+      x,
+      y: y - fontSize,
+      size: fontSize,
+      font,
+      color: item.accent ? accentColor : textColor
+    });
   });
-  cursorY -= fontSize + 8;
+  const rows = Math.ceil(gridItems.length / 2);
+  cursorY -= rows * rowHeight + 10;
 
-  if (order.orderNumber) {
-    page.drawText(`Order: ${order.orderNumber}`, {
-      x: 40,
-      y: cursorY,
-      size: fontSize,
-      font,
-      color: textColor
-    });
-    cursorY -= fontSize + 4;
+  // Terms and notes at bottom
+  const sizeMap = { small: 64, medium: 96, large: 128 };
+  const qrSize = sizeMap[qrCode.size] || 96;
+  let termsY = cardY + padding;
+  if (design.showQRCode && ['bottom-left', 'bottom-right'].includes(qrCode.position)) {
+    termsY += qrSize + 10;
   }
-
-  const seatLabel = seat?.label || seat?.number || seat?.id;
-  if (seatLabel) {
-    page.drawText(`Seat: ${seatLabel}`, {
-      x: 40,
-      y: cursorY,
-      size: fontSize,
-      font,
-      color: textColor
-    });
-    cursorY -= fontSize + 4;
-  }
-
-  if (ticketContent.showPrice && order.totalPrice) {
-    page.drawText(`Total: ${order.totalPrice}`, {
-      x: 40,
-      y: cursorY,
-      size: fontSize,
-      font,
-      color: hexToRgb(colorScheme.accent || '#000000')
-    });
-    cursorY -= fontSize + 8;
-  }
-
-  if (ticketContent.customInstructions) {
-    page.drawText(ticketContent.customInstructions, {
-      x: 40,
-      y: cursorY,
+  const termsText = [
+    ticketContent.customInstructions,
+    ticketContent.termsAndConditions
+  ].filter(Boolean).join(' ');
+  if (termsText) {
+    page.drawText(termsText, {
+      x: cardX + padding,
+      y: termsY,
       size: fontSize - 2,
       font,
       color: textColor,
-      maxWidth: pageWidth - 80
+      maxWidth: cardWidth - padding * 2
     });
-    cursorY -= fontSize + 10;
   }
 
-  // Company Info footer
-  const footerLines = [];
-  if (companyInfo.name) footerLines.push(companyInfo.name);
-  if (companyInfo.phone) footerLines.push(companyInfo.phone);
-  if (companyInfo.website) footerLines.push(companyInfo.website);
-  footerLines.forEach((line, idx) => {
-    page.drawText(line, {
-      x: 40,
-      y: 20 + idx * (fontSize - 2),
-      size: fontSize - 2,
-      font,
-      color: textColor
-    });
-  });
-
-  // QR Code
+  // QR block with ticket ID footer
   if (design.showQRCode) {
     try {
       const qrData = [];
       if (qrCode.includeEventInfo && order.event?.title) qrData.push(order.event.title);
-      if (qrCode.includeSeatInfo && seatLabel) qrData.push(seatLabel);
+      if (qrCode.includeSeatInfo && seat?.id) qrData.push(seat.id);
       if (qrCode.includeOrderInfo && order.orderNumber) qrData.push(order.orderNumber);
-      if (companyInfo.name) qrData.push(companyInfo.name);
       const qrString = qrData.join('|') || 'TicketWayz';
       const qrDataUrl = await QRCode.toDataURL(qrString);
       const qrBytes = await fetch(qrDataUrl).then((res) => res.arrayBuffer());
       const qrImage = await pdfDoc.embedPng(qrBytes);
-      const sizeMap = { small: 64, medium: 96, large: 128 };
-      const qrSize = sizeMap[qrCode.size] || 96;
+
       const positions = {
-        'top-left': { x: 20, y: pageHeight - qrSize - 20 },
-        'top-right': { x: pageWidth - qrSize - 20, y: pageHeight - qrSize - 20 },
-        'bottom-left': { x: 20, y: 20 },
-        'bottom-right': { x: pageWidth - qrSize - 20, y: 20 },
-        center: { x: (pageWidth - qrSize) / 2, y: (pageHeight - qrSize) / 2 }
+        'top-left': {
+          x: cardX + padding,
+          y: cardY + cardHeight - qrSize - padding
+        },
+        'top-right': {
+          x: cardX + cardWidth - qrSize - padding,
+          y: cardY + cardHeight - qrSize - padding
+        },
+        'bottom-left': { x: cardX + padding, y: cardY + padding },
+        'bottom-right': {
+          x: cardX + cardWidth - qrSize - padding,
+          y: cardY + padding
+        },
+        center: {
+          x: cardX + (cardWidth - qrSize) / 2,
+          y: cardY + (cardHeight - qrSize) / 2
+        }
       };
+
       const pos = positions[qrCode.position] || positions['bottom-right'];
       page.drawImage(qrImage, { x: pos.x, y: pos.y, width: qrSize, height: qrSize });
+
+      const ticketId = seat?.id || order.id;
+      if (ticketId) {
+        const idText = `ID: ${String(ticketId).slice(0, 8)}`;
+        const idWidth = font.widthOfTextAtSize(idText, fontSize - 2);
+        let idY = pos.y - fontSize - 4;
+        if (['bottom-left', 'bottom-right'].includes(qrCode.position)) {
+          idY = pos.y + qrSize + 4;
+        }
+        page.drawText(idText, {
+          x: pos.x + (qrSize - idWidth) / 2,
+          y: idY,
+          size: fontSize - 2,
+          font,
+          color: textColor
+        });
+      }
     } catch {
       // ignore QR errors
     }
