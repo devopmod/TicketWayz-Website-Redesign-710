@@ -195,15 +195,17 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   }
 }
 
-export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
+export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templateSettings) {
   if (!order) return;
 
-  let settings = {};
-  try {
-    const stored = localStorage.getItem('ticketTemplateSettings');
-    if (stored) settings = JSON.parse(stored);
-  } catch {
-    // ignore
+  let settings = templateSettings;
+  if (!settings) {
+    try {
+      const stored = localStorage.getItem('ticketTemplateSettings');
+      if (stored) settings = JSON.parse(stored);
+    } catch {
+      // ignore
+    }
   }
 
   const pdfDoc = await PDFDocument.create();

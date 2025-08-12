@@ -795,6 +795,14 @@ const AdminPage = () => {
       }
       return { label: 'Общий вход' };
     });
+    let templateSettings;
+    try {
+      const stored = localStorage.getItem('ticketTemplateSettings');
+      if (stored) templateSettings = JSON.parse(stored);
+    } catch (err) {
+      console.error('Error parsing ticket template settings:', err);
+    }
+
     downloadTicketsPDF({
       orderNumber: orderDetails.id,
       event: {
@@ -803,7 +811,7 @@ const AdminPage = () => {
         location: event?.location
       },
       seats
-    }, `order-${orderDetails.id}.pdf`);
+    }, `order-${orderDetails.id}.pdf`, templateSettings);
   };
 
   const handleOrderAction = async (action, orderId, ticketIds = []) => {
