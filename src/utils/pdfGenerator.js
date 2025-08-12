@@ -1,9 +1,20 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
 import fontkit from '@pdf-lib/fontkit';
-// Optional local DejaVuSans font path for offline usage. Place the font file in
-// `public/fonts/DejaVuSans.ttf` at build time if needed.
-const localFontUrl = '/fonts/DejaVuSans.ttf';
+import DejaVuSansBase64 from '../assets/DejaVuSansBase64.js';
+
+function base64ToUint8Array(base64) {
+  const binaryString =
+    typeof atob === 'function'
+      ? atob(base64)
+      : Buffer.from(base64, 'base64').toString('binary');
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
 
 function hexToRgb(hex) {
   const value = hex?.replace('#', '') || '000000';
@@ -293,30 +304,12 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
 
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
-
-  const cdnFontUrl = 'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37/ttf/DejaVuSans.ttf';
-  let fontBytes;
-  try {
-    const response = await fetch(cdnFontUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    fontBytes = await response.arrayBuffer();
-  } catch (err) {
-    console.error('Failed to load font from CDN:', err);
-    console.warn('Falling back to locally stored DejaVuSans font.');
-    try {
-      const localResponse = await fetch(localFontUrl);
-      if (!localResponse.ok) throw new Error(`HTTP ${localResponse.status}`);
-      fontBytes = await localResponse.arrayBuffer();
-    } catch (localErr) {
-      console.error('Failed to load local fallback font:', localErr);
-    }
-  }
-
   let font;
-  if (fontBytes) {
+  try {
+    const fontBytes = base64ToUint8Array(DejaVuSansBase64);
     font = await pdfDoc.embedFont(fontBytes);
-  } else {
-    console.warn('Using standard Helvetica font as a last resort.');
+  } catch (err) {
+    console.error('Failed to load bundled DejaVuSans font:', err);
     font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   }
 
