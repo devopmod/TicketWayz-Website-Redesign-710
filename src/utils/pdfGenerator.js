@@ -1,5 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
+import fontkit from '@pdf-lib/fontkit';
 
 function hexToRgb(hex) {
   const value = hex?.replace('#', '') || '000000';
@@ -10,19 +11,7 @@ function hexToRgb(hex) {
   return rgb(r / 255, g / 255, b / 255);
 }
 
-export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
-  if (!order) return;
-
-  let settings = {};
-  try {
-    const stored = localStorage.getItem('ticketTemplateSettings');
-    if (stored) settings = JSON.parse(stored);
-  } catch {
-    // ignore
-  }
-
-  const pdfDoc = await PDFDocument.create();
-
+async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   let pageWidth = 400;
   let pageHeight = 600;
   if (settings.design?.layout === 'horizontal') {
@@ -42,7 +31,6 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     color: hexToRgb(colorScheme.background || '#FFFFFF')
   });
 
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   let fontSize = 12;
   if (design.fontSize === 'small') fontSize = 10;
   else if (design.fontSize === 'large') fontSize = 16;
@@ -125,18 +113,16 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     cursorY -= fontSize + 4;
   }
 
-  if (Array.isArray(order.seats)) {
-    order.seats.forEach((seat, idx) => {
-      const label = seat?.label || seat?.number || seat?.id || `Seat ${idx + 1}`;
-      page.drawText(`Seat ${idx + 1}: ${label}`, {
-        x: 40,
-        y: cursorY,
-        size: fontSize,
-        font,
-        color: textColor
-      });
-      cursorY -= fontSize + 4;
+  const seatLabel = seat?.label || seat?.number || seat?.id;
+  if (seatLabel) {
+    page.drawText(`Seat: ${seatLabel}`, {
+      x: 40,
+      y: cursorY,
+      size: fontSize,
+      font,
+      color: textColor
     });
+    cursorY -= fontSize + 4;
   }
 
   if (ticketContent.showPrice && order.totalPrice) {
@@ -182,9 +168,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
     try {
       const qrData = [];
       if (qrCode.includeEventInfo && order.event?.title) qrData.push(order.event.title);
-      if (qrCode.includeSeatInfo && Array.isArray(order.seats)) {
-        qrData.push(order.seats.map((s, i) => s?.label || s?.number || `Seat ${i + 1}`).join(','));
-      }
+      if (qrCode.includeSeatInfo && seatLabel) qrData.push(seatLabel);
       if (qrCode.includeOrderInfo && order.orderNumber) qrData.push(order.orderNumber);
       if (companyInfo.name) qrData.push(companyInfo.name);
       const qrString = qrData.join('|') || 'TicketWayz';
@@ -206,6 +190,31 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
       // ignore QR errors
     }
   }
+}
+
+export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
+  if (!order) return;
+
+  let settings = {};
+  try {
+    const stored = localStorage.getItem('ticketTemplateSettings');
+    if (stored) settings = JSON.parse(stored);
+  } catch {
+    // ignore
+  }
+
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
+  const fontBytes = await fetch('https://pdf-lib.github.io/assets/ttf/DejaVuSans.ttf').then((res) => res.arrayBuffer());
+  const font = await pdfDoc.embedFont(fontBytes);
+
+  if (Array.isArray(order.seats) && order.seats.length > 0) {
+    for (const seat of order.seats) {
+      await drawTicketPage(pdfDoc, order, seat, settings, font);
+    }
+  } else {
+    await drawTicketPage(pdfDoc, order, null, settings, font);
+  }
 
   const pdfBytes = await pdfDoc.save();
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -218,4 +227,6 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf') {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export { drawTicketPage };
 
