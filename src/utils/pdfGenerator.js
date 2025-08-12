@@ -82,6 +82,15 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
         width: cardWidth,
         height: headerHeight
       });
+      // dark overlay for readability
+      page.drawRectangle({
+        x: cardX,
+        y: bannerY,
+        width: cardWidth,
+        height: headerHeight,
+        color: rgb(0, 0, 0),
+        opacity: 0.3
+      });
     } catch {
       page.drawRectangle({
         x: cardX,
@@ -101,7 +110,7 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
     });
   }
 
-  // Brand badge
+  // Brand badge placed over banner
   const brandName = companyInfo.name || 'TicketWayz';
   const badgeFont = fontSize - 2;
   const badgePadding = 6;
@@ -109,7 +118,7 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   const badgeWidth = brandWidth + badgePadding * 2;
   const badgeHeight = badgeFont + badgePadding;
   const badgeX = cardX + padding;
-  const badgeY = cardY + cardHeight - badgeHeight - padding / 2;
+  const badgeY = bannerY + headerHeight - badgeHeight - padding / 2;
   page.drawRectangle({
     x: badgeX,
     y: badgeY,
@@ -164,12 +173,13 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   cursorY -= 10;
   const gridItems = [];
   if (seat?.section) gridItems.push({ label: 'Section', value: seat.section });
-  if (seat?.gate) gridItems.push({ label: 'Gate', value: seat.gate });
   if (seat?.row_number || seat?.row) gridItems.push({ label: 'Row', value: seat.row_number || seat.row });
   if (seat?.seat_number || seat?.number) gridItems.push({ label: 'Seat', value: seat.seat_number || seat.number });
+  if (ticketContent.showPrice) {
+    const price = seat?.price || order.price || order.totalPrice;
+    if (price) gridItems.push({ label: 'Price', value: price, accent: true });
+  }
   if (gridItems.length === 0) gridItems.push({ label: 'Admission', value: 'General' });
-  if (ticketContent.showPrice && order.totalPrice)
-    gridItems.push({ label: 'Price', value: order.totalPrice, accent: true });
 
   const colWidth = (cardWidth - padding * 2) / 2;
   const rowHeight = fontSize * 2 + 8;
@@ -196,22 +206,46 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   const rows = Math.ceil(gridItems.length / 2);
   cursorY -= rows * rowHeight + 10;
 
-  // Terms and notes at bottom
+  // Terms/instructions and company footer
   const sizeMap = { small: 64, medium: 96, large: 128 };
   const qrSize = sizeMap[qrCode.size] || 96;
-  let termsY = cardY + padding;
+  let footerBase = cardY + padding;
   if (design.showQRCode && ['bottom-left', 'bottom-right'].includes(qrCode.position)) {
-    termsY += qrSize + 10;
+    footerBase += qrSize + 10;
   }
-  const termsText =
-    order.event?.note ||
-    [ticketContent.customInstructions, ticketContent.termsAndConditions]
-      .filter(Boolean)
-      .join(' ');
+
+  // Company footer (bottom-most)
+  const companyLines = [companyInfo.name, companyInfo.phone, companyInfo.website].filter(Boolean);
+  let footerY = footerBase;
+  if (companyLines.length) {
+    const lineHeight = fontSize - 2;
+    companyLines.forEach((line, idx) => {
+      page.drawText(String(line), {
+        x: cardX + padding,
+        y: footerY + idx * lineHeight,
+        size: fontSize - 2,
+        font,
+        color: secondaryColor
+      });
+    });
+    footerY += companyLines.length * lineHeight + 4;
+    page.drawLine({
+      start: { x: cardX + padding, y: footerY },
+      end: { x: cardX + cardWidth - padding, y: footerY },
+      thickness: 1,
+      color: secondaryColor,
+      dashArray: [3, 3]
+    });
+    footerY += 6;
+  }
+
+  const termsText = [order.event?.note, ticketContent.customInstructions, ticketContent.termsAndConditions]
+    .filter(Boolean)
+    .join(' ');
   if (termsText) {
     page.drawText(termsText, {
       x: cardX + padding,
-      y: termsY,
+      y: footerY,
       size: fontSize - 2,
       font,
       color: textColor,
