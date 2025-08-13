@@ -1,8 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
+// Sanitize ticket data by forcing known fields to strings
+export function sanitizeTicket(data = {}) {
+  const stringFields = [
+    'heroImage',
+    'brand',
+    'artist',
+    'date',
+    'time',
+    'venue',
+    'address',
+    'section',
+    'row',
+    'seat',
+    'gate',
+    'price',
+    'currency',
+    'qrImage',
+    'ticketId',
+    'terms',
+  ];
+  const result = { ...data };
+  for (const key of stringFields) {
+    const val = result[key];
+    result[key] = val === undefined || val === null ? undefined : String(val);
+  }
+  return result;
+}
+
+// Render a labelled slot used for seat information, price, etc.
+function slot(label, value) {
+  if (!value) return null;
+  return React.createElement(
+    'div',
+    null,
+    React.createElement('div', { className: 'text-xs text-gray-500' }, label),
+    React.createElement('div', { className: 'text-lg font-semibold' }, value),
+  );
+}
+
 const TicketTemplate = (props = {}) => {
-  const data = props.data || {};
+  const data = sanitizeTicket(props.data || {});
   const options = props.options || {};
 
   const {
@@ -113,78 +152,16 @@ const TicketTemplate = (props = {}) => {
       React.createElement(
         'div',
         { className: `mt-6 grid ${gridCols} gap-4 text-center` },
-        section
-          ? React.createElement(
-              'div',
-              null,
-              React.createElement(
-                'div',
-                { className: 'text-xs text-gray-500' },
-                'SECTION',
-              ),
-              React.createElement(
-                'div',
-                { className: 'text-lg font-semibold' },
-                section,
-              ),
-            )
-          : null,
-        row
-          ? React.createElement(
-              'div',
-              null,
-              React.createElement(
-                'div',
-                { className: 'text-xs text-gray-500' },
-                'ROW',
-              ),
-              React.createElement('div', { className: 'text-lg font-semibold' }, row),
-            )
-          : null,
-        seat
-          ? React.createElement(
-              'div',
-              null,
-              React.createElement(
-                'div',
-                { className: 'text-xs text-gray-500' },
-                'SEAT',
-              ),
-              React.createElement(
-                'div',
-                { className: 'text-lg font-semibold' },
-                seat,
-              ),
-            )
-          : null,
-        gate
-          ? React.createElement(
-              'div',
-              null,
-              React.createElement(
-                'div',
-                { className: 'text-xs text-gray-500' },
-                'GATE',
-              ),
-              React.createElement(
-                'div',
-                { className: 'text-lg font-semibold' },
-                gate,
-              ),
-            )
-          : null,
+        slot('SECTION', section),
+        slot('ROW', row),
+        slot('SEAT', seat),
+        slot('GATE', gate),
         showPrice && price
-          ? React.createElement(
-              'div',
-              null,
+          ? slot(
+              'PRICE',
               React.createElement(
-                'div',
-                { className: 'text-xs text-gray-500' },
-                'PRICE',
-              ),
-              React.createElement(
-                'div',
-                { className: 'text-lg font-semibold' },
+                React.Fragment,
+                null,
                 price,
                 currency ? ` ${currency}` : '',
               ),
@@ -238,4 +215,3 @@ const TicketTemplate = (props = {}) => {
 };
 
 export default TicketTemplate;
-
