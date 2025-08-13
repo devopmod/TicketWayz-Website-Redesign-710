@@ -27,12 +27,15 @@ const TicketPreview = ({
   qrValue,
   settings = {}
 }) => {
-  const { qrCode = {}, design = {}, colorScheme = {} } = settings;
+  const { qrCode = {}, design = {}, colorScheme = {}, ticketContent = {}, companyInfo = {} } = settings;
   const actualHero = heroUrl ?? design.heroUrl;
   const actualAccent = accent ?? design.accent ?? colorScheme.accent ?? '#10B981';
   const actualDarkHeader = darkHeader ?? design.darkHeader ?? false;
   const actualRadius = radius ?? design.rounded ?? 12;
   const actualShadow = shadow ?? (design.shadow !== undefined ? design.shadow : true);
+  const backgroundColor = colorScheme.background || '#FFFFFF';
+  const textColor = colorScheme.text || '#000000';
+  const secondaryColor = colorScheme.secondary || '#6B7280';
 
   // Sample data used when no ticket information is provided
   const sampleOrder = {
@@ -63,13 +66,21 @@ const TicketPreview = ({
   const price = s?.price || o.price || o.totalPrice;
 
   const gridItems = [];
-  if (s?.section) gridItems.push({ label: 'Секция', value: s.section });
-  if (s?.row_number) gridItems.push({ label: 'Ряд', value: s.row_number });
-  if (s?.seat_number) gridItems.push({ label: 'Место', value: s.seat_number });
-  if (gridItems.length === 0) gridItems.push({ label: 'Admission', value: 'General' });
-  if (showPrice && price) gridItems.push({ label: 'Цена', value: price, accent: true });
+  if (s?.section) gridItems.push({ label: 'Section', value: s.section });
+  if (s?.row_number) gridItems.push({ label: 'Row', value: s.row_number });
+  if (s?.seat_number) gridItems.push({ label: 'Seat', value: s.seat_number });
+  if (!s?.section && !s?.row_number && !s?.seat_number) {
+    if (s?.zone?.name || s?.zone) gridItems.push({ label: 'Zone', value: s?.zone?.name || s.zone });
+    else gridItems.push({ label: 'Admission', value: 'General' });
+  }
+  if (showPrice && price) gridItems.push({ label: 'Price', value: price, accent: true });
 
-  const termsText = showTerms ? [event.note, o.terms].filter(Boolean).join(' ') : '';
+  const termsText = showTerms
+    ? [event.note, ticketContent.customInstructions, ticketContent.termsAndConditions, o.terms]
+        .filter(Boolean)
+        .join(' ')
+    : '';
+  const companyLines = [companyInfo.name, companyInfo.phone, companyInfo.website].filter(Boolean);
 
   const showQr = design.showQRCode !== false && qrValue;
   const sizeMap = { small: 48, medium: 72, large: 96 };
@@ -134,55 +145,74 @@ const TicketPreview = ({
       {/* Ticket Preview */}
       <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
         <div
-          className={`relative mx-auto overflow-hidden ${actualShadow ? 'shadow-lg' : ''}`}
-          style={{ width: '400px', borderRadius: actualRadius }}
+          className={`relative mx-auto ${actualShadow ? 'shadow-lg' : ''}`}
+          style={{ width: '400px', height: '600px', borderRadius: actualRadius, backgroundColor }}
         >
-          {/* Hero section */}
-          <div className="relative h-32 w-full">
-            {actualHero ? (
-              <img src={actualHero} alt="Hero" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full" style={{ backgroundColor: actualAccent }} />
-            )}
-            {actualDarkHeader && <div className="absolute inset-0 bg-black/40" />}
-            <div className="absolute bottom-2 left-2">
-              <span className="text-white text-xs font-medium px-2 py-1" style={{ backgroundColor: actualAccent }}>
+          <div className="flex h-full flex-col overflow-hidden" style={{ borderRadius: actualRadius, color: textColor }}>
+            {/* Hero section */}
+            <div className="relative h-[120px] w-full flex-shrink-0">
+              {actualHero ? (
+                <img src={actualHero} alt="Hero" className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full" style={{ backgroundColor: actualAccent }} />
+              )}
+              {actualDarkHeader && <div className="absolute inset-0 bg-black/40" />}
+              <span
+                className="absolute bottom-2 left-2 px-2 py-1 text-xs font-medium text-white"
+                style={{ backgroundColor: actualAccent }}
+              >
                 {brandName}
               </span>
             </div>
-          </div>
 
-          {/* Body */}
-          <div className="p-4 space-y-2 text-sm" style={{ color: '#000' }}>
-            {event.title && (
-              <h1 className="text-lg font-bold" style={{ color: actualAccent }}>
-                {event.title}
-              </h1>
-            )}
-            {event.date && (
-              <div>
-                <div>{date}</div>
-                <div className="opacity-75 text-xs">{time}</div>
-              </div>
-            )}
-            {event.location && <div className="opacity-75">{event.location}</div>}
-
-            <div className="grid grid-cols-2 gap-2 pt-2 mt-2 border-t border-dashed border-zinc-300">
-              {gridItems.map((item, idx) => (
-                <div key={idx}>
-                  <div className="text-[10px] uppercase opacity-60">{item.label}</div>
-                  <div
-                    className={`text-sm ${item.accent ? 'font-bold' : ''}`}
-                    style={item.accent ? { color: actualAccent } : {}}
-                  >
-                    {item.value}
-                  </div>
+            {/* Body */}
+            <div className="flex flex-1 flex-col p-5 text-sm">
+              {event.title && (
+                <h1 className="text-lg font-bold" style={{ color: actualAccent }}>
+                  {event.title}
+                </h1>
+              )}
+              {event.date && (
+                <div className="mt-1">
+                  <div>{date}</div>
+                  <div className="text-xs opacity-75">{time}</div>
                 </div>
-              ))}
-            </div>
+              )}
+              {event.location && <div className="mt-1 opacity-75">{event.location}</div>}
 
-            {termsText && <div className="mt-2 text-xs opacity-75">{termsText}</div>}
-          </div>
+              <div
+                className="mt-4 grid grid-cols-2 gap-3 border-t border-dashed pt-4"
+                style={{ borderColor: secondaryColor }}
+              >
+                {gridItems.map((item, idx) => (
+                  <div key={idx}>
+                    <div className="text-[10px] uppercase" style={{ color: secondaryColor }}>
+                      {item.label}
+                    </div>
+                    <div
+                      className={`text-sm ${item.accent ? 'font-bold' : ''}`}
+                      style={item.accent ? { color: actualAccent } : {}}
+                    >
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {companyLines.length > 0 && (
+                <div className="mt-4 text-[10px]" style={{ color: secondaryColor }}>
+                  {companyLines.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              )}
+
+              {termsText && (
+                <div className="mt-2 text-xs" style={{ color: textColor }}>
+                  {termsText}
+                </div>
+              )}
+            </div>
 
             {/* QR code */}
             {showQr && qrSvg && (
@@ -192,6 +222,7 @@ const TicketPreview = ({
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
             )}
+          </div>
         </div>
       </div>
     </motion.div>
