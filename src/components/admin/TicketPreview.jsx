@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
-import { applyTicketTemplate } from '../../utils/applyTicketTemplate.js';
+import TicketTemplate from '../ticket/TicketTemplate.jsx';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
@@ -44,31 +44,9 @@ const TicketPreview = ({
   const o = order || sampleOrder;
   const s = seat || sampleSeat;
 
-  const [html, setHtml] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const rendered = await applyTicketTemplate({
-        order: o,
-        seat: s,
-        heroUrl,
-        accent,
-        darkHeader,
-        showPrice,
-        showQr,
-        showTerms,
-        radius,
-        shadow,
-        qrValue,
-        settings
-      });
-      if (active) setHtml(rendered);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [o, s, heroUrl, accent, darkHeader, showPrice, showQr, showTerms, radius, shadow, qrValue, settings]);
+  const dateObj = o.event?.date ? new Date(o.event.date) : null;
+  const date = dateObj ? dateObj.toLocaleDateString() : undefined;
+  const time = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 font-sans">
@@ -99,7 +77,28 @@ const TicketPreview = ({
       </div>
 
       <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-        <div dangerouslySetInnerHTML={{ __html: html }} />
+        <TicketTemplate
+          heroImage={heroUrl || settings.design?.heroUrl || o.event.image}
+          brand={o.company?.name}
+          artist={o.event?.title}
+          date={date}
+          time={time}
+          venue={o.event?.location}
+          address={o.event?.note}
+          section={s.section}
+          row={s.row_number}
+          seat={s.seat_number}
+          price={s.price || o.price}
+          qrValue={qrValue}
+          ticketId={s.id || o.orderNumber}
+          terms={settings.terms}
+          rounded={radius === undefined ? true : radius !== false && radius !== 0 && radius !== 'none'}
+          shadow={shadow}
+          showQr={showQr}
+          showPrice={showPrice}
+          showTerms={showTerms}
+          darkHeader={darkHeader}
+        />
       </div>
     </motion.div>
   );
