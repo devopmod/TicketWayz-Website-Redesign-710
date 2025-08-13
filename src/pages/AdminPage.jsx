@@ -8,7 +8,7 @@ import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import TicketTemplateSettings from '../components/admin/TicketTemplateSettings';
 import supabase from '../lib/supabase';
-import { downloadTicketsPDF } from '../utils/pdfGenerator';
+import { downloadTicketsPNG } from '../utils/ticketExport.js';
 
 const {
   FiUsers,
@@ -841,7 +841,7 @@ const AdminPage = () => {
       console.error('Error parsing ticket template settings:', err);
     }
 
-    downloadTicketsPDF({
+    downloadTicketsPNG({
       orderNumber: orderDetails.id,
       event: {
         title: event?.title,
@@ -850,7 +850,7 @@ const AdminPage = () => {
         note: event?.note
       },
       seats
-    }, `order-${orderDetails.id}.pdf`, templateSettings);
+    }, `order-${orderDetails.id}`, templateSettings);
   };
 
   const handleOrderAction = async (action, orderId, ticketIds = []) => {

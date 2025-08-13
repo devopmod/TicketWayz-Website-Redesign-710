@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import TicketTemplate from '../ticket/TicketTemplate.jsx';
-import { buildTermsText } from '../../utils/ticketUtils.js';
+import { buildTermsText } from '../../utils/ticketExport.js';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
@@ -93,7 +93,7 @@ const TicketPreview = ({
             className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
           >
             <SafeIcon icon={FiDownload} className="w-4 h-4" />
-            Скачать PDF
+            Скачать PNG
           </button>
         </div>
       </div>
