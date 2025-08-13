@@ -236,13 +236,13 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               <MiniQR image={qr} qrValue={qrValue} ticketId={ticketId} />
             </div>
           )}
-
-          {showTerms && terms && (
-            <div className="mt-6 text-[10px] text-gray-500">
-              <SafeText text={terms} />
-            </div>
-          )}
         </div>
+
+        {showTerms && terms && (
+          <div className="border-t border-dashed border-gray-300 px-6 py-4 text-[11px] text-gray-500">
+            <SafeText text={terms} />
+          </div>
+        )}
       </div>
     </ErrorBoundary>
   );
