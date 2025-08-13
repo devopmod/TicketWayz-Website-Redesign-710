@@ -1,6 +1,8 @@
 import { PDFDocument } from 'pdf-lib';
 import html2canvas from 'html2canvas';
-import { applyTicketTemplate } from './applyTicketTemplate.js';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import TicketTemplate from '../components/ticket/TicketTemplate.jsx';
 
 function validateImageUrl(url) {
   if (!url) return null;
@@ -29,6 +31,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   }
   settings = settings || {};
   settings.design = settings.design || {};
+  settings.ticketContent = settings.ticketContent || {};
   order.event = order.event || {};
   settings.design.heroUrl = validateImageUrl(settings.design.heroUrl);
   order.event.image = validateImageUrl(order.event.image);
@@ -37,12 +40,51 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   const seats = Array.isArray(order.seats) && order.seats.length > 0 ? order.seats : [null];
 
   for (const seat of seats) {
-    const html = await applyTicketTemplate({ order, seat, settings });
     const wrapper = document.createElement('div');
     wrapper.style.position = 'absolute';
     wrapper.style.left = '-10000px';
-    wrapper.innerHTML = html;
     document.body.appendChild(wrapper);
+
+    const event = order.event || {};
+    const company = order.company || {};
+    const seatInfo = seat || order.seat || {};
+    const dateObj = event.date ? new Date(event.date) : null;
+    const date = dateObj ? dateObj.toLocaleDateString() : undefined;
+    const time = dateObj
+      ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : undefined;
+
+    const data = {
+      heroImage: settings.design?.heroUrl || event.image,
+      brand: company.name,
+      artist: event.title,
+      date,
+      time,
+      venue: event.location,
+      address: event.address || event.note,
+      section: seatInfo.section,
+      row: seatInfo.row_number,
+      seat: seatInfo.seat_number,
+      gate: seatInfo.gate,
+      price: seatInfo.price || order.price,
+      currency: order.currency,
+      ticketId: seatInfo.id || order.orderNumber,
+      terms: settings.terms,
+    };
+
+    const options = {
+      accent: settings.design?.accent,
+      darkHeader: settings.design?.darkHeader,
+      showPrice: settings.ticketContent?.showPrice,
+      showQr: settings.design?.showQRCode,
+      showTerms: settings.ticketContent?.showTerms,
+      radius: settings.design?.rounded,
+      shadow: settings.design?.shadow,
+      qrValue: order.orderNumber || seatInfo.id,
+    };
+
+    const root = createRoot(wrapper);
+    root.render(React.createElement(TicketTemplate, { data, options }));
 
     const child = wrapper.firstElementChild;
     if (child && child.style) {
@@ -60,6 +102,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
       backgroundColor: null,
       useCORS: true,
     });
+    root.unmount();
     document.body.removeChild(wrapper);
     if (!canvas.width || !canvas.height) continue;
     const imgData = canvas.toDataURL('image/png');

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
@@ -48,13 +48,42 @@ const TicketPreview = ({
   const date = dateObj ? dateObj.toLocaleDateString() : undefined;
   const time = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined;
 
+  const ticketRef = useRef(null);
+
+  const data = {
+    heroImage: heroUrl || settings.design?.heroUrl || o.event.image,
+    brand: o.company?.name,
+    artist: o.event?.title,
+    date,
+    time,
+    venue: o.event?.location,
+    address: o.event?.note,
+    section: s.section,
+    row: s.row_number,
+    seat: s.seat_number,
+    price: s.price || o.price,
+    ticketId: s.id || o.orderNumber,
+    terms: settings.terms,
+  };
+
+  const options = {
+    accent,
+    darkHeader,
+    showPrice,
+    showQr,
+    showTerms,
+    radius,
+    shadow,
+    qrValue,
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 font-sans">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Предпросмотр билета</h3>
         <div className="flex gap-2">
           <button
-            onClick={onRefresh}
+            onClick={() => onRefresh(ticketRef.current)}
             className={[
               'flex items-center gap-2 px-3 py-1',
               'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300',
@@ -67,7 +96,7 @@ const TicketPreview = ({
             Обновить
           </button>
           <button
-            onClick={onDownload}
+            onClick={() => onDownload(ticketRef.current)}
             className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
           >
             <SafeIcon icon={FiDownload} className="w-4 h-4" />
@@ -77,28 +106,7 @@ const TicketPreview = ({
       </div>
 
       <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-        <TicketTemplate
-          heroImage={heroUrl || settings.design?.heroUrl || o.event.image}
-          brand={o.company?.name}
-          artist={o.event?.title}
-          date={date}
-          time={time}
-          venue={o.event?.location}
-          address={o.event?.note}
-          section={s.section}
-          row={s.row_number}
-          seat={s.seat_number}
-          price={s.price || o.price}
-          qrValue={qrValue}
-          ticketId={s.id || o.orderNumber}
-          terms={settings.terms}
-          rounded={radius === undefined ? true : radius !== false && radius !== 0 && radius !== 'none'}
-          shadow={shadow}
-          showQr={showQr}
-          showPrice={showPrice}
-          showTerms={showTerms}
-          darkHeader={darkHeader}
-        />
+        <TicketTemplate ref={ticketRef} data={data} options={options} />
       </div>
     </motion.div>
   );

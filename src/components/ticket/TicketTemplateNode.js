@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
 const TicketTemplate = (props = {}) => {
-  const data = props.data || props;
+  const data = props.data || {};
+  const options = props.options || {};
+
   const {
     heroImage,
     brand,
@@ -18,16 +20,23 @@ const TicketTemplate = (props = {}) => {
     price,
     currency,
     qrImage,
-    qrValue,
     ticketId,
     terms,
-    rounded = true,
-    shadow = true,
-    showQr = true,
-    showPrice = true,
-    showTerms = true,
-    darkHeader = false,
   } = data;
+
+  const {
+    accent,
+    darkHeader = false,
+    showPrice = true,
+    showQr = true,
+    showTerms = true,
+    radius,
+    shadow = true,
+    qrValue,
+  } = options;
+
+  const rounded =
+    radius === undefined ? true : radius !== false && radius !== 0 && radius !== 'none';
 
   const [qr, setQr] = useState(qrImage);
 
@@ -75,7 +84,10 @@ const TicketTemplate = (props = {}) => {
             'span',
             {
               className:
-                'absolute top-4 left-4 px-2 py-1 bg-black/70 text-white text-xs font-semibold rounded',
+                'absolute top-4 left-4 px-2 py-1 text-white text-xs font-semibold rounded',
+              style: accent
+                ? { backgroundColor: accent }
+                : { backgroundColor: '#000000b3' },
             },
             brand,
           )
@@ -226,3 +238,4 @@ const TicketTemplate = (props = {}) => {
 };
 
 export default TicketTemplate;
+

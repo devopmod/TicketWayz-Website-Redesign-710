@@ -1,31 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, forwardRef } from 'react';
 import QRCode from 'qrcode';
 
-const TicketTemplate = ({
-  heroImage,
-  brand,
-  artist,
-  date,
-  time,
-  venue,
-  address,
-  section,
-  row,
-  seat,
-  gate,
-  price,
-  currency,
-  qrImage,
-  qrValue,
-  ticketId,
-  terms,
-  rounded = true,
-  shadow = true,
-  showQr = true,
-  showPrice = true,
-  showTerms = true,
-  darkHeader = false,
-}) => {
+const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
+  const {
+    heroImage,
+    brand,
+    artist,
+    date,
+    time,
+    venue,
+    address,
+    section,
+    row,
+    seat,
+    gate,
+    price,
+    currency,
+    qrImage,
+    ticketId,
+    terms,
+  } = data;
+
+  const {
+    accent,
+    darkHeader = false,
+    showPrice = true,
+    showQr = true,
+    showTerms = true,
+    radius,
+    shadow = true,
+    qrValue,
+  } = options;
+
+  const rounded =
+    radius === undefined ? true : radius !== false && radius !== 0 && radius !== 'none';
+
   const [qr, setQr] = useState(qrImage);
 
   useEffect(() => {
@@ -40,6 +49,7 @@ const TicketTemplate = ({
 
   return (
     <div
+      ref={ref}
       className={[
         'ticket w-[560px] bg-white text-gray-900 font-sans border',
         rounded ? 'rounded-lg overflow-hidden' : '',
@@ -59,7 +69,10 @@ const TicketTemplate = ({
           ].join(' ')}
         ></div>
         {brand && (
-          <span className="absolute top-4 left-4 px-2 py-1 bg-black/70 text-white text-xs font-semibold rounded">
+          <span
+            className="absolute top-4 left-4 px-2 py-1 text-white text-xs font-semibold rounded"
+            style={accent ? { backgroundColor: accent } : { backgroundColor: '#000000b3' }}
+          >
             {brand}
           </span>
         )}
@@ -127,6 +140,7 @@ const TicketTemplate = ({
       </div>
     </div>
   );
-};
+});
 
 export default TicketTemplate;
+
