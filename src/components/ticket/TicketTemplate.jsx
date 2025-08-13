@@ -1,8 +1,7 @@
-import React, { forwardRef, useEffect, useState } from 'react';
-import QRCode from 'qrcode';
+import React, { forwardRef } from 'react';
 
 export const CARD_WIDTH = 560;
-export const HEADER_HEIGHT = 160;
+export const HEADER_HEIGHT = 192;
 
 const toStr = (val) => (val === undefined || val === null ? '' : String(val));
 
@@ -52,20 +51,15 @@ const Slot = ({ label, value, accent }) => {
   );
 };
 
-const MiniQR = ({ image, qrValue, ticketId }) => {
+const MiniQR = ({ image, ticketId }) => {
   if (!image) return null;
   return (
     <div className="flex flex-col items-center">
-      <div className="w-32 h-32 bg-gray-200 flex items-center justify-center">
+      <div className="w-32 h-32 bg-white flex items-center justify-center">
         <img src={image} alt="QR code" className="w-full h-full object-cover" />
       </div>
-      {qrValue && (
-        <div className="mt-2 text-xs text-gray-500">
-          <SafeText text={qrValue} />
-        </div>
-      )}
       {ticketId && (
-        <div className="text-xs text-gray-500">
+        <div className="mt-2 text-xs text-gray-500">
           <SafeText text={ticketId} />
         </div>
       )}
@@ -124,18 +118,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     showTerms = true,
     rounded = true,
     shadow = true,
-    qrValue,
   } = options;
-
-  const [qr, setQr] = useState(qrImage);
-
-  useEffect(() => {
-    if (!qr && showQr && qrValue) {
-      QRCode.toDataURL(String(qrValue))
-        .then(setQr)
-        .catch(() => {});
-    }
-  }, [qr, showQr, qrValue]);
 
   const isGA = !section && !row && !seat;
   const slotItems = [];
@@ -231,9 +214,9 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
             </div>
           )}
 
-          {showQr && (
+          {showQr && qrImage && (
             <div className="mt-6 flex items-center justify-center">
-              <MiniQR image={qr} qrValue={qrValue} ticketId={ticketId} />
+              <MiniQR image={qrImage} ticketId={ticketId} />
             </div>
           )}
         </div>

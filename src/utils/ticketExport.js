@@ -2,7 +2,7 @@ import { toPng } from 'html-to-image';
 import JSZip from 'jszip';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import TicketTemplate from '../components/ticket/TicketTemplate.jsx';
+import { TicketTemplate } from '../components/ticket';
 
 export function buildTermsText(order = {}, settings = {}) {
   const eventNote = order?.event?.note;
@@ -93,7 +93,6 @@ export async function downloadTicketsPNG(order, baseFileName = 'ticket', templat
       showTerms: settings.ticketContent?.showTerms,
       rounded: settings.design?.rounded,
       shadow: settings.design?.shadow,
-      qrValue: order.orderNumber || seatInfo.id,
     };
 
     const markup = renderToStaticMarkup(
