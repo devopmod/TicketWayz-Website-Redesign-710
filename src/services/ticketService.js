@@ -1,9 +1,13 @@
 import supabase from '../lib/supabase';
 
+const isDevelopment = (import.meta.env?.MODE || process.env.NODE_ENV) !== 'production';
+
 // Create event tickets using stored procedure
 export const createEventTickets = async (eventId) => {
   try {
-    console.log('Creating tickets for event:', eventId);
+    if (isDevelopment) {
+      console.log('Creating tickets for event:', eventId);
+    }
 
     // Call the stored procedure directly
     const { data, error } = await supabase.rpc('create_event_tickets', {
@@ -15,7 +19,9 @@ export const createEventTickets = async (eventId) => {
       throw error;
     }
 
-    console.log('Tickets created successfully:', data);
+    if (isDevelopment) {
+      console.log('Tickets created successfully:', data);
+    }
     return data;
   } catch (error) {
     console.error('Error creating event tickets:', error);
@@ -58,22 +64,24 @@ export const getEventTickets = async (eventId) => {
     if (error) throw error;
 
     // ДОБАВЛЯЕМ ОТЛАДОЧНУЮ ИНФОРМАЦИЮ
-    console.log('🎫 ОТЛАДКА: Загружены билеты для события', eventId);
-    console.log('🎫 Общее количество билетов:', data?.length || 0);
-    
-    if (data && data.length > 0) {
-      const seatTickets = data.filter(t => t.seat_id);
-      const zoneTickets = data.filter(t => t.zone_id);
-      
-      console.log('🎫 Билеты для отдельных мест:', seatTickets.length);
-      console.log('🎫 Билеты для зон:', zoneTickets.length);
-      
-      // Показываем примеры билетов для отладки
-      if (seatTickets.length > 0) {
-        console.log('🎫 Пример билета для места:', seatTickets[0]);
-      }
-      if (zoneTickets.length > 0) {
-        console.log('🎫 Пример билета для зоны:', zoneTickets[0]);
+    if (isDevelopment) {
+      console.log('🎫 ОТЛАДКА: Загружены билеты для события', eventId);
+      console.log('🎫 Общее количество билетов:', data?.length || 0);
+
+      if (data && data.length > 0) {
+        const seatTickets = data.filter(t => t.seat_id);
+        const zoneTickets = data.filter(t => t.zone_id);
+
+        console.log('🎫 Билеты для отдельных мест:', seatTickets.length);
+        console.log('🎫 Билеты для зон:', zoneTickets.length);
+
+        // Показываем примеры билетов для отладки
+        if (seatTickets.length > 0) {
+          console.log('🎫 Пример билета для места:', seatTickets[0]);
+        }
+        if (zoneTickets.length > 0) {
+          console.log('🎫 Пример билета для зоны:', zoneTickets[0]);
+        }
       }
     }
 
