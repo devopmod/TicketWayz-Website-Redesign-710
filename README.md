@@ -9,10 +9,12 @@ This project uses [Vite](https://vitejs.dev/) for development and the built-in N
    ```bash
    npm install
    ```
-3. Create an `.env.local` file in the project root with your Supabase credentials:
+3. Copy `.env.example` to `.env.local` and set your Supabase credentials:
    ```bash
-   SUPABASE_URL="https://your-project.supabase.co"
-   SUPABASE_ANON_KEY="public-anon-key"
+   cp .env.example .env.local
+   # then edit .env.local
+   VITE_SUPABASE_URL="https://your-project.supabase.co"
+   VITE_SUPABASE_ANON_KEY="public-anon-key"
    ```
 
 ## Supabase CLI
