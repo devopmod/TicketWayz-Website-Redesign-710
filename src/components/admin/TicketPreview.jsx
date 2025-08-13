@@ -95,7 +95,7 @@ const TicketPreview = ({
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 font-sans">
       {/* Preview Controls */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">

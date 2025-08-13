@@ -55,7 +55,7 @@ function App() {
   const isThankYouPage = location.pathname.includes('/thank-you');
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+    <div className="min-h-screen font-sans bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
       {!isThankYouPage && <Header />}
       <main className={!isThankYouPage ? "pt-11" : ""}>
         <Routes>
