@@ -1,4 +1,5 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 import QRCode from 'qrcode';
 import { formatDateTime } from './formatDateTime.js';
 
@@ -324,7 +325,11 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   }
 
   const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  pdfDoc.registerFontkit(fontkit);
+  const fontBytes = await fetch('https://pdf-lib.js.org/assets/ubuntu/Ubuntu-R.ttf').then((res) =>
+    res.arrayBuffer()
+  );
+  const font = await pdfDoc.embedFont(fontBytes, { subset: true });
 
   if (Array.isArray(order.seats) && order.seats.length > 0) {
     for (const seat of order.seats) {
