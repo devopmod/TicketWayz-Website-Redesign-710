@@ -9,6 +9,7 @@ const TicketLayoutSettings = ({ settings, onDownloadPreview, onRefreshPreview, t
         onDownload={onDownloadPreview}
         onRefresh={onRefreshPreview}
         ticketData={ticketData}
+        qrValue={ticketData?.ticketNumber}
       />
     </div>
   );
