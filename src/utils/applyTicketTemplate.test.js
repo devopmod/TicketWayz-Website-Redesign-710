@@ -3,24 +3,19 @@ import assert from 'node:assert/strict';
 import { applyTicketTemplate } from './applyTicketTemplate.js';
 import { rename } from 'node:fs/promises';
 
-test('applyTicketTemplate inserts event and seat info', async () => {
-  const order = {
-    event: {
-      title: 'Show',
-      event_date: '2025-08-13T20:25:00Z',
-      location: 'Venue',
-    },
-    orderNumber: '123',
-    price: '$50',
-  };
-  const seat = {
+test('applyTicketTemplate inserts ticket details', async () => {
+  const html = await applyTicketTemplate({
+    brand: 'MyBrand',
+    artist: 'Show',
+    dateTime: '2025-08-13T20:25:00Z',
+    venue: 'Venue',
+    address: '123 Street',
     section: 'SEC',
-    row_number: 'ROW',
-    seat_number: '10',
+    row: 'ROW',
+    seat: '10',
     price: '$50',
-  };
-  const settings = { companyInfo: { brand: 'MyBrand' } };
-  const html = await applyTicketTemplate({ order, seat, settings });
+  });
+
   assert.ok(html.includes('Show'));
   assert.ok(html.includes('MyBrand'));
   assert.ok(html.includes('SECTION'));
