@@ -3,67 +3,59 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import TicketTemplate from '../ticket/TicketTemplate.jsx';
+import { buildTermsText } from '../../utils/ticketUtils.js';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
 const TicketPreview = ({
-  order,
-  seat,
+  ticketData,
   onDownload,
   onRefresh,
-  heroUrl,
   accent,
   darkHeader,
   showPrice = true,
   showQr = true,
   showTerms = true,
-  radius,
+  rounded,
   shadow,
   qrValue,
   settings = {},
 }) => {
-  const sampleOrder = {
-    event: {
-      title: 'Концерт группы "Пример"',
-      date: '2024-12-15T20:00:00',
-      location: 'Концертный зал "Олимпийский"',
-      note: 'Пожалуйста, приходите за 30 минут до начала.'
-    },
-    orderNumber: 'TW-123456',
-    price: '2500 ₽',
-    company: { name: 'TicketWayz' }
-  };
-  const sampleSeat = {
-    id: 'SAMPLE-SEAT',
+  const sampleTicket = {
+    brand: 'TicketWayz',
+    artist: 'Концерт группы "Пример"',
+    date: '15.12.2024',
+    time: '20:00',
+    venue: 'Концертный зал "Олимпийский"',
+    address: 'Пожалуйста, приходите за 30 минут до начала.',
     section: 'Партер',
-    row_number: '5',
-    seat_number: '12',
-    price: '2500 ₽'
+    row: '5',
+    seat: '12',
+    price: '2500 ₽',
+    ticketId: 'TW-123456',
+    ticketType: 'seat',
+    qrValue: 'TW-123456',
   };
 
-  const o = order || sampleOrder;
-  const s = seat || sampleSeat;
-
-  const dateObj = o.event?.date ? new Date(o.event.date) : null;
-  const date = dateObj ? dateObj.toLocaleDateString() : undefined;
-  const time = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined;
+  const t = { ...sampleTicket, ...(ticketData || {}) };
 
   const ticketRef = useRef(null);
 
   const data = {
-    heroImage: heroUrl || settings.design?.heroUrl || o.event.image,
-    brand: o.company?.name,
-    artist: o.event?.title,
-    date,
-    time,
-    venue: o.event?.location,
-    address: o.event?.note,
-    section: s.section,
-    row: s.row_number,
-    seat: s.seat_number,
-    price: s.price || o.price,
-    ticketId: s.id || o.orderNumber,
-    terms: settings.terms,
+    heroImage: t.heroImage || settings.design?.heroUrl,
+    brand: t.brand,
+    artist: t.artist,
+    date: t.date,
+    time: t.time,
+    venue: t.venue,
+    address: t.address,
+    section: t.section,
+    row: t.row,
+    seat: t.seat,
+    price: t.price,
+    ticketId: t.ticketId,
+    ticketType: t.ticketType,
+    terms: buildTermsText({}, settings),
   };
 
   const options = {
@@ -72,9 +64,10 @@ const TicketPreview = ({
     showPrice,
     showQr,
     showTerms,
-    radius,
+    rounded,
+    radius: rounded,
     shadow,
-    qrValue,
+    qrValue: qrValue || t.qrValue || t.ticketId,
   };
 
   return (

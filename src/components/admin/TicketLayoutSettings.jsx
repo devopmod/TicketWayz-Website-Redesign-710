@@ -108,7 +108,7 @@ const TicketLayoutSettings = ({
         settings={settings}
         accent={settings.design.accent}
         darkHeader={settings.design.darkHeader}
-        radius={settings.design.rounded}
+        rounded={settings.design.rounded}
         shadow={settings.design.shadow}
         showPrice={settings.ticketContent.showPrice}
         showQr={settings.design.showQRCode}
@@ -116,7 +116,7 @@ const TicketLayoutSettings = ({
         onDownload={onDownloadPreview}
         onRefresh={onRefreshPreview}
         ticketData={ticketData}
-        qrValue={ticketData?.ticketNumber}
+        qrValue={ticketData?.qrValue}
       />
     </div>
   );
