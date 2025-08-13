@@ -1,8 +1,9 @@
 import { PDFDocument } from 'pdf-lib';
 import html2canvas from 'html2canvas';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 import TicketTemplate from '../components/ticket/TicketTemplate.jsx';
+import { buildTermsText } from './ticketUtils.js';
 
 function validateImageUrl(url) {
   if (!url) return null;
@@ -69,7 +70,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
       price: seatInfo.price || order.price,
       currency: order.currency,
       ticketId: seatInfo.id || order.orderNumber,
-      terms: settings.terms,
+      terms: buildTermsText(order, settings),
     };
 
     const options = {
@@ -83,8 +84,10 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
       qrValue: order.orderNumber || seatInfo.id,
     };
 
-    const root = createRoot(wrapper);
-    root.render(React.createElement(TicketTemplate, { data, options }));
+    const markup = renderToStaticMarkup(
+      React.createElement(TicketTemplate, { data, options }),
+    );
+    wrapper.innerHTML = markup;
 
     const child = wrapper.firstElementChild;
     if (child && child.style) {
@@ -102,7 +105,6 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
       backgroundColor: null,
       useCORS: true,
     });
-    root.unmount();
     document.body.removeChild(wrapper);
     if (!canvas.width || !canvas.height) continue;
     const imgData = canvas.toDataURL('image/png');
