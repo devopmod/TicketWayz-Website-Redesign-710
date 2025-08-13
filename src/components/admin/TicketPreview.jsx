@@ -6,64 +6,85 @@ import { formatDateTime } from '../../utils/formatDateTime';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
-const TicketPreview = ({ settings, onDownload, onRefresh, ticketData }) => {
-  const { date: sampleDate, time: sampleTime } = formatDateTime('2024-12-15T20:00:00');
-  const sampleTicketData = {
-    eventTitle: 'Концерт группы "Пример"',
-    eventDate: sampleDate,
-    eventTime: sampleTime,
-    eventLocation: 'Концертный зал "Олимпийский"',
+/**
+ * Ticket preview component used in the admin panel. The layout mirrors the
+ * structure used in the PDF export (see utils/pdfGenerator.js) so that both
+ * features operate on the same data format.
+ */
+const TicketPreview = ({
+  order,
+  seat,
+  onDownload,
+  onRefresh,
+  heroUrl,
+  accent = '#10B981',
+  darkHeader = false,
+  showQr = true,
+  showPrice = true,
+  showTerms = true,
+  radius = 12,
+  shadow = true
+}) => {
+  // Sample data used when no ticket information is provided
+  const sampleOrder = {
+    event: {
+      title: 'Концерт группы "Пример"',
+      date: '2024-12-15T20:00:00',
+      location: 'Концертный зал "Олимпийский"',
+      image: heroUrl,
+      note: 'Пожалуйста, приходите за 30 минут до начала.'
+    },
     orderNumber: 'TW-123456',
-    seatInfo: 'Партер, ряд 5, место 12',
     price: '2500 ₽',
-    customerName: 'Иван Петров',
-    ticketNumber: 'T-001'
+    company: { name: 'TicketWayz' }
+  };
+  const sampleSeat = {
+    section: 'Партер',
+    row_number: '5',
+    seat_number: '12',
+    price: '2500 ₽'
   };
 
-  // Используем реальные данные билета, если они переданы из родительского компонента
-  const data = ticketData || sampleTicketData;
+  const o = order || sampleOrder;
+  const s = seat || sampleSeat;
 
-  const getQRSize = () => {
-    switch (settings.qrCode.size) {
-      case 'small': return 64;
-      case 'large': return 128;
-      default: return 96;
-    }
-  };
+  const event = o.event || {};
+  const brandName = o.company?.name || 'TicketWayz';
+  const { date, time } = event.date ? formatDateTime(event.date) : { date: '', time: '' };
+  const price = s?.price || o.price || o.totalPrice;
 
-  const getQRPosition = () => {
-    const size = getQRSize();
-    const positions = {
-      'top-left': { top: 16, left: 16 },
-      'top-right': { top: 16, right: 16 },
-      'bottom-left': { bottom: 16, left: 16 },
-      'bottom-right': { bottom: 16, right: 16 },
-      'center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-    };
-    return positions[settings.qrCode.position] || positions['bottom-right'];
-  };
+  const gridItems = [];
+  if (s?.section) gridItems.push({ label: 'Секция', value: s.section });
+  if (s?.row_number) gridItems.push({ label: 'Ряд', value: s.row_number });
+  if (s?.seat_number) gridItems.push({ label: 'Место', value: s.seat_number });
+  if (gridItems.length === 0) gridItems.push({ label: 'Admission', value: 'General' });
+  if (showPrice && price) gridItems.push({ label: 'Цена', value: price, accent: true });
+
+  const termsText = showTerms ? [event.note, o.terms].filter(Boolean).join(' ') : '';
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      className="space-y-4"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Preview Controls */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
           Предпросмотр билета
         </h3>
         <div className="flex gap-2">
-          <button 
-            onClick={onRefresh} 
-            className="flex items-center gap-2 px-3 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-300 dark:hover:bg-zinc-600 transition text-sm"
+          <button
+            onClick={onRefresh}
+            className={[
+              'flex items-center gap-2 px-3 py-1',
+              'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300',
+              'rounded',
+              'hover:bg-zinc-300 dark:hover:bg-zinc-600',
+              'transition text-sm'
+            ].join(' ')}
           >
             <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
             Обновить
           </button>
-          <button 
-            onClick={onDownload} 
+          <button
+            onClick={onDownload}
             className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
           >
             <SafeIcon icon={FiDownload} className="w-4 h-4" />
@@ -71,144 +92,66 @@ const TicketPreview = ({ settings, onDownload, onRefresh, ticketData }) => {
           </button>
         </div>
       </div>
-      
+
       {/* Ticket Preview */}
       <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-        <div 
-          className="relative mx-auto rounded-lg shadow-lg overflow-hidden"
-          style={{
-            width: '400px',
-            height: settings.design.layout === 'horizontal' ? '200px' : '600px',
-            backgroundColor: settings.colorScheme.background,
-            color: settings.colorScheme.text
-          }}
+        <div
+          className={`relative mx-auto overflow-hidden ${shadow ? 'shadow-lg' : ''}`}
+          style={{ width: '400px', borderRadius: radius }}
         >
-          {/* Company Logo */}
-          {settings.design.showCompanyLogo && settings.companyLogo && (
-            <div className="absolute top-4 left-4">
-              <img 
-                src={settings.companyLogo} 
-                alt="Company Logo" 
-                className="h-8 w-auto object-contain" 
-              />
+          {/* Hero section */}
+          <div className="relative h-32 w-full">
+            {heroUrl ? (
+              <img src={heroUrl} alt="Hero" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full" style={{ backgroundColor: accent }} />
+            )}
+            {darkHeader && <div className="absolute inset-0 bg-black/40" />}
+            <div className="absolute bottom-2 left-2">
+              <span className="text-white text-xs font-medium px-2 py-1" style={{ backgroundColor: accent }}>
+                {brandName}
+              </span>
             </div>
-          )}
+          </div>
 
-          {/* QR Code */}
-          {settings.design.showQRCode && (
-            <div 
-              className="absolute"
-              style={{
-                ...getQRPosition(),
-                width: getQRSize(),
-                height: getQRSize()
-              }}
-            >
-              <div 
-                className="w-full h-full bg-black flex items-center justify-center text-white text-xs"
-                style={{ backgroundColor: settings.colorScheme.text }}
-              >
-                QR
-              </div>
-            </div>
-          )}
-
-          {/* Ticket Content */}
-          <div className="p-6 h-full flex flex-col justify-center">
-            <div className="text-center mb-4">
-              <h1 
-                className="font-bold mb-2"
-                style={{ 
-                  color: settings.colorScheme.primary,
-                  fontSize: settings.design.fontSize === 'large' ? '24px' : settings.design.fontSize === 'small' ? '16px' : '20px'
-                }}
-              >
-                {data.eventTitle}
+          {/* Body */}
+          <div className="p-4 space-y-2 text-sm" style={{ color: '#000' }}>
+            {event.title && (
+              <h1 className="text-lg font-bold" style={{ color: accent }}>
+                {event.title}
               </h1>
-              {settings.ticketContent.showDateTime && (
-                <div className="mb-2">
-                  <div className="font-medium">{data.eventDate}</div>
-                  <div className="text-sm opacity-75">{data.eventTime}</div>
-                </div>
-              )}
-              {settings.ticketContent.showVenueInfo && (
-                <div className="mb-2 text-sm opacity-75">
-                  {data.eventLocation}
-                </div>
-              )}
-            </div>
+            )}
+            {event.date && (
+              <div>
+                <div>{date}</div>
+                <div className="opacity-75 text-xs">{time}</div>
+              </div>
+            )}
+            {event.location && <div className="opacity-75">{event.location}</div>}
 
-            <div 
-              className="border-t border-dashed my-4"
-              style={{ borderColor: settings.colorScheme.secondary }}
-            />
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Билет №:</span>
-                <span className="font-mono">{data.ticketNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Заказ №:</span>
-                <span className="font-mono">{data.orderNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Место:</span>
-                <span>{data.seatInfo}</span>
-              </div>
-              {settings.ticketContent.showPrice && (
-                <div className="flex justify-between">
-                  <span>Цена:</span>
-                  <span
-                    className="font-bold"
-                    style={{ color: settings.colorScheme.accent }}
+            <div className="grid grid-cols-2 gap-2 pt-2 mt-2 border-t border-dashed border-zinc-300">
+              {gridItems.map((item, idx) => (
+                <div key={idx}>
+                  <div className="text-[10px] uppercase opacity-60">{item.label}</div>
+                  <div
+                    className={`text-sm ${item.accent ? 'font-bold' : ''}`}
+                    style={item.accent ? { color: accent } : {}}
                   >
-                    {data.price}
-                  </span>
+                    {item.value}
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
 
-            {/* Company Info */}
-            {settings.companyInfo.name && (
-              <div 
-                className="mt-4 pt-4 border-t text-xs opacity-50"
-                style={{ borderColor: settings.colorScheme.secondary }}
-              >
-                <div>{settings.companyInfo.name}</div>
-                {settings.companyInfo.phone && <div>{settings.companyInfo.phone}</div>}
-                {settings.companyInfo.website && <div>{settings.companyInfo.website}</div>}
-              </div>
-            )}
+            {termsText && <div className="mt-2 text-xs opacity-75">{termsText}</div>}
+          </div>
 
-            {/* Custom Instructions */}
-            {settings.ticketContent.customInstructions && (
-              <div className="mt-2 text-xs opacity-75">
-                {settings.ticketContent.customInstructions}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Template Info */}
-      <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg">
-        <h4 className="font-medium text-zinc-900 dark:text-white mb-2">
-          Параметры шаблона
-        </h4>
-        <div className="grid grid-cols-2 gap-4 text-sm text-zinc-600 dark:text-zinc-400">
-          <div>
-            <span className="font-medium">Шаблон:</span> {settings.design.template}
-          </div>
-          <div>
-            <span className="font-medium">Размер шрифта:</span> {settings.design.fontSize}
-          </div>
-          <div>
-            <span className="font-medium">Ориентация:</span> {settings.design.layout}
-          </div>
-          <div>
-            <span className="font-medium">QR код:</span> {settings.qrCode.size} ({settings.qrCode.position})
-          </div>
+          {/* QR placeholder */}
+          {showQr && (
+            <div className="absolute bottom-2 right-2 w-16 h-16 bg-zinc-900 text-white text-xs flex items-center justify-center">
+              QR
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -216,3 +159,4 @@ const TicketPreview = ({ settings, onDownload, onRefresh, ticketData }) => {
 };
 
 export default TicketPreview;
+
