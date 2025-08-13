@@ -18,22 +18,29 @@ const TicketPreview = ({
   onDownload,
   onRefresh,
   heroUrl,
-  accent = '#10B981',
-  darkHeader = false,
+  accent,
+  darkHeader,
   showPrice = true,
   showTerms = true,
-  radius = 12,
-  shadow = true,
+  radius,
+  shadow,
   qrValue,
   settings = {}
 }) => {
+  const { qrCode = {}, design = {}, colorScheme = {} } = settings;
+  const actualHero = heroUrl ?? design.heroUrl;
+  const actualAccent = accent ?? design.accent ?? colorScheme.accent ?? '#10B981';
+  const actualDarkHeader = darkHeader ?? design.darkHeader ?? false;
+  const actualRadius = radius ?? design.rounded ?? 12;
+  const actualShadow = shadow ?? (design.shadow !== undefined ? design.shadow : true);
+
   // Sample data used when no ticket information is provided
   const sampleOrder = {
     event: {
       title: 'Концерт группы "Пример"',
       date: '2024-12-15T20:00:00',
       location: 'Концертный зал "Олимпийский"',
-      image: heroUrl,
+      image: actualHero,
       note: 'Пожалуйста, приходите за 30 минут до начала.'
     },
     orderNumber: 'TW-123456',
@@ -64,7 +71,6 @@ const TicketPreview = ({
 
   const termsText = showTerms ? [event.note, o.terms].filter(Boolean).join(' ') : '';
 
-  const { qrCode = {}, design = {} } = settings;
   const showQr = design.showQRCode !== false && qrValue;
   const sizeMap = { small: 48, medium: 72, large: 96 };
   const qrSize = sizeMap[qrCode.size] || 64;
@@ -128,19 +134,19 @@ const TicketPreview = ({
       {/* Ticket Preview */}
       <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
         <div
-          className={`relative mx-auto overflow-hidden ${shadow ? 'shadow-lg' : ''}`}
-          style={{ width: '400px', borderRadius: radius }}
+          className={`relative mx-auto overflow-hidden ${actualShadow ? 'shadow-lg' : ''}`}
+          style={{ width: '400px', borderRadius: actualRadius }}
         >
           {/* Hero section */}
           <div className="relative h-32 w-full">
-            {heroUrl ? (
-              <img src={heroUrl} alt="Hero" className="h-full w-full object-cover" />
+            {actualHero ? (
+              <img src={actualHero} alt="Hero" className="h-full w-full object-cover" />
             ) : (
-              <div className="h-full w-full" style={{ backgroundColor: accent }} />
+              <div className="h-full w-full" style={{ backgroundColor: actualAccent }} />
             )}
-            {darkHeader && <div className="absolute inset-0 bg-black/40" />}
+            {actualDarkHeader && <div className="absolute inset-0 bg-black/40" />}
             <div className="absolute bottom-2 left-2">
-              <span className="text-white text-xs font-medium px-2 py-1" style={{ backgroundColor: accent }}>
+              <span className="text-white text-xs font-medium px-2 py-1" style={{ backgroundColor: actualAccent }}>
                 {brandName}
               </span>
             </div>
@@ -149,7 +155,7 @@ const TicketPreview = ({
           {/* Body */}
           <div className="p-4 space-y-2 text-sm" style={{ color: '#000' }}>
             {event.title && (
-              <h1 className="text-lg font-bold" style={{ color: accent }}>
+              <h1 className="text-lg font-bold" style={{ color: actualAccent }}>
                 {event.title}
               </h1>
             )}
@@ -167,7 +173,7 @@ const TicketPreview = ({
                   <div className="text-[10px] uppercase opacity-60">{item.label}</div>
                   <div
                     className={`text-sm ${item.accent ? 'font-bold' : ''}`}
-                    style={item.accent ? { color: accent } : {}}
+                    style={item.accent ? { color: actualAccent } : {}}
                   >
                     {item.value}
                   </div>
