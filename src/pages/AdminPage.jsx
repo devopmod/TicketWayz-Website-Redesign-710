@@ -787,13 +787,28 @@ const AdminPage = () => {
     const seats = orderDetails.order_items.map(item => {
       const seat = item.ticket?.seat;
       const zone = item.ticket?.zone;
+      const price = item.unit_price || item.ticket?.price;
       if (seat) {
-        return { label: `${seat.section} ряд ${seat.row_number} место ${seat.seat_number}` };
+        return {
+          section: seat.section,
+          row_number: seat.row_number,
+          seat_number: seat.seat_number,
+          price,
+          id: seat.id
+        };
       }
       if (zone) {
-        return { label: `Зона "${zone.name}"` };
+        return {
+          zone: { name: zone.name },
+          price,
+          id: zone.id
+        };
       }
-      return { label: 'Общий вход' };
+      return {
+        zone: { name: 'Общий вход' },
+        price,
+        id: item.ticket?.id
+      };
     });
     let templateSettings;
     try {
