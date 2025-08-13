@@ -23,7 +23,6 @@
     "echarts": "^5.5.0",
     "echarts-for-react": "^3.0.2",
     "date-fns": "4.1.0",
-    "qrcode": "^1.5.3",
     "html-to-image": "^1.11.11",
     "jszip": "^3.10.1"
   },

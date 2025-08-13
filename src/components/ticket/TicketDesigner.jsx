@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
-import TicketTemplate from './TicketTemplate.jsx';
+import { toPng } from 'html-to-image';
+import TicketTemplate from './TicketTemplate';
 
 const defaultData = {
   heroImage: '',
@@ -29,7 +29,6 @@ const defaultOptions = {
   showTerms: true,
   rounded: true,
   shadow: true,
-  qrValue: '',
 };
 
 const TicketDesigner = () => {
@@ -52,11 +51,15 @@ const TicketDesigner = () => {
 
   const exportPng = async () => {
     if (!previewRef.current) return;
-    const canvas = await html2canvas(previewRef.current);
-    const link = document.createElement('a');
-    link.download = 'ticket.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    try {
+      const dataUrl = await toPng(previewRef.current);
+      const link = document.createElement('a');
+      link.download = 'ticket.png';
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Error exporting ticket', err);
+    }
   };
 
   return (
@@ -123,16 +126,6 @@ const TicketDesigner = () => {
             onChange={handleOptionsChange}
           />
           <label htmlFor="showTerms">Show terms</label>
-        </div>
-        <div className="flex flex-col">
-          <label className="text-xs" htmlFor="qrValue">qrValue</label>
-          <input
-            id="qrValue"
-            name="qrValue"
-            className="border p-1 text-sm"
-            value={options.qrValue}
-            onChange={handleOptionsChange}
-          />
         </div>
         <button
           type="button"

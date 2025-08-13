@@ -2,8 +2,8 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
-import TicketTemplate from '../ticket/TicketTemplate.jsx';
-import { buildTermsText } from '../../utils/ticketExport.js';
+import { TicketTemplate } from '../ticket';
+import { buildTermsText } from '../../utils/ticketExport';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
@@ -18,7 +18,6 @@ const TicketPreview = ({
   showTerms = true,
   rounded,
   shadow,
-  qrValue,
   settings = {},
 }) => {
   const sampleTicket = {
@@ -35,7 +34,6 @@ const TicketPreview = ({
     currency: '₽',
     ticketId: 'TW-123456',
     ticketType: 'seat',
-    qrValue: 'TW-123456',
   };
 
   const t = { ...sampleTicket, ...(ticketData || {}) };
@@ -67,9 +65,7 @@ const TicketPreview = ({
     showQr,
     showTerms,
     rounded,
-    radius: rounded,
     shadow,
-    qrValue: qrValue || t.qrValue || t.ticketId,
   };
 
   return (

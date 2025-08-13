@@ -8,7 +8,7 @@ import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import TicketTemplateSettings from '../components/admin/TicketTemplateSettings';
 import supabase from '../lib/supabase';
-import { downloadTicketsPNG } from '../utils/ticketExport.js';
+import { downloadTicketsPNG } from '../utils/ticketExport';
 
 const {
   FiUsers,
