@@ -9,10 +9,14 @@ CREATE TABLE tickets (
   seat_id UUID REFERENCES single_seats(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'free' CHECK (status IN ('free','held','sold')),
   hold_expires_at TIMESTAMPTZ,
-  order_item_id UUID REFERENCES order_items(id) ON DELETE SET NULL,
+  order_item_id UUID,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
+
+  CONSTRAINT tickets_order_item_id_fkey
+    FOREIGN KEY (order_item_id)
+    REFERENCES order_items(id)
+    ON DELETE SET NULL,
   -- Constraint: ticket должен быть либо для zone, либо для seat
   CONSTRAINT ticket_zone_or_seat CHECK (
     (zone_id IS NOT NULL AND seat_id IS NULL) OR 
