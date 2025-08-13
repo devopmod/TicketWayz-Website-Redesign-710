@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import TicketTemplate from './TicketTemplate';
-import { downloadTicketsPDF } from '../../utils/ticketExportPdf';
+import { downloadTicketsPDF } from '../../utils/ticketExport';
 
 const defaultData = {
   heroImage: '',

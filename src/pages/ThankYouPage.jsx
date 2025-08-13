@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCheck, FiDownload, FiHome } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { downloadTicketsPDF } from '../utils/ticketExportPdf';
+import { downloadTicketsPDF } from '../utils/ticketExport';
 
 const ThankYouPage = () => {
   const navigate = useNavigate();

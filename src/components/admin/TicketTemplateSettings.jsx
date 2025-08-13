@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import supabase from '../../lib/supabase';
-import { downloadTicketsPDF } from '../../utils/ticketExportPdf';
+import { downloadTicketsPDF } from '../../utils/ticketExport';
 import { formatDateTime } from '../../utils/formatDateTime';
 import TicketLayoutSettings from './TicketLayoutSettings';
 import SMTPSettings from './SMTPSettings';
