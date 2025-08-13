@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import { formatDateTime } from '../../utils/formatDateTime';
+import QRCode from 'qrcode';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
@@ -19,11 +20,12 @@ const TicketPreview = ({
   heroUrl,
   accent = '#10B981',
   darkHeader = false,
-  showQr = true,
   showPrice = true,
   showTerms = true,
   radius = 12,
-  shadow = true
+  shadow = true,
+  qrValue,
+  settings = {}
 }) => {
   // Sample data used when no ticket information is provided
   const sampleOrder = {
@@ -61,6 +63,36 @@ const TicketPreview = ({
   if (showPrice && price) gridItems.push({ label: 'Цена', value: price, accent: true });
 
   const termsText = showTerms ? [event.note, o.terms].filter(Boolean).join(' ') : '';
+
+  const { qrCode = {}, design = {} } = settings;
+  const showQr = design.showQRCode !== false && qrValue;
+  const sizeMap = { small: 48, medium: 72, large: 96 };
+  const qrSize = sizeMap[qrCode.size] || 64;
+  const [qrSvg, setQrSvg] = useState('');
+
+  useEffect(() => {
+    if (!showQr) {
+      setQrSvg('');
+      return;
+    }
+    QRCode.toString(qrValue, { type: 'svg', margin: 0, width: qrSize })
+      .then(setQrSvg)
+      .catch(() => setQrSvg(''));
+  }, [qrValue, qrSize, showQr]);
+
+  const positions = {
+    'top-left': { top: 8, left: 8 },
+    'top-right': { top: 8, right: 8 },
+    'bottom-left': { bottom: 8, left: 8 },
+    'bottom-right': { bottom: 8, right: 8 },
+    center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+  };
+
+  const qrStyle = {
+    width: qrSize,
+    height: qrSize,
+    ...(positions[qrCode.position] || positions['bottom-right'])
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -146,12 +178,14 @@ const TicketPreview = ({
             {termsText && <div className="mt-2 text-xs opacity-75">{termsText}</div>}
           </div>
 
-          {/* QR placeholder */}
-          {showQr && (
-            <div className="absolute bottom-2 right-2 w-16 h-16 bg-zinc-900 text-white text-xs flex items-center justify-center">
-              QR
-            </div>
-          )}
+            {/* QR code */}
+            {showQr && qrSvg && (
+              <div
+                className="absolute"
+                style={qrStyle}
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+            )}
         </div>
       </div>
     </motion.div>
