@@ -1,19 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import supabase from '../../lib/supabase';
 import { downloadTicketsPDF } from '../../utils/pdfGenerator';
 import { formatDateTime } from '../../utils/formatDateTime';
 import TicketLayoutSettings from './TicketLayoutSettings';
+import SMTPSettings from './SMTPSettings';
+import EmailTemplates from './EmailTemplates';
 
 const {
   FiSave,
   FiRotateCcw,
   FiMail,
   FiServer,
-  FiEye,
-  FiEyeOff,
   FiLayout,
 } = FiIcons;
 
@@ -22,7 +21,6 @@ const TicketTemplateSettings = () => {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
   const logoInputRef = useRef(null);
   const [lastSoldTicket, setLastSoldTicket] = useState(null);
   const [refreshingPreview, setRefreshingPreview] = useState(false);
@@ -257,14 +255,8 @@ const TicketTemplateSettings = () => {
     { value: 'minimal', label: 'Минималистичный' }
   ];
 
-  const securityOptions = [
-    { value: 'none', label: 'Без шифрования' },
-    { value: 'tls', label: 'TLS/STARTTLS' },
-    { value: 'ssl', label: 'SSL' }
-  ];
-
   // Загрузка настроек из localStorage
-  React.useEffect(() => {
+  useEffect(() => {
     const loadSettings = () => {
       try {
         const savedTemplate = localStorage.getItem('ticketTemplateSettings');
@@ -352,23 +344,6 @@ const TicketTemplateSettings = () => {
     }));
   };
 
-  const handleSMTPChange = (field, value) => {
-    setSmtpSettings(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleEmailChange = (section, field, value) => {
-    setEmailSettings(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
-  };
-
   const addCustomField = () => {
     setTemplateSettings(prev => ({
       ...prev,
@@ -404,21 +379,6 @@ const TicketTemplateSettings = () => {
     }));
   };
 
-  const testSMTPConnection = async () => {
-    setSaving(true);
-    setError(null);
-    try {
-      // Здесь будет логика тестирования SMTP соединения
-      // Пока что имитируем успешное подключение
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
-      setError('Ошибка подключения к SMTP серверу');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const saveSettings = async () => {
     setSaving(true);
@@ -649,308 +609,12 @@ const TicketTemplateSettings = () => {
 
       {/* SMTP Settings Tab */}
       {activeTab === 'smtp' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                SMTP Сервер
-              </h3>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={smtpSettings.enabled}
-                  onChange={(e) => handleSMTPChange('enabled', e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                  Включить отправку email
-                </span>
-              </label>
-            </div>
-
-            {smtpSettings.enabled && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      SMTP хост
-                    </label>
-                    <input
-                      type="text"
-                      value={smtpSettings.host}
-                      onChange={(e) => handleSMTPChange('host', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Порт
-                    </label>
-                    <input
-                      type="number"
-                      value={smtpSettings.port}
-                      onChange={(e) => handleSMTPChange('port', parseInt(e.target.value))}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                      placeholder="587"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Имя пользователя
-                    </label>
-                    <input
-                      type="text"
-                      value={smtpSettings.username}
-                      onChange={(e) => handleSMTPChange('username', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                      placeholder="your-email@gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Пароль
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={smtpSettings.password}
-                        onChange={(e) => handleSMTPChange('password', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-zinc-500"
-                      >
-                        <SafeIcon icon={showPassword ? FiEyeOff : FiEye} className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Безопасность
-                    </label>
-                    <select
-                      value={smtpSettings.security}
-                      onChange={(e) => handleSMTPChange('security', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                    >
-                      {securityOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Email отправителя
-                    </label>
-                    <input
-                      type="email"
-                      value={smtpSettings.senderEmail}
-                      onChange={(e) => handleSMTPChange('senderEmail', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                      placeholder="noreply@ticketwayz.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Имя отправителя
-                    </label>
-                    <input
-                      type="text"
-                      value={smtpSettings.senderName}
-                      onChange={(e) => handleSMTPChange('senderName', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                      placeholder="TicketWayz"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Ответить на (Reply-To)
-                    </label>
-                    <input
-                      type="email"
-                      value={smtpSettings.replyTo}
-                      onChange={(e) => handleSMTPChange('replyTo', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                      placeholder="support@ticketwayz.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={testSMTPConnection}
-                    disabled={saving}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
-                  >
-                    {saving ? 'Тестирование...' : 'Тест подключения'}
-                  </button>
-                </div>
-
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                    Популярные SMTP настройки
-                  </h4>
-                  <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                    <div><strong>Gmail:</strong> smtp.gmail.com:587 (TLS)</div>
-                    <div><strong>Outlook:</strong> smtp-mail.outlook.com:587 (TLS)</div>
-                    <div><strong>Yahoo:</strong> smtp.mail.yahoo.com:587 (TLS)</div>
-                    <div><strong>Yandex:</strong> smtp.yandex.ru:465 (SSL)</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
+        <SMTPSettings settings={smtpSettings} onChange={setSmtpSettings} />
       )}
 
       {/* Email Templates Tab */}
       {activeTab === 'email' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Purchase Confirmation Email */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                Подтверждение покупки
-              </h3>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={emailSettings.purchaseConfirmation.enabled}
-                  onChange={(e) => handleEmailChange('purchaseConfirmation', 'enabled', e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                  Включить
-                </span>
-              </label>
-            </div>
-
-            {emailSettings.purchaseConfirmation.enabled && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Тема письма
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSettings.purchaseConfirmation.subject}
-                    onChange={(e) => handleEmailChange('purchaseConfirmation', 'subject', e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                    placeholder="Ваши билеты - {eventTitle}"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Шаблон письма
-                  </label>
-                  <textarea
-                    value={emailSettings.purchaseConfirmation.template}
-                    onChange={(e) => handleEmailChange('purchaseConfirmation', 'template', e.target.value)}
-                    rows="10"
-                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg font-mono text-sm"
-                  />
-                </div>
-
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                    Доступные переменные
-                  </h4>
-                  <div className="text-xs text-yellow-700 dark:text-yellow-300 grid grid-cols-2 gap-1">
-                    <div>{'{customerName}'} - Имя клиента</div>
-                    <div>{'{eventTitle}'} - Название события</div>
-                    <div>{'{eventDate}'} - Дата события</div>
-                    <div>{'{eventTime}'} - Время события</div>
-                    <div>{'{eventLocation}'} - Место проведения</div>
-                    <div>{'{orderNumber}'} - Номер заказа</div>
-                    <div>{'{ticketCount}'} - Количество билетов</div>
-                    <div>{'{totalPrice}'} - Общая сумма</div>
-                    <div>{'{seatInfo}'} - Информация о местах</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Event Reminder Email */}
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-6 rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                Напоминание о событии
-              </h3>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={emailSettings.eventReminder.enabled}
-                  onChange={(e) => handleEmailChange('eventReminder', 'enabled', e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                  Включить
-                </span>
-              </label>
-            </div>
-
-            {emailSettings.eventReminder.enabled && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Отправить за ... дней до события
-                  </label>
-                  <select
-                    value={emailSettings.eventReminder.daysBefore}
-                    onChange={(e) => handleEmailChange('eventReminder', 'daysBefore', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                  >
-                    <option value={1}>1 день</option>
-                    <option value={2}>2 дня</option>
-                    <option value={3}>3 дня</option>
-                    <option value={7}>1 неделя</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Тема письма
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSettings.eventReminder.subject}
-                    onChange={(e) => handleEmailChange('eventReminder', 'subject', e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg"
-                    placeholder="Напоминание о событии - {eventTitle}"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Шаблон письма
-                  </label>
-                  <textarea
-                    value={emailSettings.eventReminder.template}
-                    onChange={(e) => handleEmailChange('eventReminder', 'template', e.target.value)}
-                    rows="8"
-                    className="w-full px-3 py-2 bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg font-mono text-sm"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
+        <EmailTemplates settings={emailSettings} onChange={setEmailSettings} />
       )}
 
       {/* Action Buttons */}
