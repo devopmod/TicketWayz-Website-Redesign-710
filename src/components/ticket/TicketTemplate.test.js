@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+
+// Extract sanitizeTicket from the JSX file without parsing the entire React component
+const loadSanitizeTicket = async () => {
+  const code = await fs.readFile(new URL('./TicketTemplate.jsx', import.meta.url), 'utf8');
+  const start = code.indexOf('const toStr');
+  const end = code.indexOf('const SafeText');
+  const snippet = code.slice(start, end);
+  return import(`data:text/javascript;base64,${Buffer.from(snippet).toString('base64')}`);
+};
+
+test('sanitizeTicket preserves heroImage strings', async () => {
+  const { sanitizeTicket } = await loadSanitizeTicket();
+  const base64 = 'data:image/png;base64,ABC123';
+  const url = 'https://example.com/image.jpg';
+  assert.equal(sanitizeTicket({ heroImage: base64 }).heroImage, base64);
+  assert.equal(sanitizeTicket({ heroImage: url }).heroImage, url);
+});

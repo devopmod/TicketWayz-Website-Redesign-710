@@ -149,21 +149,21 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               data-slot="heroImage"
               src={heroImage}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover z-0"
             />
           )}
           <div
             className={[
-              'absolute inset-0',
+              'absolute inset-0 z-10',
               darkHeader
-                ? 'bg-black/70'
-                : 'bg-gradient-to-b from-transparent via-black/30 to-black/70',
+                ? 'bg-black/60'
+                : 'bg-gradient-to-b from-black/20 via-black/40 to-black/80',
             ].join(' ')}
           />
           {brand && (
             <span
               data-slot="brand"
-              className="absolute top-4 left-4 px-2 py-1 text-white text-xs font-semibold rounded"
+              className="absolute top-4 left-4 z-20 px-2 py-1 text-white text-xs font-semibold rounded"
               style={accent ? { backgroundColor: accent } : { backgroundColor: '#000000b3' }}
             >
               {brand}
