@@ -1,4 +1,3 @@
-import { PDFDocument } from 'pdf-lib';
 import html2canvas from 'html2canvas';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -18,7 +17,7 @@ function validateImageUrl(url) {
   return null;
 }
 
-export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templateSettings) {
+export async function exportTicketsPNG(order, baseName = 'tickets', templateSettings) {
   if (!order) return;
 
   let settings = templateSettings;
@@ -37,8 +36,8 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   settings.design.heroUrl = validateImageUrl(settings.design.heroUrl);
   order.event.image = validateImageUrl(order.event.image);
 
-  const pdfDoc = await PDFDocument.create();
   const seats = Array.isArray(order.seats) && order.seats.length > 0 ? order.seats : [null];
+  let index = 1;
 
   for (const seat of seats) {
     const wrapper = document.createElement('div');
@@ -51,9 +50,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
     const seatInfo = seat || order.seat || {};
     const dateObj = event.date ? new Date(event.date) : null;
     const date = dateObj ? dateObj.toLocaleDateString() : undefined;
-    const time = dateObj
-      ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : undefined;
+    const time = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined;
 
     const data = {
       heroImage: settings.design?.heroUrl || event.image,
@@ -107,23 +104,16 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
     });
     document.body.removeChild(wrapper);
     if (!canvas.width || !canvas.height) continue;
-    const imgData = canvas.toDataURL('image/png');
-    const imgBytes = await fetch(imgData).then((res) => res.arrayBuffer());
-    const img = await pdfDoc.embedPng(imgBytes);
-    const page = pdfDoc.addPage([img.width, img.height]);
-    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+    const url = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = url;
+    const name = seats.length > 1 ? `${baseName}-${index}.png` : `${baseName}.png`;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    index++;
   }
-
-  const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
 
-export default downloadTicketsPDF;
+export default exportTicketsPNG;

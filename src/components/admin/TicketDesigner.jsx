@@ -7,7 +7,7 @@ import { buildTermsText } from '../../utils/ticketUtils.js';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
-const TicketPreview = ({
+const TicketDesigner = ({
   ticketData,
   onDownload,
   onRefresh,
@@ -73,7 +73,7 @@ const TicketPreview = ({
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 font-sans">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Предпросмотр билета</h3>
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Редактор билета</h3>
         <div className="flex gap-2">
           <button
             onClick={() => onRefresh(ticketRef.current)}
@@ -93,7 +93,7 @@ const TicketPreview = ({
             className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
           >
             <SafeIcon icon={FiDownload} className="w-4 h-4" />
-            Скачать PDF
+            Скачать PNG
           </button>
         </div>
       </div>
@@ -105,4 +105,4 @@ const TicketPreview = ({
   );
 };
 
-export default TicketPreview;
+export default TicketDesigner;

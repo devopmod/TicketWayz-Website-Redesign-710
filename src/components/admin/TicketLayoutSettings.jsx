@@ -1,5 +1,5 @@
 import React from 'react';
-import TicketPreview from './TicketPreview';
+import TicketDesigner from './TicketDesigner';
 
 const TicketLayoutSettings = ({
   settings,
@@ -104,7 +104,7 @@ const TicketLayoutSettings = ({
         </label>
       </div>
 
-      <TicketPreview
+      <TicketDesigner
         settings={settings}
         accent={settings.design.accent}
         darkHeader={settings.design.darkHeader}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCheck, FiDownload, FiHome } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { downloadTicketsPDF } from '../utils/pdfGenerator';
+import { exportTicketsPNG } from '../utils/ticketExport';
 
 const ThankYouPage = () => {
   const navigate = useNavigate();
@@ -61,7 +61,7 @@ const ThankYouPage = () => {
 
   const handleDownload = () => {
     if (orderSummary) {
-      downloadTicketsPDF(orderSummary, `tickets-${orderNumber}.pdf`, templateSettings);
+      exportTicketsPNG(orderSummary, `tickets-${orderNumber}`, templateSettings);
     }
   };
 
