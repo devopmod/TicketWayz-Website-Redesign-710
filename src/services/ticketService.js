@@ -491,7 +491,7 @@ export const getOrderDetails = async (orderId) => {
         *,
         order_items:order_items(
           *,
-          ticket:tickets!fk_order_items_ticket_id(
+          ticket:tickets!order_items_ticket_id_fkey(
             *,
             event:events(id, title, event_date, location, note),
             zone:zones(id, name, category:seat_categories(*)),
@@ -521,7 +521,7 @@ export const getAllOrders = async () => {
         order_items:order_items(
           id,
           unit_price,
-          ticket:tickets!fk_order_items_ticket_id(
+          ticket:tickets!order_items_ticket_id_fkey(
             id,
             status,
             event:events(title, event_date, note)
