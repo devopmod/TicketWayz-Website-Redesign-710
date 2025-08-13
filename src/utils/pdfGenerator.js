@@ -2,6 +2,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import QRCode from 'qrcode';
 import { formatDateTime } from './formatDateTime.js';
+import { buildTermsText } from './ticketUtils.js';
 
 function sanitizeValue(value) {
   return value === undefined || value === null ? '' : String(value).replace(/\s+/g, ' ').trim();
@@ -73,7 +74,8 @@ async function drawTicketPage(pdfDoc, order, seat, settings = {}, font) {
   const data = sanitizeTicket(order, seat);
   const { colorScheme = {}, design = {}, qrCode = {}, ticketContent = {}, companyInfo = {} } = settings;
 
-  const showTerms = ticketContent.showTerms && (ticketContent.termsAndConditions || data.terms);
+  const termsText = buildTermsText(order, settings);
+  const showTerms = ticketContent.showTerms !== false && termsText;
 
   const pageWidth = 560;
   const pageHeight = showTerms ? 860 : 700;
@@ -289,8 +291,7 @@ async function drawTicketPage(pdfDoc, order, seat, settings = {}, font) {
   }
 
   // terms section
-  const termsText = showTerms && (ticketContent.termsAndConditions || data.terms);
-  if (termsText) {
+  if (showTerms) {
     page.drawLine({
       start: { x: cardX + padX, y: cursorY },
       end: { x: cardX + cardWidth - padX, y: cursorY },

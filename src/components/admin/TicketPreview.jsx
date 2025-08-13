@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import { formatDateTime } from '../../utils/formatDateTime';
+import { buildTermsText } from '../../utils/ticketUtils';
 import QRCode from 'qrcode';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
@@ -77,11 +78,7 @@ const TicketPreview = ({
   }
   if (showPriceFinal && price) gridItems.push(['PRICE', price]);
 
-  const termsText = showTermsFinal
-    ? [event.note, ticketContent.customInstructions, ticketContent.termsAndConditions, o.terms]
-        .filter(Boolean)
-        .join(' ')
-    : '';
+  const termsText = showTermsFinal ? buildTermsText(o, settings) : '';
 
   const qrString = qrCode.value || qrValue || ticketId || 'Ticket';
   const qrBlockSize = 164;
