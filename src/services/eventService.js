@@ -254,7 +254,16 @@ export const updateEvent = async (eventId, eventData) => {
     // Убеждаемся что категория корректна
     await ensureEventCategory(eventData.category);
 
-    // Update event
+    // Получаем текущие данные события для сравнения
+    const { data: currentEvent, error: currentError } = await supabase
+      .from('events')
+      .select('venue_id, status')
+      .eq('id', eventId)
+      .single();
+
+    if (currentError) throw currentError;
+
+    // Обновляем событие
     const { data: event, error: eventError } = await supabase
       .from('events')
       .update({
@@ -302,8 +311,10 @@ export const updateEvent = async (eventId, eventData) => {
       if (priceError) throw priceError;
     }
 
-    // Recreate tickets if venue is selected
-    if (event.venue_id) {
+    const venueChanged = currentEvent.venue_id !== eventData.venue_id;
+    const shouldRecreate = event.venue_id && (venueChanged || eventData.recreateTickets);
+
+    if (shouldRecreate) {
       try {
         if (isDevelopment) {
           console.log('Recreating tickets for updated event:', eventId);
@@ -338,7 +349,11 @@ export const updateEvent = async (eventId, eventData) => {
       }
     }
 
-    return event;
+    // If tickets are not recreated, сохраняем текущий статус
+    return {
+      ...event,
+      status: currentEvent.status
+    };
   } catch (error) {
     console.error('Error updating event:', error);
     throw error;

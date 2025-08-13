@@ -266,6 +266,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   const [venues, setVenues] = useState([]);
   const [categories, setCategories] = useState([]);
   const [ticketsInfo, setTicketsInfo] = useState(null);
+  const [recreateTickets, setRecreateTickets] = useState(false);
 
   // НОВЫЕ состояния для загрузки изображений
   const [uploadedFileName, setUploadedFileName] = useState('');
@@ -644,7 +645,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             venue_id: eventPayload.venue_id,
             note: eventPayload.note,
             updated_at: eventPayload.updated_at,
-            status: 'draft' // Set to draft before creating tickets
+            status: recreateTickets ? 'draft' : (eventToEdit?.status || 'published')
           })
           .eq('id', eventId)
           .select()
@@ -679,8 +680,8 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
           if (priceError) throw priceError;
         }
 
-        // Recreate tickets if venue is selected
-        if (savedEvent.venue_id) {
+        // Recreate tickets only when explicitly requested
+        if (recreateTickets && savedEvent.venue_id) {
           try {
             console.log('Creating tickets for event:', eventId);
             const ticketsResult = await createEventTickets(eventId);
@@ -691,6 +692,10 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
             } else {
               throw new Error('No tickets were created');
             }
+
+            await supabase.from('events')
+              .update({ status: 'published', updated_at: new Date().toISOString() })
+              .eq('id', eventId);
           } catch (ticketError) {
             console.error('Error recreating tickets:', ticketError);
             setError(`Event updated but failed to recreate tickets: ${ticketError.message}`);
@@ -1396,6 +1401,21 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                     <p className="text-xs text-blue-200/80">
                       Publishing this event will automatically create tickets based on the selected venue's seating layout.
                     </p>
+                  </div>
+                )}
+
+                {eventToEdit && eventData.venue_id && (
+                  <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+                    <label htmlFor="recreateTickets" className="flex items-start text-sm text-red-200">
+                      <input
+                        id="recreateTickets"
+                        type="checkbox"
+                        checked={recreateTickets}
+                        onChange={(e) => setRecreateTickets(e.target.checked)}
+                        className="mt-1 mr-2 rounded border-zinc-600 bg-zinc-700 text-red-500 focus:ring-red-400"
+                      />
+                      Пересоздать билеты (существующие продажи будут потеряны)
+                    </label>
                   </div>
                 )}
               </div>

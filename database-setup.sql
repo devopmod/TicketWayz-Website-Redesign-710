@@ -91,8 +91,13 @@ BEGIN
     RAISE EXCEPTION 'Event has no venue assigned';
   END IF;
 
-  -- Удаляем существующие билеты для этого события
-  DELETE FROM tickets WHERE event_id = p_event_id;
+  -- Проверяем наличие проданных билетов
+  IF EXISTS (SELECT 1 FROM tickets WHERE event_id = p_event_id AND status = 'sold') THEN
+    RAISE EXCEPTION 'Cannot recreate tickets: sold tickets exist';
+  END IF;
+
+  -- Удаляем только свободные и удержанные билеты
+  DELETE FROM tickets WHERE event_id = p_event_id AND status IN ('free', 'held');
 
   -- Создаем билеты для зон (sections/polygons)
   FOR v_zone_record IN 
