@@ -356,7 +356,7 @@ const AdminPage = () => {
           *,
           order_items:order_items(
             *,
-            ticket:tickets!fk_order_items_ticket_id(
+            ticket:tickets!order_items_ticket_id_fkey(
               *,
               event:events(id, title, event_date, note)
             )
@@ -405,7 +405,7 @@ const AdminPage = () => {
         .select(`
           total_price,
           order_items:order_items(
-            ticket:tickets!fk_order_items_ticket_id(
+            ticket:tickets!order_items_ticket_id_fkey(
               event:events(category, note)
             )
           )
