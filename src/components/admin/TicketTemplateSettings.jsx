@@ -65,7 +65,7 @@ const TicketTemplateSettings = () => {
     colorScheme: {
       primary: '#FCD34D', // Yellow
       secondary: '#1F2937', // Dark gray
-      accent: '#10B981', // Green
+      accent: '#f59e0b',
       background: '#FFFFFF',
       text: '#000000'
     },
@@ -77,6 +77,7 @@ const TicketTemplateSettings = () => {
       includeOrderInfo: true
     },
     companyInfo: {
+      brand: 'TicketWayz',
       name: 'TicketWayz',
       address: '',
       phone: '',
@@ -88,6 +89,7 @@ const TicketTemplateSettings = () => {
       showVenueInfo: true,
       showDateTime: true,
       showPrice: true,
+      showTerms: true,
       customInstructions: '',
       termsAndConditions: '',
       additionalFields: []
@@ -100,9 +102,9 @@ const TicketTemplateSettings = () => {
       layout: 'vertical', // vertical, horizontal
       heroUrl: '',
       darkHeader: false,
-      rounded: 12,
+      rounded: 24,
       shadow: true,
-      accent: '#10B981'
+      accent: '#f59e0b'
     }
   });
 
@@ -203,7 +205,7 @@ const TicketTemplateSettings = () => {
       colors: {
         primary: '#FCD34D',
         secondary: '#1F2937',
-        accent: '#10B981',
+        accent: '#f59e0b',
         background: '#FFFFFF',
         text: '#000000'
       }
@@ -233,7 +235,7 @@ const TicketTemplateSettings = () => {
       colors: {
         primary: '#FCD34D',
         secondary: '#374151',
-        accent: '#10B981',
+        accent: '#f59e0b',
         background: '#111827',
         text: '#FFFFFF'
       }
@@ -269,7 +271,16 @@ const TicketTemplateSettings = () => {
         const savedEmail = localStorage.getItem('emailSettings');
         
         if (savedTemplate) {
-          setTemplateSettings(prev => ({ ...prev, ...JSON.parse(savedTemplate) }));
+          const parsed = JSON.parse(savedTemplate);
+          setTemplateSettings(prev => ({
+            ...prev,
+            ...parsed,
+            colorScheme: { ...prev.colorScheme, ...parsed.colorScheme },
+            qrCode: { ...prev.qrCode, ...parsed.qrCode },
+            companyInfo: { ...prev.companyInfo, ...parsed.companyInfo },
+            ticketContent: { ...prev.ticketContent, ...parsed.ticketContent },
+            design: { ...prev.design, ...parsed.design },
+          }));
         }
         
         if (savedSMTP) {
@@ -409,7 +420,7 @@ const TicketTemplateSettings = () => {
         colorScheme: {
           primary: '#FCD34D',
           secondary: '#1F2937',
-          accent: '#10B981',
+          accent: '#f59e0b',
           background: '#FFFFFF',
           text: '#000000'
         },
@@ -421,6 +432,7 @@ const TicketTemplateSettings = () => {
           includeOrderInfo: true
         },
         companyInfo: {
+          brand: 'TicketWayz',
           name: 'TicketWayz',
           address: '',
           phone: '',
@@ -432,6 +444,7 @@ const TicketTemplateSettings = () => {
           showVenueInfo: true,
           showDateTime: true,
           showPrice: true,
+          showTerms: true,
           customInstructions: '',
           termsAndConditions: '',
           additionalFields: []
@@ -444,9 +457,9 @@ const TicketTemplateSettings = () => {
           layout: 'vertical',
           heroUrl: '',
           darkHeader: false,
-          rounded: 12,
+          rounded: 24,
           shadow: true,
-          accent: '#10B981'
+          accent: '#f59e0b'
         }
       });
       
@@ -611,6 +624,7 @@ const TicketTemplateSettings = () => {
       {activeTab === 'layout' && (
         <TicketLayoutSettings
           settings={templateSettings}
+          onChange={setTemplateSettings}
           onDownloadPreview={handleDownloadPreview}
           onRefreshPreview={handleRefreshPreview}
           ticketData={previewTicketData}
