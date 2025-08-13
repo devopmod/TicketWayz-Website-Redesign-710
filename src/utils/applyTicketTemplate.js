@@ -1,7 +1,41 @@
 import React from 'react';
-import ReactDOMServer from 'react-dom/server';
+import { renderToStaticMarkup } from 'react-dom/server';
 import QRCode from 'qrcode';
 import TicketTemplate from '../components/ticket/TicketTemplateNode.js';
+
+export function sanitizeTicket(data = {}) {
+  const stringFields = [
+    'heroImage',
+    'brand',
+    'artist',
+    'date',
+    'time',
+    'venue',
+    'address',
+    'section',
+    'row',
+    'seat',
+    'gate',
+    'price',
+    'currency',
+    'qrImage',
+    'qrValue',
+    'ticketId',
+    'terms',
+  ];
+  const result = { ...data };
+  for (const key of stringFields) {
+    const val = result[key];
+    result[key] = val === undefined || val === null ? undefined : String(val);
+  }
+  result.rounded = result.rounded ?? true;
+  result.shadow = result.shadow ?? true;
+  result.showQr = result.showQr ?? true;
+  result.showPrice = result.showPrice ?? true;
+  result.showTerms = result.showTerms ?? true;
+  result.darkHeader = result.darkHeader ?? false;
+  return result;
+}
 
 export async function applyTicketTemplate(data = {}) {
   const { order = {}, seat = {}, settings = {}, ...rest } = data;
@@ -22,7 +56,7 @@ export async function applyTicketTemplate(data = {}) {
     }
   }
 
-  const props = {
+  const props = sanitizeTicket({
     heroImage: rest.heroUrl || settings.design?.heroUrl || event.image,
     brand: rest.brand || company.name,
     artist: rest.artist || event.title,
@@ -47,7 +81,7 @@ export async function applyTicketTemplate(data = {}) {
     showPrice: rest.showPrice ?? true,
     showTerms: rest.showTerms ?? true,
     darkHeader: rest.darkHeader ?? false,
-  };
+  });
 
   if (props.showQr && props.qrValue) {
     try {
@@ -57,8 +91,8 @@ export async function applyTicketTemplate(data = {}) {
     }
   }
 
-  return ReactDOMServer.renderToStaticMarkup(
-    React.createElement(TicketTemplate, props),
+  return renderToStaticMarkup(
+    React.createElement(TicketTemplate, { data: props }),
   );
 }
 
