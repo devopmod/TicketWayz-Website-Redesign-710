@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
-import { renderTicket } from '../../utils/renderTicket';
+import { applyTicketTemplate } from '../../utils/applyTicketTemplate.js';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
@@ -49,7 +49,7 @@ const TicketPreview = ({
   useEffect(() => {
     let active = true;
     (async () => {
-      const rendered = await renderTicket({
+      const rendered = await applyTicketTemplate({
         order: o,
         seat: s,
         heroUrl,

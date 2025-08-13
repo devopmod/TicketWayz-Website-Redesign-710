@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import html2canvas from 'html2canvas';
-import { renderTicket } from './renderTicket.js';
+import { applyTicketTemplate } from './applyTicketTemplate.js';
 
 function validateImageUrl(url) {
   if (!url) return null;
@@ -37,7 +37,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   const seats = Array.isArray(order.seats) && order.seats.length > 0 ? order.seats : [null];
 
   for (const seat of seats) {
-    const html = await renderTicket({ order, seat, settings });
+    const html = await applyTicketTemplate({ order, seat, settings });
     const wrapper = document.createElement('div');
     wrapper.style.position = 'absolute';
     wrapper.style.left = '-10000px';
