@@ -1,22 +1,28 @@
-<div class="ticket">
-  <h1 data-slot="event.title"></h1>
-  <div data-slot="event.date"></div>
-  <div data-slot="event.location"></div>
-  <div data-slot="company.name"></div>
-  <div>
-    <span>SECTION</span>
-    <span data-slot="seat.section"></span>
+<div data-canvas-width="560" class="ticket w-[560px] bg-white text-gray-900 font-sans border rounded-lg overflow-hidden shadow-md">
+  <div class="flex items-center justify-between px-6 py-4 bg-gray-100 border-b">
+    <h1 class="text-xl font-bold" data-slot="event.title"></h1>
+    <span class="text-sm" data-slot="settings.companyInfo.brand"></span>
   </div>
-  <div>
-    <span>ROW</span>
-    <span data-slot="seat.row_number"></span>
+  <div class="px-6 py-4">
+    <div class="text-base" data-slot="event.location"></div>
+    <div class="text-sm text-gray-600" data-slot="event.event_date"></div>
   </div>
-  <div>
-    <span>SEAT</span>
-    <span data-slot="seat.seat_number"></span>
-  </div>
-  <div>
-    <span>PRICE</span>
-    <span data-slot="seat.price"></span>
+  <div class="px-6 py-4 grid grid-cols-4 gap-4 text-center border-t">
+    <div>
+      <div class="text-xs text-gray-500">SECTION</div>
+      <div class="text-lg font-semibold" data-slot="seat.section"></div>
+    </div>
+    <div>
+      <div class="text-xs text-gray-500">ROW</div>
+      <div class="text-lg font-semibold" data-slot="seat.row_number"></div>
+    </div>
+    <div>
+      <div class="text-xs text-gray-500">SEAT</div>
+      <div class="text-lg font-semibold" data-slot="seat.seat_number"></div>
+    </div>
+    <div>
+      <div class="text-xs text-gray-500">PRICE</div>
+      <div class="text-lg font-semibold" data-slot="seat.price"></div>
+    </div>
   </div>
 </div>
