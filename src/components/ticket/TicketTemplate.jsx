@@ -94,7 +94,6 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     section,
     row,
     seat,
-    gate,
     price,
     currency,
     qrImage,
@@ -114,21 +113,6 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
 
   const isGA = !section && !row && !seat;
   const sectionValue = section || (isGA ? 'GA' : undefined);
-  const fieldsCount = [
-    sectionValue,
-    row,
-    seat,
-    gate,
-    showPrice && price,
-  ].filter(Boolean).length;
-
-  const gridClass = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-2',
-    3: 'grid-cols-3',
-    4: 'grid-cols-4',
-    5: 'grid-cols-5',
-  }[fieldsCount] || 'grid-cols-1';
 
   return (
     <ErrorBoundary>
@@ -189,7 +173,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               </div>
             )}
             {venue && (
-              <div className="text-sm">
+              <div className="text-sm" style={{ color: '#f59e0b' }}>
                 <SafeText data-slot="venue" text={venue} />
               </div>
             )}
@@ -199,71 +183,56 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               </div>
             )}
 
-            {fieldsCount > 0 && (
-              <div className={`mt-6 grid ${gridClass} gap-4 text-center`}>
-                {sectionValue && (
-                  <div className="flex flex-col text-center">
-                    <div className="text-xs text-gray-500">
-                      {isGA ? 'ADMISSION' : 'SECTION'}
-                    </div>
-                    <div
-                      className="text-lg font-semibold"
-                      style={accent ? { color: accent } : undefined}
-                    >
-                      <SafeText data-slot="section" text={sectionValue} />
-                    </div>
-                  </div>
-                )}
-                {row && (
-                  <div className="flex flex-col text-center">
-                    <div className="text-xs text-gray-500">ROW</div>
-                    <div
-                      className="text-lg font-semibold"
-                      style={accent ? { color: accent } : undefined}
-                    >
-                      <SafeText data-slot="row" text={row} />
-                    </div>
-                  </div>
-                )}
-                {seat && (
-                  <div className="flex flex-col text-center">
-                    <div className="text-xs text-gray-500">SEAT</div>
-                    <div
-                      className="text-lg font-semibold"
-                      style={accent ? { color: accent } : undefined}
-                    >
-                      <SafeText data-slot="seat" text={seat} />
-                    </div>
-                  </div>
-                )}
-                {gate && (
-                  <div className="flex flex-col text-center">
-                    <div className="text-xs text-gray-500">GATE</div>
-                    <div
-                      className="text-lg font-semibold"
-                      style={accent ? { color: accent } : undefined}
-                    >
-                      <SafeText data-slot="gate" text={gate} />
-                    </div>
-                  </div>
-                )}
-                {showPrice && price && (
-                  <div className="flex flex-col text-center">
-                    <div className="text-xs text-gray-500">PRICE</div>
-                    <div
-                      className="text-lg font-semibold"
-                      style={accent ? { color: accent } : undefined}
-                    >
-                      <SafeText data-slot="price" text={price} />
-                      {currency && (
-                        <span>
-                          {' '}
-                          <SafeText data-slot="currency" text={currency} />
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
+            {(sectionValue || row || seat || (showPrice && price)) && (
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="flex flex-col text-left">
+                  {sectionValue && (
+                    <>
+                      <div className="text-xs text-gray-500">
+                        {isGA ? 'ADMISSION' : 'SECTION'}
+                      </div>
+                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                        <SafeText data-slot="section" text={sectionValue} />
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-col text-right">
+                  {showPrice && price && (
+                    <>
+                      <div className="text-xs text-gray-500">PRICE</div>
+                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                        <SafeText data-slot="price" text={price} />
+                        {currency && (
+                          <span>
+                            {' '}
+                            <SafeText data-slot="currency" text={currency} />
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-col text-left">
+                  {row && (
+                    <>
+                      <div className="text-xs text-gray-500">ROW</div>
+                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                        <SafeText data-slot="row" text={row} />
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-col text-right">
+                  {seat && (
+                    <>
+                      <div className="text-xs text-gray-500">SEAT</div>
+                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                        <SafeText data-slot="seat" text={seat} />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
