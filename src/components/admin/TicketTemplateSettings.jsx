@@ -99,8 +99,9 @@ const TicketTemplateSettings = () => {
       row: lastSoldTicket.seat?.row_number,
       seat: lastSoldTicket.seat?.seat_number,
       price: lastSoldTicket.order_item?.unit_price
-        ? `€${parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)}`
+        ? parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)
         : '',
+      currency: '€',
       ticketId: lastSoldTicket.id
         ? `T-${lastSoldTicket.id.substring(0, 8)}`
         : '',
@@ -568,6 +569,8 @@ const TicketTemplateSettings = () => {
 
     const orderData = {
       orderNumber: lastSoldTicket.order_item?.order?.id,
+      company: { name: templateSettings.companyInfo?.brand || 'TicketWayz' },
+      currency: '€',
       event: {
         title: lastSoldTicket.event?.title,
         date: lastSoldTicket.event?.event_date,

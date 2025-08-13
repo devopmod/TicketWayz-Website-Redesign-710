@@ -841,8 +841,11 @@ const AdminPage = () => {
       console.error('Error parsing ticket template settings:', err);
     }
 
+    const brand = templateSettings?.companyInfo?.brand || 'TicketWayz';
     downloadTicketsPNG({
       orderNumber: orderDetails.id,
+      company: { name: brand },
+      currency: '€',
       event: {
         title: event?.title,
         date: event?.event_date,

@@ -61,7 +61,14 @@ const ThankYouPage = () => {
 
   const handleDownload = () => {
     if (orderSummary) {
-      downloadTicketsPNG(orderSummary, `tickets-${orderNumber}`, templateSettings);
+      const orderData = {
+        ...orderSummary,
+        company: {
+          name: templateSettings?.companyInfo?.brand || 'TicketWayz',
+        },
+        currency: orderSummary.currency || '€',
+      };
+      downloadTicketsPNG(orderData, `tickets-${orderNumber}`, templateSettings);
     }
   };
 
