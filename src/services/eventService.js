@@ -1,6 +1,8 @@
 import supabase from '../lib/supabase';
 import {createEventTickets} from './ticketService';
 
+const isDevelopment = (import.meta.env?.MODE || process.env.NODE_ENV) !== 'production';
+
 // Fetch all events
 export const fetchEvents = async () => {
   try {
@@ -205,9 +207,13 @@ export const createEvent = async (eventData) => {
     // Create tickets if venue is selected
     if (event.venue_id) {
       try {
-        console.log('Creating tickets for event:', event.id);
+        if (isDevelopment) {
+          console.log('Creating tickets for event:', event.id);
+        }
         const ticketsResult = await createEventTickets(event.id);
-        console.log('Tickets creation result:', ticketsResult);
+        if (isDevelopment) {
+          console.log('Tickets creation result:', ticketsResult);
+        }
 
         // Update event status to published after tickets are created
         const { error: statusError } = await supabase
@@ -299,9 +305,13 @@ export const updateEvent = async (eventId, eventData) => {
     // Recreate tickets if venue is selected
     if (event.venue_id) {
       try {
-        console.log('Recreating tickets for updated event:', eventId);
+        if (isDevelopment) {
+          console.log('Recreating tickets for updated event:', eventId);
+        }
         const ticketsResult = await createEventTickets(eventId);
-        console.log('Tickets recreation result:', ticketsResult);
+        if (isDevelopment) {
+          console.log('Tickets recreation result:', ticketsResult);
+        }
 
         // Update event status to published after tickets are recreated
         const { error: statusError } = await supabase
