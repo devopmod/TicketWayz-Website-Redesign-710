@@ -97,7 +97,12 @@ const TicketTemplateSettings = () => {
       showCompanyLogo: true,
       showQRCode: true,
       fontSize: 'medium', // small, medium, large
-      layout: 'vertical' // vertical, horizontal
+      layout: 'vertical', // vertical, horizontal
+      heroUrl: '',
+      darkHeader: false,
+      rounded: 12,
+      shadow: true,
+      accent: '#10B981'
     }
   });
 
@@ -436,7 +441,12 @@ const TicketTemplateSettings = () => {
           showCompanyLogo: true,
           showQRCode: true,
           fontSize: 'medium',
-          layout: 'vertical'
+          layout: 'vertical',
+          heroUrl: '',
+          darkHeader: false,
+          rounded: 12,
+          shadow: true,
+          accent: '#10B981'
         }
       });
       

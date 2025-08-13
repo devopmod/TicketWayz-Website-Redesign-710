@@ -42,7 +42,7 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   const textColor = hexToRgb(colorScheme.text || '#000000');
   const primaryColor = hexToRgb(colorScheme.primary || '#000000');
   const secondaryColor = hexToRgb(colorScheme.secondary || '#000000');
-  const accentColor = hexToRgb(colorScheme.accent || '#000000');
+  const accentColor = hexToRgb(design.accent || colorScheme.accent || '#000000');
 
   // Page background
   page.drawRectangle({ x: 0, y: 0, width: pageWidth, height: pageHeight, color: backgroundColor });
@@ -56,14 +56,16 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   const cardY = margin;
   const cardWidth = pageWidth - margin * 2;
   const cardHeight = pageHeight - margin * 2;
-  const radius = 12;
+  const radius = design.rounded ?? 12;
   const padding = 20;
 
   // Shadow and card background
-  drawRoundedRect(page, cardX + 4, cardY - 4, cardWidth, cardHeight, radius, {
-    color: rgb(0, 0, 0),
-    opacity: 0.1
-  });
+  if (design.shadow !== false) {
+    drawRoundedRect(page, cardX + 4, cardY - 4, cardWidth, cardHeight, radius, {
+      color: rgb(0, 0, 0),
+      opacity: 0.1
+    });
+  }
   drawRoundedRect(page, cardX, cardY, cardWidth, cardHeight, radius, {
     color: backgroundColor
   });
@@ -71,11 +73,12 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
   // Header banner
   const headerHeight = 120;
   const bannerY = cardY + cardHeight - headerHeight;
-  if (order.event?.image) {
+  const heroUrl = design.heroUrl || order.event?.image;
+  if (heroUrl) {
     try {
-      const imgBytes = await fetch(order.event.image).then((r) => r.arrayBuffer());
+      const imgBytes = await fetch(heroUrl).then((r) => r.arrayBuffer());
       let img;
-      if (order.event.image.startsWith('data:image/png')) img = await pdfDoc.embedPng(imgBytes);
+      if (heroUrl.startsWith('data:image/png')) img = await pdfDoc.embedPng(imgBytes);
       else img = await pdfDoc.embedJpg(imgBytes);
       page.drawImage(img, {
         x: cardX,
@@ -83,15 +86,16 @@ async function drawTicketPage(pdfDoc, order, seat, settings, font) {
         width: cardWidth,
         height: headerHeight
       });
-      // dark overlay for readability
-      page.drawRectangle({
-        x: cardX,
-        y: bannerY,
-        width: cardWidth,
-        height: headerHeight,
-        color: rgb(0, 0, 0),
-        opacity: 0.3
-      });
+      if (design.darkHeader) {
+        page.drawRectangle({
+          x: cardX,
+          y: bannerY,
+          width: cardWidth,
+          height: headerHeight,
+          color: rgb(0, 0, 0),
+          opacity: 0.3
+        });
+      }
     } catch {
       page.drawRectangle({
         x: cardX,
