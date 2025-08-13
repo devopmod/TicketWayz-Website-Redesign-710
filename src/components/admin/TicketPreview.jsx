@@ -91,7 +91,7 @@ const TicketPreview = ({
             className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition text-sm"
           >
             <SafeIcon icon={FiDownload} className="w-4 h-4" />
-            Скачать PNG
+            Скачать PDF
           </button>
         </div>
       </div>

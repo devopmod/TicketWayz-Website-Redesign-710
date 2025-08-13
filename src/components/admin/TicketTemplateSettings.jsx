@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import supabase from '../../lib/supabase';
-import { downloadTicketsPNG } from '../../utils/ticketExport';
+import { downloadTicketsPDF } from '../../utils/ticketExportPdf';
 import { formatDateTime } from '../../utils/formatDateTime';
 import TicketLayoutSettings from './TicketLayoutSettings';
 import SMTPSettings from './SMTPSettings';
@@ -592,7 +592,7 @@ const TicketTemplateSettings = () => {
       ]
     };
 
-    downloadTicketsPNG(orderData, 'ticket-preview', templateSettings);
+    downloadTicketsPDF(orderData, 'ticket-preview', templateSettings);
   };
 
   const tabs = [

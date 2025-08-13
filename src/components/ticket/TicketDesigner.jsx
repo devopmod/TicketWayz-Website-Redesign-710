@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { toPng } from 'html-to-image';
 import TicketTemplate from './TicketTemplate';
+import { downloadTicketsPDF } from '../../utils/ticketExportPdf';
 
 const defaultData = {
   heroImage: '',
@@ -49,17 +49,44 @@ const TicketDesigner = () => {
     }));
   };
 
-  const exportPng = async () => {
-    if (!previewRef.current) return;
-    try {
-      const dataUrl = await toPng(previewRef.current);
-      const link = document.createElement('a');
-      link.download = 'ticket.png';
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error('Error exporting ticket', err);
-    }
+  const exportPdf = async () => {
+    const order = {
+      company: { name: data.brand },
+      event: {
+        title: data.artist,
+        date: data.date,
+        location: data.venue,
+        note: data.address,
+        image: data.heroImage,
+      },
+      seats: [
+        {
+          section: data.section,
+          row_number: data.row,
+          seat_number: data.seat,
+          gate: data.gate,
+          price: data.price,
+          id: data.ticketId,
+        },
+      ],
+      currency: data.currency,
+    };
+
+    const settings = {
+      design: {
+        accent: options.accent,
+        darkHeader: options.darkHeader,
+        rounded: options.rounded,
+        shadow: options.shadow,
+        showQRCode: options.showQr,
+      },
+      ticketContent: {
+        showPrice: options.showPrice,
+        showTerms: options.showTerms,
+      },
+    };
+
+    downloadTicketsPDF(order, 'ticket', settings);
   };
 
   return (
@@ -130,9 +157,9 @@ const TicketDesigner = () => {
         <button
           type="button"
           className="mt-4 px-3 py-2 bg-blue-500 text-white rounded"
-          onClick={exportPng}
+          onClick={exportPdf}
         >
-          Export PNG
+          Export PDF
         </button>
       </div>
       <div className="flex items-start justify-center">
