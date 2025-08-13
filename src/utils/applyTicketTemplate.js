@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import QRCode from 'qrcode';
-import TicketTemplate from '../components/ticket/TicketTemplateNode.js';
+import TicketTemplate from '../components/ticket/TicketTemplate.js';
 
 const DEFAULT_HERO = 'https://via.placeholder.com/560x160.png?text=Ticket';
 
