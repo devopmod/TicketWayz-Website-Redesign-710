@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
-const TicketTemplate = (props) => {
+const TicketTemplate = (props = {}) => {
+  const data = props.data || props;
   const {
     heroImage,
     brand,
@@ -26,7 +27,7 @@ const TicketTemplate = (props) => {
     showPrice = true,
     showTerms = true,
     darkHeader = false,
-  } = props;
+  } = data;
 
   const [qr, setQr] = useState(qrImage);
 
