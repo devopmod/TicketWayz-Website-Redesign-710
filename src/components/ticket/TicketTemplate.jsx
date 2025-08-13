@@ -1,14 +1,10 @@
 import React, { forwardRef, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
-// -----------------------------------------------------------------------------
-// Helper utilities
-// -----------------------------------------------------------------------------
-
 export const CARD_WIDTH = 560;
 export const HEADER_HEIGHT = 160;
 
-export const toStr = (val) => (val === undefined || val === null ? '' : String(val));
+const toStr = (val) => (val === undefined || val === null ? '' : String(val));
 
 export function sanitizeTicket(data = {}) {
   const fields = [
@@ -29,7 +25,6 @@ export function sanitizeTicket(data = {}) {
     'ticketId',
     'terms',
   ];
-
   const result = {};
   for (const key of fields) {
     const val = data[key];
@@ -100,10 +95,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Ticket template component
-// -----------------------------------------------------------------------------
-
 const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
   const ticket = sanitizeTicket(data);
   const {
@@ -131,13 +122,10 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     showPrice = true,
     showQr = true,
     showTerms = true,
-    radius,
+    rounded = true,
     shadow = true,
     qrValue,
   } = options;
-
-  const rounded =
-    radius === undefined ? true : radius !== false && radius !== 0 && radius !== 'none';
 
   const [qr, setQr] = useState(qrImage);
 
@@ -150,7 +138,6 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
   }, [qr, showQr, qrValue]);
 
   const isGA = !section && !row && !seat;
-
   const slotItems = [];
   if (isGA) {
     slotItems.push({ label: 'ADMISSION', value: 'GA' });
@@ -262,4 +249,3 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
 });
 
 export default TicketTemplate;
-
