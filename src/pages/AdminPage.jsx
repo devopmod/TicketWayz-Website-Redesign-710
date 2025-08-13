@@ -8,7 +8,7 @@ import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import TicketTemplateSettings from '../components/admin/TicketTemplateSettings';
 import supabase from '../lib/supabase';
-import { downloadTicketsPNG } from '../utils/ticketExport';
+import { downloadTicketsPDF } from '../utils/ticketExportPdf';
 
 const {
   FiUsers,
@@ -842,7 +842,7 @@ const AdminPage = () => {
     }
 
     const brand = templateSettings?.companyInfo?.brand || 'TicketWayz';
-    downloadTicketsPNG({
+    downloadTicketsPDF({
       orderNumber: orderDetails.id,
       company: { name: brand },
       currency: '€',

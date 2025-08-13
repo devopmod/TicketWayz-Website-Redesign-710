@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCheck, FiDownload, FiHome } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { downloadTicketsPNG } from '../utils/ticketExport';
+import { downloadTicketsPDF } from '../utils/ticketExportPdf';
 
 const ThankYouPage = () => {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ const ThankYouPage = () => {
         },
         currency: orderSummary.currency || '€',
       };
-      downloadTicketsPNG(orderData, `tickets-${orderNumber}`, templateSettings);
+      downloadTicketsPDF(orderData, `tickets-${orderNumber}`, templateSettings);
     }
   };
 
