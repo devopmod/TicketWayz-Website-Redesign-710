@@ -1,9 +1,53 @@
 import { toPng } from 'html-to-image';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { TicketTemplate } from '../components/ticket';
-import { buildTermsText, validateImageUrl } from './ticketExport';
+import { TicketTemplate } from '../../components/ticket';
 
+/**
+ * Combine event notes and custom text into a single terms string.
+ * @param {Object} [order={}] Order data containing event info and terms
+ * @param {Object} [settings={}] Template settings that may include custom text
+ * @returns {string} Joined terms text
+ */
+export function buildTermsText(order = {}, settings = {}) {
+  const eventNote = order?.event?.note;
+  const ticketContent = settings.ticketContent || {};
+  return [
+    eventNote,
+    ticketContent.customInstructions,
+    ticketContent.termsAndConditions,
+    order?.terms,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Validate hero or event image URL allowing only http(s) or data URIs.
+ * @param {string} url Image URL to validate
+ * @returns {string|null} Sanitised URL or null if invalid
+ */
+export function validateImageUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('data:image')) return url;
+  try {
+    const { protocol } = new URL(url);
+    if (protocol === 'http:' || protocol === 'https:') return url;
+  } catch {
+    // ignore
+  }
+  console.warn('Hero image URL must be an absolute, publicly accessible URL:', url);
+  return null;
+}
+
+/**
+ * Generate a PDF of tickets and trigger download in the browser.
+ *
+ * @param {Object} order Order data including event, company and seats
+ * @param {string} [baseFileName='ticket'] Base name for the resulting file
+ * @param {Object} [templateSettings] Ticket template settings
+ * @returns {Promise<void>} Resolves when the download has been triggered
+ */
 export async function downloadTicketsPDF(order, baseFileName = 'ticket', templateSettings) {
   if (!order) return;
 

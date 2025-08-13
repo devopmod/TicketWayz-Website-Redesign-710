@@ -49,3 +49,19 @@ npm test
 ```
 
 This executes the Node.js test runner.
+
+## Ticket PDF Export
+
+Use `downloadTicketsPDF` to generate and download tickets as a single PDF. The function is provided by `src/utils/ticketExport`.
+
+```js
+import { downloadTicketsPDF } from './src/utils/ticketExport';
+await downloadTicketsPDF(order, 'tickets', settings);
+```
+
+Arguments:
+- `order` – object with event details, company information and `seats` array.
+- `baseFileName` – optional filename without extension, defaults to `ticket`.
+- `templateSettings` – optional ticket template configuration.
+
+The function returns a `Promise` that resolves once the browser download of the generated PDF (one page per seat) has been triggered.
