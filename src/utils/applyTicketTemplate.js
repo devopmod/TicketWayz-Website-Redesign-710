@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -19,6 +17,7 @@ async function loadTemplate() {
     const res = await fetch(url);
     return res.text();
   }
+  const { readFile } = await import('node:fs/promises');
   return readFile(url, 'utf-8');
 }
 
