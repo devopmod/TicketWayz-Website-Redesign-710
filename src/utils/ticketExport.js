@@ -1,9 +1,21 @@
-import { PDFDocument } from 'pdf-lib';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
+import JSZip from 'jszip';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import TicketTemplate from '../components/ticket/TicketTemplate.jsx';
-import { buildTermsText } from './ticketUtils.js';
+
+export function buildTermsText(order = {}, settings = {}) {
+  const eventNote = order?.event?.note;
+  const ticketContent = settings.ticketContent || {};
+  return [
+    eventNote,
+    ticketContent.customInstructions,
+    ticketContent.termsAndConditions,
+    order?.terms,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
 
 function validateImageUrl(url) {
   if (!url) return null;
@@ -18,7 +30,7 @@ function validateImageUrl(url) {
   return null;
 }
 
-export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templateSettings) {
+export async function downloadTicketsPNG(order, baseFileName = 'ticket', templateSettings) {
   if (!order) return;
 
   let settings = templateSettings;
@@ -37,8 +49,8 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
   settings.design.heroUrl = validateImageUrl(settings.design.heroUrl);
   order.event.image = validateImageUrl(order.event.image);
 
-  const pdfDoc = await PDFDocument.create();
   const seats = Array.isArray(order.seats) && order.seats.length > 0 ? order.seats : [null];
+  const images = [];
 
   for (const seat of seats) {
     const wrapper = document.createElement('div');
@@ -79,7 +91,7 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
       showPrice: settings.ticketContent?.showPrice,
       showQr: settings.design?.showQRCode,
       showTerms: settings.ticketContent?.showTerms,
-      radius: settings.design?.rounded,
+      rounded: settings.design?.rounded,
       shadow: settings.design?.shadow,
       qrValue: order.orderNumber || seatInfo.id,
     };
@@ -101,29 +113,46 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
 
     await new Promise((r) => setTimeout(r, 100));
 
-    const canvas = await html2canvas(wrapper.firstElementChild, {
-      backgroundColor: null,
-      useCORS: true,
-    });
+    try {
+      const dataUrl = await toPng(wrapper.firstElementChild, {
+        cacheBust: true,
+        backgroundColor: null,
+      });
+      images.push(dataUrl);
+    } catch (err) {
+      console.error('Error generating image', err);
+    }
+
     document.body.removeChild(wrapper);
-    if (!canvas.width || !canvas.height) continue;
-    const imgData = canvas.toDataURL('image/png');
-    const imgBytes = await fetch(imgData).then((res) => res.arrayBuffer());
-    const img = await pdfDoc.embedPng(imgBytes);
-    const page = pdfDoc.addPage([img.width, img.height]);
-    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
   }
 
-  const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
+  if (images.length === 0) return;
+
+  if (images.length === 1) {
+    const link = document.createElement('a');
+    link.href = images[0];
+    link.download = `${baseFileName}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return;
+  }
+
+  const zip = new JSZip();
+  for (let i = 0; i < images.length; i++) {
+    const imgData = images[i];
+    const blob = await fetch(imgData).then((res) => res.blob());
+    zip.file(`${baseFileName}-${i + 1}.png`, blob);
+  }
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = fileName;
+  link.download = `${baseFileName}.zip`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 
-export default downloadTicketsPDF;
+export default downloadTicketsPNG;

@@ -48,4 +48,4 @@ Run the test suite:
 npm test
 ```
 
-This executes the Node.js test runner and verifies basic PDF generation utilities.
+This executes the Node.js test runner.
