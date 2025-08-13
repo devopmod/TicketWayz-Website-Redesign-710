@@ -5,6 +5,7 @@ import SafeIcon from '../../common/SafeIcon';
 import supabase from '../../lib/supabase';
 import { downloadTicketsPDF } from '../../utils/pdfGenerator';
 import { formatDateTime } from '../../utils/formatDateTime';
+import TicketLayoutSettings from './TicketLayoutSettings';
 
 const {
   FiSave,
@@ -13,6 +14,7 @@ const {
   FiServer,
   FiEye,
   FiEyeOff,
+  FiLayout,
 } = FiIcons;
 
 const TicketTemplateSettings = () => {
@@ -597,6 +599,7 @@ const TicketTemplateSettings = () => {
   };
 
   const tabs = [
+    { id: 'layout', label: 'Макет билета', icon: FiLayout },
     { id: 'smtp', label: 'SMTP настройки', icon: FiServer },
     { id: 'email', label: 'Email шаблоны', icon: FiMail }
   ];
@@ -632,6 +635,16 @@ const TicketTemplateSettings = () => {
         <div className="bg-green-500/10 border border-green-500 text-green-500 p-4 rounded-lg">
           Настройки успешно сохранены!
         </div>
+      )}
+
+      {/* Ticket Layout Tab */}
+      {activeTab === 'layout' && (
+        <TicketLayoutSettings
+          settings={templateSettings}
+          onDownloadPreview={handleDownloadPreview}
+          onRefreshPreview={handleRefreshPreview}
+          ticketData={previewTicketData}
+        />
       )}
 
       {/* SMTP Settings Tab */}
