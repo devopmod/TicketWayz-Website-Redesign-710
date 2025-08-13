@@ -8,7 +8,7 @@ global.document = {
     tagName: tag,
     style: {},
     innerHTML: '',
-    firstElementChild: {},
+    firstElementChild: { style: {} },
     click: () => {},
   }),
   body: {
@@ -33,7 +33,7 @@ test('downloadTicketsPDF creates a page for each seat', async (t) => {
   let canvasCalls = 0;
   const html2canvasMock = async () => {
     canvasCalls++;
-    return { toDataURL: () => 'data:image/png;base64,AAAA' };
+    return { width: 100, height: 50, toDataURL: () => 'data:image/png;base64,AAAA' };
   };
 
   global.__mockPDFLib = { PDFDocument: { create: async () => pdfDocMock } };

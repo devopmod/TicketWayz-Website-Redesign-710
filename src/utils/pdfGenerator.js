@@ -43,8 +43,25 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
     wrapper.style.left = '-10000px';
     wrapper.innerHTML = html;
     document.body.appendChild(wrapper);
-    const canvas = await html2canvas(wrapper.firstElementChild);
+
+    const child = wrapper.firstElementChild;
+    if (child && child.style) {
+      child.style.width = '560px';
+      const scale = settings.scale || settings.design.scale;
+      if (scale && scale !== 1) {
+        child.style.transform = `scale(${scale})`;
+        child.style.transformOrigin = 'top left';
+      }
+    }
+
+    await new Promise((r) => setTimeout(r, 100));
+
+    const canvas = await html2canvas(wrapper.firstElementChild, {
+      backgroundColor: null,
+      useCORS: true,
+    });
     document.body.removeChild(wrapper);
+    if (!canvas.width || !canvas.height) continue;
     const imgData = canvas.toDataURL('image/png');
     const imgBytes = await fetch(imgData).then((res) => res.arrayBuffer());
     const img = await pdfDoc.embedPng(imgBytes);
