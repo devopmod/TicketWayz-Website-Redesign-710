@@ -736,24 +736,47 @@ const AdminPage = () => {
       let ticketsMap = {};
 
       if (ticketIds.length > 0) {
-        const { data: ticketsData, error: ticketsError } = await supabase
-          .from('tickets')
-          .select(`
-            *,
-            event:events(id, title, event_date, note),
-            zone:zones(id, name),
-            seat:single_seats(id, row_number, seat_number, section)
-          `)
-          .in('id', ticketIds);
+        const batchSize = 100;
+        const ticketsData = [];
 
-        if (ticketsError) {
-          console.warn('Error fetching tickets:', ticketsError);
-        } else {
-          ticketsMap = ticketsData.reduce((acc, ticket) => {
-            acc[ticket.id] = ticket;
-            return acc;
-          }, {});
+        for (let i = 0; i < ticketIds.length; i += batchSize) {
+          const batch = ticketIds.slice(i, i + batchSize);
+          let { data, error } = await supabase
+            .from('tickets')
+            .select(`
+              *,
+              event:events(id, title, event_date),
+              zone:zones(id, name),
+              seat:single_seats(id, row_number, seat_number, section)
+            `)
+            .in('id', batch);
+
+          if (error) {
+            console.warn('Error fetching tickets batch:', error, 'Retrying...');
+            ({ data, error } = await supabase
+              .from('tickets')
+              .select(`
+                *,
+                event:events(id, title, event_date),
+                zone:zones(id, name),
+                seat:single_seats(id, row_number, seat_number, section)
+              `)
+              .in('id', batch));
+            if (error) {
+              console.error('Retry failed for tickets batch:', error);
+              continue;
+            }
+          }
+
+          if (data) {
+            ticketsData.push(...data);
+          }
         }
+
+        ticketsMap = ticketsData.reduce((acc, ticket) => {
+          acc[ticket.id] = ticket;
+          return acc;
+        }, {});
       }
 
       // Собираем все данные вместе
