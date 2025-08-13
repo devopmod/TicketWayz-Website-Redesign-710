@@ -32,35 +32,27 @@ export function sanitizeTicket(data = {}) {
   return result;
 }
 
-const SafeText = ({ text, className }) => (
-  <span className={className}>{toStr(text)}</span>
+const SafeText = ({ text, className, ...props }) => (
+  <span className={className} {...props}>
+    {toStr(text)}
+  </span>
 );
-
-const Slot = ({ label, value, accent }) => {
-  if (!value) return null;
-  return (
-    <div className="flex flex-col text-center">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div
-        className="text-lg font-semibold"
-        style={accent ? { color: accent } : undefined}
-      >
-        <SafeText text={value} />
-      </div>
-    </div>
-  );
-};
 
 const MiniQR = ({ image, ticketId }) => {
   if (!image) return null;
   return (
     <div className="flex flex-col items-center">
       <div className="w-32 h-32 bg-white flex items-center justify-center">
-        <img src={image} alt="QR code" className="w-full h-full object-cover" />
+        <img
+          data-slot="qrImage"
+          src={image}
+          alt="QR code"
+          className="w-full h-full object-cover"
+        />
       </div>
       {ticketId && (
         <div className="mt-2 text-xs text-gray-500">
-          <SafeText text={ticketId} />
+          <SafeText data-slot="ticketId" text={ticketId} />
         </div>
       )}
     </div>
@@ -121,22 +113,14 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
   } = options;
 
   const isGA = !section && !row && !seat;
-  const slotItems = [];
-  if (isGA) {
-    slotItems.push({ label: 'ADMISSION', value: 'GA' });
-    if (gate) slotItems.push({ label: 'GATE', value: gate });
-  } else {
-    if (section) slotItems.push({ label: 'SECTION', value: section });
-    if (row) slotItems.push({ label: 'ROW', value: row });
-    if (seat) slotItems.push({ label: 'SEAT', value: seat });
-    if (gate) slotItems.push({ label: 'GATE', value: gate });
-  }
-  if (showPrice && price) {
-    slotItems.push({
-      label: 'PRICE',
-      value: currency ? `${price} ${currency}` : price,
-    });
-  }
+  const sectionValue = section || (isGA ? 'GA' : undefined);
+  const fieldsCount = [
+    sectionValue,
+    row,
+    seat,
+    gate,
+    showPrice && price,
+  ].filter(Boolean).length;
 
   const gridClass = {
     1: 'grid-cols-1',
@@ -144,7 +128,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     3: 'grid-cols-3',
     4: 'grid-cols-4',
     5: 'grid-cols-5',
-  }[slotItems.length] || 'grid-cols-1';
+  }[fieldsCount] || 'grid-cols-1';
 
   return (
     <ErrorBoundary>
@@ -162,6 +146,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
         <div className="relative w-full" style={{ height: HEADER_HEIGHT }}>
           {heroImage && (
             <img
+              data-slot="heroImage"
               src={heroImage}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
@@ -177,6 +162,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
           />
           {brand && (
             <span
+              data-slot="brand"
               className="absolute top-4 left-4 px-2 py-1 text-white text-xs font-semibold rounded"
               style={accent ? { backgroundColor: accent } : { backgroundColor: '#000000b3' }}
             >
@@ -187,30 +173,96 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
         <div className="p-6 space-y-2">
           {artist && (
             <h1 className="text-2xl font-bold">
-              <SafeText text={artist} />
+              <SafeText data-slot="artist" text={artist} />
             </h1>
           )}
           {(date || time) && (
             <div className="text-sm text-gray-600">
-              <SafeText text={[date, time].filter(Boolean).join(' ')} />
+              {date && <SafeText data-slot="date" text={date} />}
+              {time && (
+                <>
+                  {date && ' '}
+                  <SafeText data-slot="time" text={time} />
+                </>
+              )}
             </div>
           )}
           {venue && (
             <div className="text-sm">
-              <SafeText text={venue} />
+              <SafeText data-slot="venue" text={venue} />
             </div>
           )}
           {address && (
             <div className="text-sm text-gray-500">
-              <SafeText text={address} />
+              <SafeText data-slot="address" text={address} />
             </div>
           )}
 
-          {slotItems.length > 0 && (
+          {fieldsCount > 0 && (
             <div className={`mt-6 grid ${gridClass} gap-4 text-center`}>
-              {slotItems.map((s) => (
-                <Slot key={`${s.label}-${s.value}`} accent={accent} {...s} />
-              ))}
+              {sectionValue && (
+                <div className="flex flex-col text-center">
+                  <div className="text-xs text-gray-500">
+                    {isGA ? 'ADMISSION' : 'SECTION'}
+                  </div>
+                  <div
+                    className="text-lg font-semibold"
+                    style={accent ? { color: accent } : undefined}
+                  >
+                    <SafeText data-slot="section" text={sectionValue} />
+                  </div>
+                </div>
+              )}
+              {row && (
+                <div className="flex flex-col text-center">
+                  <div className="text-xs text-gray-500">ROW</div>
+                  <div
+                    className="text-lg font-semibold"
+                    style={accent ? { color: accent } : undefined}
+                  >
+                    <SafeText data-slot="row" text={row} />
+                  </div>
+                </div>
+              )}
+              {seat && (
+                <div className="flex flex-col text-center">
+                  <div className="text-xs text-gray-500">SEAT</div>
+                  <div
+                    className="text-lg font-semibold"
+                    style={accent ? { color: accent } : undefined}
+                  >
+                    <SafeText data-slot="seat" text={seat} />
+                  </div>
+                </div>
+              )}
+              {gate && (
+                <div className="flex flex-col text-center">
+                  <div className="text-xs text-gray-500">GATE</div>
+                  <div
+                    className="text-lg font-semibold"
+                    style={accent ? { color: accent } : undefined}
+                  >
+                    <SafeText data-slot="gate" text={gate} />
+                  </div>
+                </div>
+              )}
+              {showPrice && price && (
+                <div className="flex flex-col text-center">
+                  <div className="text-xs text-gray-500">PRICE</div>
+                  <div
+                    className="text-lg font-semibold"
+                    style={accent ? { color: accent } : undefined}
+                  >
+                    <SafeText data-slot="price" text={price} />
+                    {currency && (
+                      <span>
+                        {' '}
+                        <SafeText data-slot="currency" text={currency} />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -223,7 +275,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
 
         {showTerms && terms && (
           <div className="border-t border-dashed border-gray-300 px-6 py-4 text-[11px] text-gray-500">
-            <SafeText text={terms} />
+            <SafeText data-slot="terms" text={terms} />
           </div>
         )}
       </div>
