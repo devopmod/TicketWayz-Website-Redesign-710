@@ -32,6 +32,19 @@ function sanitizeTicket(order = {}, seat = {}) {
   };
 }
 
+function validateImageUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('data:image')) return url;
+  try {
+    const { protocol } = new URL(url);
+    if (protocol === 'http:' || protocol === 'https:') return url;
+  } catch {
+    // ignore invalid URL
+  }
+  console.warn('Hero image URL must be an absolute, publicly accessible URL:', url);
+  return null;
+}
+
 function hexToRgb(hex) {
   const value = hex?.replace('#', '') || '000000';
   const int = parseInt(value, 16);
@@ -95,12 +108,15 @@ async function drawTicketPage(pdfDoc, order, seat, settings = {}, font) {
   const heroUrl = design.heroUrl || data.event.image;
   if (heroUrl) {
     try {
-      const imgBytes = await fetch(heroUrl).then((r) => r.arrayBuffer());
+      const response = await fetch(heroUrl, { mode: 'cors', headers: { Accept: 'image/*' } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const imgBytes = await response.arrayBuffer();
       let img;
       if (heroUrl.startsWith('data:image/png')) img = await pdfDoc.embedPng(imgBytes);
       else img = await pdfDoc.embedJpg(imgBytes);
       page.drawImage(img, { x: cardX, y: bannerY, width: cardWidth, height: heroHeight });
-    } catch {
+    } catch (err) {
+      console.warn(`Failed to fetch hero image from ${heroUrl}:`, err);
       page.drawRectangle({ x: cardX, y: bannerY, width: cardWidth, height: heroHeight, color: accentColor });
     }
   } else {
@@ -307,6 +323,11 @@ export async function downloadTicketsPDF(order, fileName = 'tickets.pdf', templa
     }
   }
   settings = settings || {};
+
+  settings.design = settings.design || {};
+  order.event = order.event || {};
+  settings.design.heroUrl = validateImageUrl(settings.design.heroUrl);
+  order.event.image = validateImageUrl(order.event.image);
 
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
