@@ -5,13 +5,22 @@ import { rename } from 'node:fs/promises';
 
 test('applyTicketTemplate inserts event and seat info', async () => {
   const order = {
-    event: { title: 'Show', date: '2025-08-13T20:25:00Z', location: 'Venue' },
-    company: { name: 'MyBrand' },
+    event: {
+      title: 'Show',
+      event_date: '2025-08-13T20:25:00Z',
+      location: 'Venue',
+    },
     orderNumber: '123',
-    price: '$50'
+    price: '$50',
   };
-  const seat = { section: 'SEC', row_number: 'ROW', seat_number: '10', price: '$50' };
-  const html = await applyTicketTemplate({ order, seat, settings: {} });
+  const seat = {
+    section: 'SEC',
+    row_number: 'ROW',
+    seat_number: '10',
+    price: '$50',
+  };
+  const settings = { companyInfo: { brand: 'MyBrand' } };
+  const html = await applyTicketTemplate({ order, seat, settings });
   assert.ok(html.includes('Show'));
   assert.ok(html.includes('MyBrand'));
   assert.ok(html.includes('SECTION'));
