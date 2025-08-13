@@ -25,38 +25,6 @@ const TicketTemplateSettings = () => {
   const [lastSoldTicket, setLastSoldTicket] = useState(null);
   const [refreshingPreview, setRefreshingPreview] = useState(false);
 
-  // Формируем данные билета для предпросмотра на основе последнего проданного билета
-  const previewTicketData = useMemo(() => {
-    if (!lastSoldTicket) return null;
-    const eventDateRaw = lastSoldTicket.event?.event_date;
-    let eventDate = '';
-    let eventTime = '';
-    if (eventDateRaw) {
-      const { date, time } = formatDateTime(eventDateRaw);
-      eventDate = date;
-      eventTime = time;
-    }
-    return {
-      eventTitle: lastSoldTicket.event?.title || '',
-      eventDate,
-      eventTime,
-      eventLocation: lastSoldTicket.event?.location || '',
-      orderNumber: lastSoldTicket.order_item?.order?.id
-        ? `TW-${lastSoldTicket.order_item.order.id.substring(0, 6)}`
-        : '',
-      seatInfo: lastSoldTicket.seat
-        ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
-        : lastSoldTicket.zone
-          ? `Зона "${lastSoldTicket.zone.name}"`
-          : 'Общий вход',
-      price: lastSoldTicket.order_item?.unit_price
-        ? `€${parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)}`
-        : '',
-      ticketNumber: lastSoldTicket.id
-        ? `T-${lastSoldTicket.id.substring(0, 8)}`
-        : ''
-    };
-  }, [lastSoldTicket]);
 
   // Настройки шаблона билета
   const [templateSettings, setTemplateSettings] = useState({
@@ -107,6 +75,45 @@ const TicketTemplateSettings = () => {
       accent: '#f59e0b'
     }
   });
+
+  // Формируем данные билета для предпросмотра на основе последнего проданного билета
+  const previewTicketData = useMemo(() => {
+    if (!lastSoldTicket) return null;
+    const eventDateRaw = lastSoldTicket.event?.event_date;
+    let eventDate = '';
+    let eventTime = '';
+    if (eventDateRaw) {
+      const { date, time } = formatDateTime(eventDateRaw);
+      eventDate = date;
+      eventTime = time;
+    }
+    return {
+      brand: templateSettings.companyInfo?.brand || 'TicketWayz',
+      heroImage: templateSettings.design?.heroUrl || lastSoldTicket.event?.image || '',
+      artist: lastSoldTicket.event?.title || '',
+      date: eventDate,
+      time: eventTime,
+      venue: lastSoldTicket.event?.location || '',
+      address: lastSoldTicket.event?.note || '',
+      section: lastSoldTicket.seat?.section,
+      row: lastSoldTicket.seat?.row_number,
+      seat: lastSoldTicket.seat?.seat_number,
+      price: lastSoldTicket.order_item?.unit_price
+        ? `€${parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)}`
+        : '',
+      ticketId: lastSoldTicket.id
+        ? `T-${lastSoldTicket.id.substring(0, 8)}`
+        : '',
+      ticketType: lastSoldTicket.seat
+        ? 'seat'
+        : lastSoldTicket.zone
+          ? 'zone'
+          : 'general',
+      qrValue: lastSoldTicket.id
+        ? `T-${lastSoldTicket.id.substring(0, 8)}`
+        : '',
+    };
+  }, [lastSoldTicket, templateSettings]);
 
   // Настройки SMTP
   const [smtpSettings, setSmtpSettings] = useState({
@@ -569,6 +576,13 @@ const TicketTemplateSettings = () => {
       },
       seats: [
         {
+          id: lastSoldTicket.id
+            ? `T-${lastSoldTicket.id.substring(0, 8)}`
+            : undefined,
+          section: lastSoldTicket.seat?.section,
+          row_number: lastSoldTicket.seat?.row_number,
+          seat_number: lastSoldTicket.seat?.seat_number,
+          price: lastSoldTicket.order_item?.unit_price,
           label: lastSoldTicket.seat
             ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
             : lastSoldTicket.zone
