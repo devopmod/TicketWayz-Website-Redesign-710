@@ -13,12 +13,20 @@ function getValue(obj, path) {
 
 async function loadTemplate() {
   const url = new URL('../templates/ticket.html', import.meta.url);
-  if (typeof window !== 'undefined' && window.fetch) {
-    const res = await fetch(url);
-    return res.text();
+  try {
+    if (typeof window !== 'undefined' && window.fetch) {
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch template: ${res.status} ${res.statusText}`);
+      }
+      return res.text();
+    }
+    const { readFile } = await import('node:fs/promises');
+    return await readFile(url, 'utf-8');
+  } catch (err) {
+    console.error('Error loading ticket template:', err);
+    return '<div>Ticket template unavailable</div>';
   }
-  const { readFile } = await import('node:fs/promises');
-  return readFile(url, 'utf-8');
 }
 
 export async function applyTicketTemplate(data = {}) {
