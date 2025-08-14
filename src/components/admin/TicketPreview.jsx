@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../common/SafeIcon';
 import { TicketTemplate } from '../ticket';
-import { buildTermsText } from '../../utils/ticketExport';
+import { buildTicketTemplateProps } from '../../utils/ticketExport';
 
 const { FiDownload, FiRefreshCw } = FiIcons;
 
@@ -40,33 +40,57 @@ const TicketPreview = ({
 
   const ticketRef = useRef(null);
 
-  const data = {
-    heroImage: t.heroImage || settings.design?.heroUrl,
-    brand: t.brand,
-    artist: t.artist,
+  const previewOrder = {
     date: t.date,
     time: t.time,
+    brand: t.brand,
+    artist: t.artist,
     venue: t.venue,
     address: t.address,
-    section: t.section,
-    row: t.row,
-    seat: t.seat,
+    event: {
+      title: t.artist,
+      location: t.venue,
+      address: t.address,
+      note: t.terms,
+      image: t.heroImage,
+    },
+    company: { name: t.brand },
+    seat: {
+      section: t.section,
+      row_number: t.row,
+      seat_number: t.seat,
+      price: t.price,
+      id: t.qrValue,
+      ticketType: t.ticketType,
+    },
     price: t.price,
     currency: t.currency,
-    qrValue: t.qrValue,
-    ticketType: t.ticketType,
-    terms: buildTermsText({ event: { note: t.terms } }, settings),
+    orderNumber: t.qrValue,
   };
 
-  const options = {
-    accent,
-    darkHeader,
-    showPrice,
-    showQr,
-    showTerms,
-    rounded,
-    shadow,
+  const previewSettings = {
+    ...settings,
+    design: {
+      ...(settings.design || {}),
+      heroUrl: settings.design?.heroUrl,
+      accent,
+      darkHeader,
+      showQRCode: showQr,
+      rounded,
+      shadow,
+    },
+    ticketContent: {
+      ...(settings.ticketContent || {}),
+      showPrice,
+      showTerms,
+    },
   };
+
+  const { data, options } = buildTicketTemplateProps(
+    previewOrder,
+    previewOrder.seat,
+    previewSettings,
+  );
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 font-sans">
