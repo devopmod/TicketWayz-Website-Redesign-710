@@ -56,6 +56,8 @@ const EventListItem=({event})=> {
     return price ? Number(price).toFixed(2) : '0.00';
   };
 
+  const accentColor=event?.accent_color || event?.accent || '#f59e0b';
+
   return (
     <div className="flex border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4 cursor-pointer hover:bg-zinc-100/30 dark:hover:bg-zinc-800/30 transition p-2 rounded-lg" onClick={handleCardClick}>
       <div className="w-20 h-20 flex-shrink-0">
@@ -78,9 +80,22 @@ const EventListItem=({event})=> {
           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400" />
           <span>{event.artist}</span>
         </div>
-        
+
+        {event.venue && (
+          <div className="mb-2">
+            <div className="text-[13px] font-medium" style={{color: accentColor}}>
+              {event.venue.name}
+            </div>
+            {(event.venue.address || event.address) && (
+              <div className="text-[12px] text-gray-500">
+                {event.venue.address || event.address}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-          {formatDate(event.date)} • {event.location}
+          {formatDate(event.date)}{event.location && ` • ${event.location}`}
         </div>
         
         <div className="flex flex-wrap gap-1">
