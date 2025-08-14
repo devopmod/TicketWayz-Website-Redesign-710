@@ -241,6 +241,11 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
                 <MiniQR value={qrValue} />
               </div>
             )}
+            {qrValue && (
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                <SafeText data-slot="ticketId" text={qrValue} />
+              </div>
+            )}
           </div>
         </div>
 
