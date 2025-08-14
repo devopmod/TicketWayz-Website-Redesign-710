@@ -145,12 +145,14 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
             ].join(' ')}
           />
           {brand && (
-            <span
-              data-slot="brand"
-              className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white backdrop-blur"
-            >
-              {brand}
-            </span>
+            <div className="absolute inset-x-0 top-6 z-20 flex justify-center">
+              <span
+                data-slot="brand"
+                className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white backdrop-blur"
+              >
+                {brand}
+              </span>
+            </div>
           )}
         </div>
         <div className="relative -mt-6 rounded-t-[24px] bg-white p-6 pt-8">
