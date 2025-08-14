@@ -42,6 +42,61 @@ export function validateImageUrl(url) {
 }
 
 /**
+ * Build TicketTemplate props from order, seat and settings objects.
+ * @param {Object} [order={}] Order data
+ * @param {Object} [seat={}] Seat-specific data
+ * @param {Object} [settings={}] Template settings
+ * @returns {{data: Object, options: Object}} Props for TicketTemplate
+ */
+export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
+  settings = settings || {};
+  const design = settings.design || {};
+  const ticketContent = settings.ticketContent || {};
+
+  const event = order.event || {};
+  const company = order.company || {};
+  const seatInfo = seat || order.seat || {};
+
+  const dateObj = event.date ? new Date(event.date) : null;
+  const date = dateObj && !isNaN(dateObj) ? dateObj.toLocaleDateString() : order.date;
+  const time =
+    dateObj && !isNaN(dateObj)
+      ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : order.time;
+
+  const data = {
+    heroImage: design.heroUrl || event.image || order.heroImage,
+    brand: company.name || order.brand,
+    artist: event.title || order.artist,
+    date,
+    time,
+    venue: event.location || order.venue,
+    address: event.address || order.address,
+    section: seatInfo.section || seatInfo.zoneName || seatInfo.zone?.name || order.section,
+    row: seatInfo.row_number || order.row,
+    seat: seatInfo.seat_number || order.seat,
+    price: seatInfo.price ?? order.price,
+    currency: order.currency,
+    qrValue: seatInfo.id || order.orderNumber || order.qrValue,
+    ticketType: seatInfo.ticketType || seatInfo.type || order.ticketType,
+    terms: buildTermsText(order, settings),
+  };
+
+  const options = {
+    accent: design.accent,
+    darkHeader: design.darkHeader,
+    showPrice: ticketContent.showPrice,
+    showQr: design.showQRCode,
+    showTerms: ticketContent.showTerms ?? true,
+    rounded: design.rounded,
+    shadow: design.shadow,
+    scale: settings.scale || design.scale,
+  };
+
+  return { data, options };
+}
+
+/**
  * Generate a PDF of tickets and trigger download in the browser.
  *
  * @param {Object} order Order data including event, company and seats
@@ -77,41 +132,8 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
     wrapper.style.left = '-10000px';
     document.body.appendChild(wrapper);
 
-    const event = order.event || {};
-    const company = order.company || {};
     const seatInfo = seat || order.seat || {};
-    const dateObj = event.date ? new Date(event.date) : null;
-    const date = dateObj ? dateObj.toLocaleDateString() : undefined;
-    const time = dateObj
-      ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : undefined;
-
-    const data = {
-      heroImage: settings.design?.heroUrl || event.image,
-      brand: company.name,
-      artist: event.title,
-      date,
-      time,
-      venue: event.location,
-      address: event.address,
-      section: seatInfo.section || seatInfo.zoneName || seatInfo.zone?.name,
-      row: seatInfo.row_number,
-      seat: seatInfo.seat_number,
-      price: seatInfo.price || order.price,
-      currency: order.currency,
-      qrValue: seatInfo.id || order.orderNumber,
-      terms: buildTermsText(order, settings),
-    };
-
-    const options = {
-      accent: settings.design?.accent,
-      darkHeader: settings.design?.darkHeader,
-      showPrice: settings.ticketContent?.showPrice,
-      showQr: settings.design?.showQRCode,
-      showTerms: settings.ticketContent?.showTerms ?? true,
-      rounded: settings.design?.rounded,
-      shadow: settings.design?.shadow,
-    };
+    const { data, options } = buildTicketTemplateProps(order, seatInfo, settings);
 
     const markup = renderToStaticMarkup(
       React.createElement(TicketTemplate, { data, options }),
@@ -121,10 +143,18 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
     const child = wrapper.firstElementChild;
     if (child && child.style) {
       child.style.width = '560px';
-      const scale = settings.scale || settings.design.scale;
+      const scale = options.scale;
       if (scale && scale !== 1) {
         child.style.transform = `scale(${scale})`;
         child.style.transformOrigin = 'top left';
+      }
+      if (options.rounded !== undefined) {
+        child.style.borderRadius = options.rounded ? '24px' : '0';
+      }
+      if (options.shadow !== undefined) {
+        child.style.boxShadow = options.shadow
+          ? '0 25px 50px -12px rgba(0,0,0,0.25)'
+          : 'none';
       }
     }
 
@@ -134,6 +164,12 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
       const dataUrl = await toPng(wrapper.firstElementChild, {
         cacheBust: true,
         backgroundColor: null,
+        style: {
+          transform: child?.style.transform,
+          transformOrigin: child?.style.transformOrigin,
+          borderRadius: child?.style.borderRadius,
+          boxShadow: child?.style.boxShadow,
+        },
       });
       images.push(dataUrl);
     } catch (err) {
