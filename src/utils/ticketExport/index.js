@@ -35,7 +35,18 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
     address: event.address || order.address,
     section: seatInfo.section || seatInfo.zoneName || seatInfo.zone?.name || order.section,
     row: seatInfo.row_number || order.row,
-    seat: seatInfo.seat_number || order.seat,
+    seat: (() => {
+      const seatValue = [
+        seatInfo.seat_number,
+        seatInfo.label,
+        seatInfo.seat?.seat_number,
+        seatInfo.seat?.label,
+        order.seat,
+      ].find(v => v !== undefined && v !== null);
+      return typeof seatValue === 'number' || typeof seatValue === 'string'
+        ? String(seatValue)
+        : undefined;
+    })(),
     price: seatInfo.price ?? order.price,
     currency: order.currency,
     qrValue: seatInfo.id || order.orderNumber || order.qrValue,

@@ -372,12 +372,16 @@ const CheckoutPage=()=> {
           image: eventDetails.image,
         };
         sessionStorage.setItem('orderSummary', JSON.stringify({
-          seats: selectedSeats.map(seat=> ({
-            ...seat,
-            section: seat.section,
-            row_number: seat.row_number,
-            seat_number: seat.seat_number
-          })),
+          seats: selectedSeats.map(seat => {
+            const id = seat.seat_number ?? seat.label ?? seat.zone?.name;
+            return {
+              ...seat,
+              section: seat.section,
+              row_number: seat.row_number,
+              seat_number: id != null ? String(id) : undefined,
+              label: seat.label || seat.zone?.name || (id != null ? String(id) : undefined),
+            };
+          }),
           event: eventForSummary,
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
@@ -425,12 +429,16 @@ const CheckoutPage=()=> {
           image: eventDetails.image,
         };
         sessionStorage.setItem('orderSummary', JSON.stringify({
-          seats: selectedSeats.map(seat=> ({
-            ...seat,
-            section: seat.section,
-            row_number: seat.row_number,
-            seat_number: seat.seat_number
-          })),
+          seats: selectedSeats.map(seat => {
+            const id = seat.seat_number ?? seat.label ?? seat.zone?.name;
+            return {
+              ...seat,
+              section: seat.section,
+              row_number: seat.row_number,
+              seat_number: id != null ? String(id) : undefined,
+              label: seat.label || seat.zone?.name || (id != null ? String(id) : undefined),
+            };
+          }),
           event: eventForSummary,
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,

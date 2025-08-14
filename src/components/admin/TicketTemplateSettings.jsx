@@ -587,7 +587,9 @@ const TicketTemplateSettings = () => {
             : undefined,
           section: lastSoldTicket.seat?.section,
           row_number: lastSoldTicket.seat?.row_number,
-          seat_number: lastSoldTicket.seat?.seat_number,
+          seat_number: lastSoldTicket.seat?.seat_number != null
+            ? String(lastSoldTicket.seat.seat_number)
+            : undefined,
           price: lastSoldTicket.order_item?.unit_price,
           label: lastSoldTicket.seat
             ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
