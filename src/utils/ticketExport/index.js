@@ -1,6 +1,6 @@
 import React from 'react';
 import { pdf, Document } from '@react-pdf/renderer';
-import { TicketTemplatePDF } from '../../components/ticket';
+import { TicketTemplatePDF } from '../../components/ticket/index.js';
 
 /**
  * Build TicketTemplate props from order, seat and settings objects.
@@ -39,6 +39,8 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
       const seatValue = [
         seatInfo.seat_number,
         seatInfo.label,
+        seatInfo.number,
+        seatInfo.id,
         seatInfo.seat?.seat_number,
         seatInfo.seat?.label,
         order.seat,
