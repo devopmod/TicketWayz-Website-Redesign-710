@@ -56,6 +56,8 @@ const EventCard=({event,size="large"})=> {
     return price ? Number(price).toFixed(2) : '0.00';
   };
 
+  const accentColor=event?.accent_color || event?.accent || '#f59e0b';
+
   if (size==="large") {
     return (
       <div className="flex-shrink-0 flex-grow-0 w-60 min-w-[240px] mr-6 mb-3 cursor-pointer" onClick={handleCardClick}>
@@ -86,6 +88,19 @@ const EventCard=({event,size="large"})=> {
           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400" />
           <span>{event.artist}</span>
         </div>
+
+        {event.venue && (
+          <div className="mb-1">
+            <div className="text-[13px] font-medium" style={{color: accentColor}}>
+              {event.venue.name}
+            </div>
+            {(event.venue.address || event.address) && (
+              <div className="text-[12px] text-gray-500">
+                {event.venue.address || event.address}
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="flex justify-between items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs">
@@ -118,6 +133,19 @@ const EventCard=({event,size="large"})=> {
           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400 text-xs" />
           <span className="truncate">{event.artist}</span>
         </div>
+
+        {event.venue && (
+          <div className="mb-1">
+            <div className="text-[13px] font-medium truncate" style={{color: accentColor}}>
+              {event.venue.name}
+            </div>
+            {(event.venue.address || event.address) && (
+              <div className="text-[12px] text-gray-500 truncate">
+                {event.venue.address || event.address}
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="flex justify-between items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs block truncate">{formatDate(event.date)}</span>
