@@ -1,6 +1,8 @@
 import React from 'react';
-import { Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
+import { Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer';
 import { CARD_WIDTH, HEADER_HEIGHT, sanitizeTicket } from './TicketTemplate';
+
+Font.register({ family: 'Roboto', src: '/fonts/Roboto-Regular.ttf' });
 
 const styles = StyleSheet.create({
   page: {
@@ -39,6 +41,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     fontSize: 12,
     borderRadius: 4,
+    fontFamily: 'Roboto',
   },
   content: {
     padding: 24,
@@ -47,11 +50,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
+    fontFamily: 'Roboto',
   },
   smallText: {
     fontSize: 12,
     color: '#4b5563',
     marginBottom: 2,
+    fontFamily: 'Roboto',
   },
   highlight: {
     color: '#f59e0b',
@@ -67,11 +72,13 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 10,
     color: '#6b7280',
+    fontFamily: 'Roboto',
   },
   infoValue: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#f59e0b',
+    fontFamily: 'Roboto',
   },
   qrContainer: {
     marginTop: 24,
@@ -86,6 +93,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 4,
     textAlign: 'center',
+    fontFamily: 'Roboto',
   },
   terms: {
     marginTop: 24,
@@ -95,6 +103,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     fontSize: 10,
     color: '#6b7280',
+    fontFamily: 'Roboto',
   },
 });
 
