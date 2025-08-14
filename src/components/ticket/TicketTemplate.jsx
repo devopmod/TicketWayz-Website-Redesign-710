@@ -201,16 +201,15 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
                   </div>
                 )}
                 {showPrice && price && (
-                  <div className="flex flex-col text-right">
+                  <div className="flex flex-col text-right ml-auto">
                     <div className="text-xs text-gray-500">PRICE</div>
-                    <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
-                      <SafeText data-slot="price" text={price} />
-                      {currency && (
-                        <span>
-                          {' '}
-                          <SafeText data-slot="currency" text={currency} />
-                        </span>
-                      )}
+                    <div
+                      className="text-lg font-semibold"
+                      style={{ color: '#f59e0b' }}
+                      data-slot="price,currency"
+                    >
+                      {toStr(price)}
+                      {currency && ` ${toStr(currency)}`}
                     </div>
                   </div>
                 )}
@@ -223,7 +222,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
                   </div>
                 )}
                 {seat && (
-                  <div className="flex flex-col text-right">
+                  <div className="flex flex-col text-right ml-auto">
                     <div className="text-xs text-gray-500">SEAT</div>
                     <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
                       <SafeText data-slot="seat" text={seat} />
