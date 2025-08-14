@@ -431,14 +431,18 @@ console.log('🚀 Proceeding to checkout with seats:',seatsForCheckout);
 
 // Store selected seats in sessionStorage to access them in checkout
 sessionStorage.setItem('selectedSeats',JSON.stringify(seatsForCheckout));
+  const eventImage = event.image || null;
+  const eventNote = event.note || '';
+  if (!event.image) console.warn('Missing event.image for event', event.id);
+  if (!event.note) console.warn('Missing event.note for event', event.id);
   sessionStorage.setItem('eventDetails',JSON.stringify({
   id: event.id,
   title: event.title,
   date: event.event_date,
   location: event.location,
   venue: venue?.name,
-  note: event.note,
-  image: event.image
+  note: eventNote,
+  image: eventImage
 }));
 
 navigate('/checkout');
