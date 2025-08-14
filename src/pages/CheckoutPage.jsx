@@ -78,7 +78,16 @@ const CheckoutPage=()=> {
 
     if (storedEventDetails) {
       try {
-        setEventDetails(JSON.parse(storedEventDetails));
+        const parsedEvent=JSON.parse(storedEventDetails);
+        if (!parsedEvent.image) {
+          console.warn('Missing event.image in sessionStorage');
+          parsedEvent.image=null;
+        }
+        if (!parsedEvent.note) {
+          console.warn('Missing event.note in sessionStorage');
+          parsedEvent.note='';
+        }
+        setEventDetails(parsedEvent);
       } catch (error) {
         console.error('Error parsing event details:',error);
       }
@@ -352,6 +361,13 @@ const CheckoutPage=()=> {
         const order=await createOrder();
 
         // Store order summary in sessionStorage for thank you page
+        const eventForSummary={
+          ...eventDetails,
+          image: eventDetails?.image || null,
+          note: eventDetails?.note || ''
+        };
+        if (!eventDetails?.image) console.warn('Missing event.image when building order summary');
+        if (!eventDetails?.note) console.warn('Missing event.note when building order summary');
         sessionStorage.setItem('orderSummary',JSON.stringify({
           seats: selectedSeats.map(seat=> ({
             ...seat,
@@ -359,7 +375,7 @@ const CheckoutPage=()=> {
             row_number: seat.row_number,
             seat_number: seat.seat_number
           })),
-          event: { ...eventDetails, image: eventDetails?.image },
+          event: eventForSummary,
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
           customerInfo: {
@@ -396,6 +412,13 @@ const CheckoutPage=()=> {
         const order=await createOrder();
 
         // Store order summary in sessionStorage for thank you page
+        const eventForSummary={
+          ...eventDetails,
+          image: eventDetails?.image || null,
+          note: eventDetails?.note || ''
+        };
+        if (!eventDetails?.image) console.warn('Missing event.image when building order summary');
+        if (!eventDetails?.note) console.warn('Missing event.note when building order summary');
         sessionStorage.setItem('orderSummary',JSON.stringify({
           seats: selectedSeats.map(seat=> ({
             ...seat,
@@ -403,7 +426,7 @@ const CheckoutPage=()=> {
             row_number: seat.row_number,
             seat_number: seat.seat_number
           })),
-          event: { ...eventDetails, image: eventDetails?.image },
+          event: eventForSummary,
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
           paymentMethod: 'Apple Pay',

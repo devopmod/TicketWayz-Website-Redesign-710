@@ -16,7 +16,16 @@ const ThankYouPage = () => {
     const storedOrderSummary = sessionStorage.getItem('orderSummary');
     if (storedOrderSummary) {
       try {
-        setOrderSummary(JSON.parse(storedOrderSummary));
+        const parsedSummary = JSON.parse(storedOrderSummary);
+        if (!parsedSummary?.event?.image) {
+          console.warn('Missing event.image in order summary');
+          parsedSummary.event = { ...parsedSummary.event, image: null };
+        }
+        if (!parsedSummary?.event?.note) {
+          console.warn('Missing event.note in order summary');
+          parsedSummary.event = { ...parsedSummary.event, note: '' };
+        }
+        setOrderSummary(parsedSummary);
       } catch (error) {
         console.error('Error parsing order summary:', error);
       }
@@ -61,11 +70,14 @@ const ThankYouPage = () => {
 
   const handleDownload = () => {
     if (orderSummary) {
+      if (!orderSummary.event?.image) console.warn('Missing event.image before PDF generation');
+      if (!orderSummary.event?.note) console.warn('Missing event.note before PDF generation');
       const orderData = {
         ...orderSummary,
         event: {
           ...orderSummary.event,
-          image: orderSummary.event?.image,
+          image: orderSummary.event?.image || null,
+          note: orderSummary.event?.note || '',
         },
         seats: orderSummary.seats?.map(seat => ({
           ...seat,
