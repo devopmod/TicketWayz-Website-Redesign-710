@@ -24,6 +24,24 @@ const ThankYouPage = () => {
     }
   }, []);
 
+  // After loading order summary, fetch fresh event data for note and image
+  useEffect(() => {
+    if (orderSummary?.event?.id) {
+      fetchEventById(orderSummary.event.id)
+        .then(freshEvent => {
+          setOrderSummary(prev => ({
+            ...prev,
+            event: {
+              ...prev.event,
+              image: freshEvent.image || null,
+              note: freshEvent.note || '',
+            },
+          }));
+        })
+        .catch(err => console.error('Error fetching event details:', err));
+    }
+  }, [orderSummary?.event?.id]);
+
   // Load template settings from localStorage
   useEffect(() => {
     const storedSettings = localStorage.getItem('ticketTemplateSettings');
@@ -62,28 +80,8 @@ const ThankYouPage = () => {
 
   const handleDownload = async () => {
     if (orderSummary) {
-      let eventWithNote = { ...orderSummary.event };
-      if (orderSummary.event?.id) {
-        try {
-          const freshEvent = await fetchEventById(orderSummary.event.id);
-          eventWithNote = {
-            ...eventWithNote,
-            image: freshEvent.image || null,
-            note: freshEvent.note || '',
-          };
-        } catch (err) {
-          console.error('Error fetching event for PDF:', err);
-          eventWithNote = {
-            ...eventWithNote,
-            image: orderSummary.event?.image || null,
-            note: orderSummary.event?.note || '',
-          };
-        }
-      }
-
       const orderData = {
         ...orderSummary,
-        event: eventWithNote,
         seats: orderSummary.seats?.map(seat => ({
           ...seat,
           section: seat.section,

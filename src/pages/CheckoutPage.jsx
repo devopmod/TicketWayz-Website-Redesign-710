@@ -56,7 +56,7 @@ const CheckoutPage=()=> {
   // Load selected seats and event by ID from sessionStorage
   useEffect(()=> {
     const storedSeats=sessionStorage.getItem('selectedSeats');
-    const storedEventId=sessionStorage.getItem('eventId');
+    const storedEventData=sessionStorage.getItem('event');
 
     if (storedSeats) {
       try {
@@ -75,6 +75,15 @@ const CheckoutPage=()=> {
     } else {
       // No seats selected,redirect to home
       navigate('/');
+    }
+
+    let storedEventId=null;
+    if (storedEventData) {
+      try {
+        storedEventId=JSON.parse(storedEventData).eventId;
+      } catch (error) {
+        console.error('Error parsing stored event:',error);
+      }
     }
 
     if (storedEventId) {
@@ -359,6 +368,8 @@ const CheckoutPage=()=> {
           date: eventDetails.event_date,
           location: eventDetails.location,
           venue: eventDetails.venue,
+          note: eventDetails.note,
+          image: eventDetails.image,
         };
         sessionStorage.setItem('orderSummary', JSON.stringify({
           seats: selectedSeats.map(seat=> ({
@@ -410,6 +421,8 @@ const CheckoutPage=()=> {
           date: eventDetails.event_date,
           location: eventDetails.location,
           venue: eventDetails.venue,
+          note: eventDetails.note,
+          image: eventDetails.image,
         };
         sessionStorage.setItem('orderSummary', JSON.stringify({
           seats: selectedSeats.map(seat=> ({
