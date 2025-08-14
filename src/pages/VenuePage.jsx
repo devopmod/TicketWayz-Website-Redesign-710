@@ -74,7 +74,7 @@ type: seat.type || 'seat',
 number: seat.number || seat.label || `Место ${seat.id.substring(0,4)}`,
 price: actualUnitPrice * quantity,
 // ДОБАВЛЯЕМ поля для отображения в корзине
-section: seat.section || 'A',
+section: seat.section ?? seat.zoneName ?? seat.label,
 row: seat.row || 1
 };
 };
@@ -422,7 +422,7 @@ price: seat.totalPrice,
 unitPrice: seat.unitPrice,
 categoryId: seat.categoryId,
 type: seat.type,
-section: seat.section,
+ section: seat.section || seat.zoneName,
 row_number: seat.row,
 seat_number: seat.number
 }));
@@ -522,6 +522,7 @@ id: `${selectedCapacityElement.id}-${Date.now()}`,
 elementId: selectedCapacityElement.id,
 number: `${selectedCapacityElement.label || 'Zone'} (${capacityToSelect} мест)`,
 label: `${selectedCapacityElement.label || 'Zone'} (${capacityToSelect} мест)`,
+zoneName: selectedCapacityElement.label,
 categoryId: selectedCapacityElement.categoryId,
 quantity: capacityToSelect,
 type: selectedCapacityElement.type
