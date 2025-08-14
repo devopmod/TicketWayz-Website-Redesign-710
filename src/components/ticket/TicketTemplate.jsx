@@ -17,7 +17,6 @@ export function sanitizeTicket(data = {}) {
     'section',
     'row',
     'seat',
-    'gate',
     'price',
     'currency',
     'qrValue',
@@ -111,9 +110,6 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     shadow = true,
   } = options;
 
-  const isGA = !section && !row && !seat;
-  const sectionValue = section || (isGA ? 'GA' : undefined);
-
   return (
     <ErrorBoundary>
       <div
@@ -184,56 +180,46 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               </div>
             )}
 
-            {(sectionValue || row || seat || (showPrice && price)) && (
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="flex flex-col text-left">
-                  {sectionValue && (
-                    <>
-                      <div className="text-xs text-gray-500">
-                        {isGA ? 'ADMISSION' : 'SECTION'}
-                      </div>
-                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
-                        <SafeText data-slot="section" text={sectionValue} />
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="flex flex-col text-right">
-                  {showPrice && price && (
-                    <>
-                      <div className="text-xs text-gray-500">PRICE</div>
-                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
-                        <SafeText data-slot="price" text={price} />
-                        {currency && (
-                          <span>
-                            {' '}
-                            <SafeText data-slot="currency" text={currency} />
-                          </span>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="flex flex-col text-left">
-                  {row && (
-                    <>
-                      <div className="text-xs text-gray-500">ROW</div>
-                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
-                        <SafeText data-slot="row" text={row} />
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="flex flex-col text-right">
-                  {seat && (
-                    <>
-                      <div className="text-xs text-gray-500">SEAT</div>
-                      <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
-                        <SafeText data-slot="seat" text={seat} />
-                      </div>
-                    </>
-                  )}
-                </div>
+            {(section || row || seat || (showPrice && price)) && (
+              <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+                {section && (
+                  <div className="flex flex-col text-left">
+                    <div className="text-xs text-gray-500">SECTION</div>
+                    <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                      <SafeText data-slot="section" text={section} />
+                    </div>
+                  </div>
+                )}
+                {showPrice && price && (
+                  <div className="flex flex-col text-right">
+                    <div className="text-xs text-gray-500">PRICE</div>
+                    <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                      <SafeText data-slot="price" text={price} />
+                      {currency && (
+                        <span>
+                          {' '}
+                          <SafeText data-slot="currency" text={currency} />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {row && (
+                  <div className="flex flex-col text-left">
+                    <div className="text-xs text-gray-500">ROW</div>
+                    <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                      <SafeText data-slot="row" text={row} />
+                    </div>
+                  </div>
+                )}
+                {seat && (
+                  <div className="flex flex-col text-right">
+                    <div className="text-xs text-gray-500">SEAT</div>
+                    <div className="text-lg font-semibold" style={{ color: '#f59e0b' }}>
+                      <SafeText data-slot="seat" text={seat} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
