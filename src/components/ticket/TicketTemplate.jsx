@@ -147,8 +147,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
           {brand && (
             <span
               data-slot="brand"
-              className="absolute top-4 left-4 z-20 px-2 py-1 text-white text-xs font-semibold rounded"
-              style={accent ? { backgroundColor: accent } : { backgroundColor: '#000000b3' }}
+              className="absolute left-6 top-6 z-20 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white backdrop-blur"
             >
               {brand}
             </span>
