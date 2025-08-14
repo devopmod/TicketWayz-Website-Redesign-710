@@ -34,7 +34,8 @@ export function sanitizeTicket(data = {}) {
         val.number ||
         val.id ||
         val.seat?.seat_number ||
-        val.seat?.label;
+        val.seat?.label ||
+        '';
     }
     if (val !== undefined && val !== null) result[key] = toStr(val);
   }
