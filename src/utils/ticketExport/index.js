@@ -26,7 +26,7 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
       : order.time;
 
   const data = {
-    heroImage: design.heroUrl || event.image || order.heroImage,
+    heroImage: event.image,
     brand: company.name || order.brand,
     artist: event.title || order.artist,
     date,
