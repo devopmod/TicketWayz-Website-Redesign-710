@@ -154,35 +154,39 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
           {(section || row || seat || (showPrice && price)) && (
             <View>
               <View style={styles.infoRow}>
-                {section && (
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>SECTION</Text>
-                    <Text style={styles.infoValue}>{section}</Text>
-                  </View>
-                )}
-                {showPrice && price && (
-                  <View style={[styles.infoBox, { alignItems: 'flex-end' }]}> 
-                    <Text style={styles.infoLabel}>PRICE</Text>
-                    <Text style={styles.infoValue}>
-                      {price}
-                      {currency ? ` ${currency}` : ''}
-                    </Text>
-                  </View>
-                )}
+                {[
+                  section && (
+                    <View style={styles.infoBox} key="section">
+                      <Text style={styles.infoLabel}>SECTION</Text>
+                      <Text style={styles.infoValue}>{section}</Text>
+                    </View>
+                  ),
+                  showPrice && price && (
+                    <View style={[styles.infoBox, { alignItems: 'flex-end' }]} key="price">
+                      <Text style={styles.infoLabel}>PRICE</Text>
+                      <Text style={styles.infoValue}>
+                        {price}
+                        {currency ? ` ${currency}` : ''}
+                      </Text>
+                    </View>
+                  ),
+                ].filter(Boolean)}
               </View>
               <View style={styles.infoRow}>
-                {row && (
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>ROW</Text>
-                    <Text style={styles.infoValue}>{row}</Text>
-                  </View>
-                )}
-                {seat && (
-                  <View style={[styles.infoBox, { alignItems: 'flex-end' }]}>
-                    <Text style={styles.infoLabel}>SEAT</Text>
-                    <Text style={styles.infoValue}>{seat}</Text>
-                  </View>
-                )}
+                {[
+                  row && (
+                    <View style={styles.infoBox} key="row">
+                      <Text style={styles.infoLabel}>ROW</Text>
+                      <Text style={styles.infoValue}>{row}</Text>
+                    </View>
+                  ),
+                  seat && (
+                    <View style={[styles.infoBox, { alignItems: 'flex-end' }]} key="seat">
+                      <Text style={styles.infoLabel}>SEAT</Text>
+                      <Text style={styles.infoValue}>{seat}</Text>
+                    </View>
+                  ),
+                ].filter(Boolean)}
               </View>
             </View>
           )}
