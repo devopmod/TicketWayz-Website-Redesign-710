@@ -97,10 +97,17 @@ const TicketTemplateSettings = () => {
       terms: lastSoldTicket.event?.note || '',
       section: lastSoldTicket.seat?.section,
       row: lastSoldTicket.seat?.row_number,
-      seat:
-        lastSoldTicket.seat?.seat_number != null
-          ? String(lastSoldTicket.seat.seat_number)
-          : lastSoldTicket.seat?.label,
+      seat: (() => {
+        const s = lastSoldTicket.seat;
+        const val =
+          s?.seat_number ??
+          s?.label ??
+          s?.number ??
+          s?.id ??
+          s?.seat?.seat_number ??
+          s?.seat?.label;
+        return val != null ? String(val) : undefined;
+      })(),
       price: lastSoldTicket.order_item?.unit_price
         ? parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)
         : '',
@@ -573,6 +580,14 @@ const TicketTemplateSettings = () => {
     // Ensure current settings are saved before generating preview
     await saveSettings();
 
+    const seatNum =
+      lastSoldTicket.seat?.seat_number ??
+      lastSoldTicket.seat?.label ??
+      lastSoldTicket.seat?.number ??
+      lastSoldTicket.seat?.id ??
+      lastSoldTicket.seat?.seat?.seat_number ??
+      lastSoldTicket.seat?.seat?.label;
+
     const orderData = {
       orderNumber: lastSoldTicket.order_item?.order?.id,
       company: { name: templateSettings.companyInfo?.brand || 'TicketWayz' },
@@ -590,12 +605,10 @@ const TicketTemplateSettings = () => {
             : undefined,
           section: lastSoldTicket.seat?.section,
           row_number: lastSoldTicket.seat?.row_number,
-          seat_number: lastSoldTicket.seat?.seat_number != null
-            ? String(lastSoldTicket.seat.seat_number)
-            : undefined,
+          seat_number: seatNum != null ? String(seatNum) : undefined,
           price: lastSoldTicket.order_item?.unit_price,
           label: lastSoldTicket.seat
-            ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${lastSoldTicket.seat.seat_number}`
+            ? `${lastSoldTicket.seat.section} ряд ${lastSoldTicket.seat.row_number} место ${seatNum ?? ''}`
             : lastSoldTicket.zone
               ? `Зона "${lastSoldTicket.zone.name}"`
               : 'Общий вход'

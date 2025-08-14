@@ -45,6 +45,8 @@ const TicketPreview = ({
     seatObj.label ??
     seatObj.number ??
     seatObj.id ??
+    seatObj.seat?.seat_number ??
+    seatObj.seat?.label ??
     (typeof t.seat === 'string' || typeof t.seat === 'number' ? t.seat : undefined);
 
   const previewOrder = {
