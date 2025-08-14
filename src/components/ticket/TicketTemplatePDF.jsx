@@ -193,9 +193,7 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
           {venue && <Text style={[styles.smallText, styles.highlight]}>{venue}</Text>}
           {address && <Text style={styles.smallText}>{address}</Text>}
 
-          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0) && (
-            <View>{filteredFirstRow.length > 0 && <View style={styles.infoRow}>{filteredFirstRow}</View>}{filteredSecondRow.length > 0 && <View style={styles.infoRow}>{filteredSecondRow}</View>}</View>
-          )}
+          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0) && (<View style={{ flexDirection: 'row' }}><View style={{ flex: 1, borderRightWidth: 1, borderColor: 'transparent', alignItems: 'flex-start' }}>{filteredFirstRow}</View><View style={{ flex: 1, borderLeftWidth: 1, borderColor: 'transparent', alignItems: 'flex-end' }}>{filteredSecondRow}</View></View>)}
 
           {showQr && qrSrc && (
             <View style={styles.qrContainer}>
