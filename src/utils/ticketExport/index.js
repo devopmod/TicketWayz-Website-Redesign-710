@@ -30,6 +30,7 @@ export function buildTermsText(order = {}, settings = {}) {
 export function validateImageUrl(url) {
   if (!url) return null;
   if (url.startsWith('data:image')) return url;
+  if (url.startsWith('/')) return new URL(url, window.location.origin).href;
   try {
     const { protocol } = new URL(url);
     if (protocol === 'http:' || protocol === 'https:') return url;

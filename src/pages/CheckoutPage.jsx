@@ -359,7 +359,7 @@ const CheckoutPage=()=> {
             row_number: seat.row_number,
             seat_number: seat.seat_number
           })),
-          event: eventDetails,
+          event: { ...eventDetails, image: eventDetails?.image },
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
           customerInfo: {
@@ -403,7 +403,7 @@ const CheckoutPage=()=> {
             row_number: seat.row_number,
             seat_number: seat.seat_number
           })),
-          event: eventDetails,
+          event: { ...eventDetails, image: eventDetails?.image },
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
           paymentMethod: 'Apple Pay',

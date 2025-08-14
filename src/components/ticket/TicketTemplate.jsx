@@ -126,6 +126,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               src={heroImage}
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-80"
+              crossOrigin="anonymous"
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
