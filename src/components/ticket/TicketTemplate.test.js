@@ -18,3 +18,8 @@ test('sanitizeTicket preserves heroImage strings', async () => {
   assert.equal(sanitizeTicket({ heroImage: base64 }).heroImage, base64);
   assert.equal(sanitizeTicket({ heroImage: url }).heroImage, url);
 });
+
+test('sanitizeTicket stringifies qrValue', async () => {
+  const { sanitizeTicket } = await loadSanitizeTicket();
+  assert.equal(sanitizeTicket({ qrValue: 123 }).qrValue, '123');
+});

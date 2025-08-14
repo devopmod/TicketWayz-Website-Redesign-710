@@ -16,8 +16,7 @@ const defaultData = {
   gate: '',
   price: '',
   currency: '',
-  qrImage: '',
-  ticketId: '',
+  qrValue: '',
   terms: '',
 };
 
@@ -66,7 +65,7 @@ const TicketDesigner = () => {
           seat_number: data.seat,
           gate: data.gate,
           price: data.price,
-          id: data.ticketId,
+          id: data.qrValue,
         },
       ],
       currency: data.currency,

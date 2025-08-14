@@ -20,8 +20,7 @@ export function sanitizeTicket(data = {}) {
     'gate',
     'price',
     'currency',
-    'qrImage',
-    'ticketId',
+    'qrValue',
     'terms',
   ];
   const result = {};
@@ -38,23 +37,25 @@ const SafeText = ({ text, className, ...props }) => (
   </span>
 );
 
-const MiniQR = ({ image, ticketId }) => {
-  if (!image) return null;
+const MiniQR = ({ value }) => {
+  if (!value) return null;
+  const src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(value)}&size=164x164`;
   return (
     <div className="flex flex-col items-center">
-      <div className="w-32 h-32 bg-white flex items-center justify-center">
-        <img
-          data-slot="qrImage"
-          src={image}
-          alt="QR code"
-          className="w-full h-full object-cover"
-        />
-      </div>
-      {ticketId && (
-        <div className="mt-2 text-xs text-gray-500">
-          <SafeText data-slot="ticketId" text={ticketId} />
+      <div className="rounded-xl border p-3">
+        <div className="w-[164px] h-[164px] border flex items-center justify-center">
+          <img
+            data-slot="qrValue"
+            src={src}
+            alt="QR code"
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
         </div>
-      )}
+      </div>
+      <div className="mt-2 text-xs text-gray-500">
+        <SafeText data-slot="qrValue (text)" text={value} />
+      </div>
     </div>
   );
 };
@@ -96,8 +97,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     seat,
     price,
     currency,
-    qrImage,
-    ticketId,
+    qrValue,
     terms,
   } = ticket;
 
@@ -236,9 +236,9 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               </div>
             )}
 
-            {showQr && qrImage && (
+            {showQr && qrValue && (
               <div className="mt-6 flex items-center justify-center">
-                <MiniQR image={qrImage} ticketId={ticketId} />
+                <MiniQR value={qrValue} />
               </div>
             )}
           </div>

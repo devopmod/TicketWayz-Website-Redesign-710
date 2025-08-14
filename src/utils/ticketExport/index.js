@@ -99,7 +99,7 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
       gate: seatInfo.gate,
       price: seatInfo.price || order.price,
       currency: order.currency,
-      ticketId: seatInfo.id || order.orderNumber,
+      qrValue: seatInfo.id || order.orderNumber,
       terms: buildTermsText(order, settings),
     };
 
