@@ -190,15 +190,22 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
   }
 
   const pdfDoc = await PDFDocument.create();
+  const PAGE_WIDTH = 595.28; // A4 width in points
+  const PAGE_HEIGHT = 841.89; // A4 height in points
   for (const img of images) {
     const pngBytes = await fetch(img).then((res) => res.arrayBuffer());
     const pngImage = await pdfDoc.embedPng(pngBytes);
-    const page = pdfDoc.addPage([pngImage.width, pngImage.height]);
+    const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+    const scale = Math.min(PAGE_WIDTH / pngImage.width, PAGE_HEIGHT / pngImage.height);
+    const imgWidth = pngImage.width * scale;
+    const imgHeight = pngImage.height * scale;
+    const x = (PAGE_WIDTH - imgWidth) / 2;
+    const y = (PAGE_HEIGHT - imgHeight) / 2;
     page.drawImage(pngImage, {
-      x: 0,
-      y: 0,
-      width: pngImage.width,
-      height: pngImage.height,
+      x,
+      y,
+      width: imgWidth,
+      height: imgHeight,
     });
   }
   const pdfBytes = await pdfDoc.save();
