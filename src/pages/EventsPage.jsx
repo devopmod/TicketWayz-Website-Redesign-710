@@ -470,7 +470,20 @@ const EventsPage=()=> {
                           <SafeIcon icon={FiUser} className="mr-1 text-yellow-400" />
                           <span>{event.artist || event.title}</span>
                         </div>
-                        
+
+                        {event.venue && (
+                          <div className="mb-1">
+                            <div className="text-[13px] font-medium" style={{color: event.accent_color || event.accent || '#f59e0b'}}>
+                              {event.venue.name}
+                            </div>
+                            {(event.venue.address || event.address) && (
+                              <div className="text-[12px] text-gray-500">
+                                {event.venue.address || event.address}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="text-sm text-zinc-600 dark:text-zinc-400">
                           {new Date(event.event_date).toLocaleDateString('ru-RU',{
                             day: 'numeric',
@@ -494,6 +507,9 @@ const EventsPage=()=> {
                           id: event.id,
                           title: event.title,
                           location: event.location,
+                          venue: event.venue,
+                          address: event.address,
+                          accent: event.accent_color || event.accent,
                           date: event.event_date,
                           image: event.image || `https://placehold.co/600x400/333/FFF?text=${encodeURIComponent(event.title)}`,
                           category: event.category,
