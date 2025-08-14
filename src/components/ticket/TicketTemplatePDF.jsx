@@ -172,6 +172,9 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
     );
   }
 
+  const filteredFirstRow = firstRow.filter(Boolean);
+  const filteredSecondRow = secondRow.filter(Boolean);
+
   return (
     <Page size="A4" style={styles.page}>
       <View style={styles.ticket}>
@@ -190,10 +193,14 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
           {venue && <Text style={[styles.smallText, styles.highlight]}>{venue}</Text>}
           {address && <Text style={styles.smallText}>{address}</Text>}
 
-          {(section || row || seat || (showPrice && price)) && (
+          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0) && (
             <View>
-              <View style={styles.infoRow}>{firstRow}</View>
-              <View style={styles.infoRow}>{secondRow}</View>
+              {filteredFirstRow.length > 0 && (
+                <View style={styles.infoRow}>{filteredFirstRow}</View>
+              )}
+              {filteredSecondRow.length > 0 && (
+                <View style={styles.infoRow}>{filteredSecondRow}</View>
+              )}
             </View>
           )}
 
