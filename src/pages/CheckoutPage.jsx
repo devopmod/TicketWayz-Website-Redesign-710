@@ -62,8 +62,8 @@ const CheckoutPage=()=> {
         const parsedSeats=JSON.parse(storedSeats).map(seat=> ({
           ...seat,
           section: seat.section,
-          row_number: seat.row_number ?? seat.row,
-          seat_number: seat.seat_number ?? seat.number ?? seat.label
+          row_number: seat.row_number ?? (seat.type==='seat' ? seat.row : undefined),
+          seat_number: seat.seat_number ?? (seat.type==='seat' ? seat.number : undefined)
         }));
         console.log('🎫 Loaded seats from sessionStorage:',parsedSeats);
         setSelectedSeats(parsedSeats);

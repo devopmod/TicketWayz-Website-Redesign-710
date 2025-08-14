@@ -125,7 +125,9 @@ const ThankYouPage = () => {
               <div className="text-sm text-left text-zinc-400 space-y-1 mb-2">
                 {orderSummary.seats.map(seat => (
                   <div key={seat.id}>
-                    Секция {seat.section || '-'}, ряд {seat.row_number || '-'}, место {seat.seat_number || seat.number || '-'}
+                    {seat.row_number && seat.seat_number
+                      ? `Секция ${seat.section || '-'}, ряд ${seat.row_number || '-'}, место ${seat.seat_number || seat.number || '-'}`
+                      : `Секция ${seat.section || '-'}`}
                   </div>
                 ))}
               </div>

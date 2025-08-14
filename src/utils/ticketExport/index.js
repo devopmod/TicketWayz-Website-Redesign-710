@@ -93,7 +93,7 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
       time,
       venue: event.location,
       address: event.address,
-      section: seatInfo.section,
+      section: seatInfo.section || seatInfo.zoneName || seatInfo.zone?.name,
       row: seatInfo.row_number,
       seat: seatInfo.seat_number,
       price: seatInfo.price || order.price,
