@@ -20,6 +20,7 @@ export function sanitizeTicket(data = {}) {
     'price',
     'currency',
     'ticketId',
+    'qrImage',
     'qrValue',
     'terms',
   ];
@@ -37,13 +38,15 @@ const SafeText = ({ text, className, ...props }) => (
   </span>
 );
 
-const MiniQR = ({ value, ticketId }) => {
-  if (!value) return null;
-  const src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(value)}&size=164x164`;
+const MiniQR = ({ qrImage, qrValue, ticketId }) => {
+  const value = qrValue;
+  const src =
+    qrImage || (value ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(value)}&size=164x164` : null);
+  if (!src) return null;
   return (
     <div className="flex flex-col items-center">
-      <div className="rounded-xl border p-3">
-        <div className="w-[164px] h-[164px] border flex items-center justify-center">
+      <div className="rounded-xl border border-gray-200 p-4">
+        <div className="w-[164px] h-[164px] flex items-center justify-center border border-gray-300">
           <img
             data-slot="qrValue"
             src={src}
@@ -100,6 +103,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     price,
     currency,
     ticketId,
+    qrImage,
     qrValue,
     terms,
   } = ticket;
@@ -229,14 +233,14 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               </div>
             )}
 
-            {showQr && qrValue && (
+            {showQr && (qrImage || qrValue) && (
               <div className="mt-6 flex items-center justify-center">
-                <MiniQR value={qrValue} ticketId={actualTicketId} />
+                <MiniQR qrImage={qrImage} qrValue={qrValue} ticketId={actualTicketId} />
               </div>
             )}
             {qrValue && actualTicketId && qrValue !== actualTicketId && (
               <div className="mt-2 text-xs text-gray-500 text-center">
-                <SafeText data-slot="qrValueText" text={qrValue} />
+                <SafeText data-slot="qrValue (text)" text={qrValue} />
               </div>
             )}
           </div>
