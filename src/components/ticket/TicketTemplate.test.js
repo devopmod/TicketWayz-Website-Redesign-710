@@ -23,3 +23,8 @@ test('sanitizeTicket stringifies qrValue', async () => {
   const { sanitizeTicket } = await loadSanitizeTicket();
   assert.equal(sanitizeTicket({ qrValue: 123 }).qrValue, '123');
 });
+
+test('sanitizeTicket stringifies ticketId', async () => {
+  const { sanitizeTicket } = await loadSanitizeTicket();
+  assert.equal(sanitizeTicket({ ticketId: 456 }).ticketId, '456');
+});
