@@ -15,7 +15,6 @@ const TicketPreview = ({
   darkHeader,
   showPrice = true,
   showQr = true,
-  showTerms = true,
   rounded,
   shadow,
   settings = {},
@@ -82,7 +81,6 @@ const TicketPreview = ({
     ticketContent: {
       ...(settings.ticketContent || {}),
       showPrice,
-      showTerms,
     },
   };
 

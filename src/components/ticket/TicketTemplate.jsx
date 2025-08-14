@@ -110,7 +110,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
 
   const actualTicketId = ticketId || qrValue;
 
-  const { showPrice = true, showQr = true, showTerms = true } = options;
+  const { showPrice = true, showQr = true } = options;
 
   return (
     <ErrorBoundary>
@@ -225,7 +225,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
           </div>
         </div>
 
-        {showTerms && terms && (
+        {terms && (
           <div className="border-t border-dashed border-gray-300 px-6 py-4 text-[11px] text-gray-500">
             <SafeText data-slot="terms" text={terms} />
           </div>

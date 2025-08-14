@@ -3,25 +3,6 @@ import { pdf, Document } from '@react-pdf/renderer';
 import { TicketTemplatePDF } from '../../components/ticket';
 
 /**
- * Combine event notes and custom text into a single terms string.
- * @param {Object} [order={}] Order data containing event info and terms
- * @param {Object} [settings={}] Template settings that may include custom text
- * @returns {string} Joined terms text
- */
-export function buildTermsText(order = {}, settings = {}) {
-  const eventNote = order?.event?.note;
-  const ticketContent = settings.ticketContent || {};
-  return [
-    eventNote,
-    ticketContent.customInstructions,
-    ticketContent.termsAndConditions,
-    order?.terms,
-  ]
-    .filter(Boolean)
-    .join(' ');
-}
-
-/**
  * Build TicketTemplate props from order, seat and settings objects.
  * @param {Object} [order={}] Order data
  * @param {Object} [seat={}] Seat-specific data
@@ -59,7 +40,7 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
     currency: order.currency,
     qrValue: seatInfo.id || order.orderNumber || order.qrValue,
     ticketType: seatInfo.ticketType || seatInfo.type || order.ticketType,
-    terms: buildTermsText(order, settings),
+    terms: order?.event?.note || '',
   };
 
   const options = {
@@ -67,7 +48,7 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
     darkHeader: design.darkHeader,
     showPrice: ticketContent.showPrice,
     showQr: design.showQRCode,
-    showTerms: ticketContent.showTerms ?? true,
+    showTerms: Boolean(order?.event?.note),
     rounded: design.rounded,
     shadow: design.shadow,
     scale: settings.scale || design.scale,

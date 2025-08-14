@@ -57,7 +57,6 @@ const TicketTemplateSettings = () => {
       showVenueInfo: true,
       showDateTime: true,
       showPrice: true,
-      showTerms: true,
       customInstructions: '',
       termsAndConditions: '',
       additionalFields: []
@@ -410,7 +409,6 @@ const TicketTemplateSettings = () => {
         ...templateSettings,
         ticketContent: {
           ...templateSettings.ticketContent,
-          showTerms: true,
         },
       };
       localStorage.setItem('ticketTemplateSettings', JSON.stringify(settingsToSave));
@@ -458,7 +456,6 @@ const TicketTemplateSettings = () => {
           showVenueInfo: true,
           showDateTime: true,
           showPrice: true,
-          showTerms: true,
           customInstructions: '',
           termsAndConditions: '',
           additionalFields: []

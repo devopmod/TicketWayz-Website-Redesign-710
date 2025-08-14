@@ -94,7 +94,6 @@ const ThankYouPage = () => {
         ...templateSettings,
         ticketContent: {
           ...templateSettings?.ticketContent,
-          showTerms: true,
         },
       };
       downloadTicketsPDF(orderData, `tickets-${orderNumber}`, settings);
