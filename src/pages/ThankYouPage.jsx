@@ -34,7 +34,7 @@ const ThankYouPage = () => {
             event: {
               ...prev.event,
               image: freshEvent.image || null,
-              note: freshEvent.note || '',
+              note: freshEvent.note || null,
             },
           }));
         })
