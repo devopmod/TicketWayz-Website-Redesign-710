@@ -151,12 +151,14 @@ const EventDetailPage = () => {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-[960px] px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+      <div className="container mx-auto max-w-[960px] px-4">
+        <div className="relative -mt-6 rounded-t-[24px] bg-white p-6 pt-8">
+          <motion.div
+            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
           <h1 className="text-3xl font-bold mb-4 text-zinc-900 dark:text-white">{event.title}</h1>
           
           {/* Artist with icon */}
@@ -198,7 +200,7 @@ const EventDetailPage = () => {
                 <span className="text-2xl font-bold ml-2 text-zinc-900 dark:text-white">€{formatPrice(getBasePrice())}</span>
               </div>
             </div>
-            
+
             <button
               onClick={handleBuyTickets}
               className="w-full px-6 py-4 bg-yellow-500 text-black rounded-lg hover:bg-yellow-400 transition font-medium text-lg"
@@ -206,7 +208,8 @@ const EventDetailPage = () => {
               Купить билеты
             </button>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </>
   );
