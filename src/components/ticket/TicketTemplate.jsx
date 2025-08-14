@@ -133,7 +133,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               data-slot="heroImage"
               src={heroImage}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover z-0"
+              className="absolute inset-0 w-full h-full object-cover z-0 opacity-80"
             />
           )}
           <div
@@ -141,7 +141,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
               'absolute inset-0 z-10',
               darkHeader
                 ? 'bg-black/60'
-                : 'bg-gradient-to-b from-black/20 via-black/40 to-black/80',
+                : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent',
             ].join(' ')}
           />
           {brand && (
