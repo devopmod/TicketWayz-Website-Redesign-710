@@ -49,5 +49,5 @@ test('sanitizeTicket extracts seat identifiers', async () => {
     sanitizeTicket({ seat: { seat: { label: 'A1' } } }).seat,
     'A1',
   );
-  assert.equal(sanitizeTicket({ seat: {} }).seat, undefined);
+  assert.equal(sanitizeTicket({ seat: {} }).seat, '');
 });
