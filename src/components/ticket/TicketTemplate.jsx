@@ -110,56 +110,35 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
 
   const actualTicketId = ticketId || qrValue;
 
-  const {
-    accent,
-    darkHeader = false,
-    showPrice = true,
-    showQr = true,
-    showTerms = true,
-    rounded = true,
-    shadow = true,
-  } = options;
+  const { showPrice = true, showQr = true, showTerms = true } = options;
 
   return (
     <ErrorBoundary>
-      <div
+      <article
         ref={ref}
-        className={[
-          'ticket bg-white text-gray-900 font-sans border',
-          rounded ? 'rounded-lg overflow-hidden' : '',
-          shadow ? 'shadow-md' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        style={{ width: CARD_WIDTH }}
+        className="ticket overflow-hidden rounded-[24px] shadow-2xl bg-white w-[560px] text-gray-900 font-sans"
+        data-canvas-width={CARD_WIDTH}
       >
-        <div className="relative w-full" style={{ height: HEADER_HEIGHT }}>
+        <div className="relative h-[192px] bg-gray-100">
           {heroImage && (
             <img
               data-slot="heroImage"
               src={heroImage}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover z-0 opacity-80"
+              className="absolute inset-0 h-full w-full object-cover opacity-80"
             />
           )}
-          <div
-            className={[
-              'absolute inset-0 z-10',
-              darkHeader
-                ? 'bg-black/60'
-                : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent',
-            ].join(' ')}
-          />
-          {brand && (
-            <div className="absolute inset-x-0 top-6 z-20 flex justify-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
+          <div className="relative flex h-full items-start justify-center p-4">
+            {brand && (
               <span
                 data-slot="brand"
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white backdrop-blur"
               >
                 {brand}
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div className="relative -mt-6 rounded-t-[24px] bg-white p-6 pt-8">
           <div className="space-y-2">
@@ -250,7 +229,7 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
             <SafeText data-slot="terms" text={terms} />
           </div>
         )}
-      </div>
+      </article>
     </ErrorBoundary>
   );
 });
