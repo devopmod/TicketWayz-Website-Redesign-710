@@ -22,27 +22,6 @@ export function buildTermsText(order = {}, settings = {}) {
 }
 
 /**
- * Validate hero or event image URL allowing only http(s) or data URIs.
- * @param {string} url Image URL to validate
- * @returns {string|null} Sanitised URL or null if invalid
- */
-export function validateImageUrl(url) {
-  if (!url) return null;
-  if (url.startsWith('data:image')) return url;
-  if (!/^https?:/i.test(url)) {
-    return new URL(url, window.location.origin).href;
-  }
-  try {
-    const { protocol } = new URL(url);
-    if (protocol === 'http:' || protocol === 'https:') return url;
-  } catch {
-    // ignore
-  }
-  console.warn('Hero image URL must be an absolute, publicly accessible URL:', url);
-  return null;
-}
-
-/**
  * Build TicketTemplate props from order, seat and settings objects.
  * @param {Object} [order={}] Order data
  * @param {Object} [seat={}] Seat-specific data
@@ -121,9 +100,6 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
   settings.design = settings.design || {};
   settings.ticketContent = settings.ticketContent || {};
   order.event = order.event || {};
-  settings.design.heroUrl = validateImageUrl(settings.design.heroUrl);
-  order.event.image = validateImageUrl(order.event.image);
-
   const seats = Array.isArray(order.seats) && order.seats.length > 0 ? order.seats : [null];
   const pages = [];
 
