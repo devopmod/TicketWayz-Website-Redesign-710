@@ -62,12 +62,22 @@ export const fetchEventById = async (eventId) => {
     if (priceError) throw priceError;
 
     // Calculate minimum price
-    const minPrice = priceData && priceData.length > 0 
-      ? Math.min(...priceData.map(p => p.price)) 
+    const minPrice = priceData && priceData.length > 0
+      ? Math.min(...priceData.map(p => p.price))
       : 0;
+
+    let imageUrl = data.image;
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      const { data: publicData } = supabase
+        .storage
+        .from('event-images')
+        .getPublicUrl(imageUrl);
+      imageUrl = publicData?.publicUrl || imageUrl;
+    }
 
     return {
       ...data,
+      image: imageUrl,
       price: minPrice,
       prices: priceData || []
     };

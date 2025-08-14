@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FiCheck, FiDownload, FiHome } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import { downloadTicketsPDF } from '../utils/ticketExport';
+import { fetchEventById } from '../services/eventService';
 
 const ThankYouPage = () => {
   const navigate = useNavigate();
@@ -16,17 +17,7 @@ const ThankYouPage = () => {
     const storedOrderSummary = sessionStorage.getItem('orderSummary');
     if (storedOrderSummary) {
       try {
-        const parsedSummary = JSON.parse(storedOrderSummary);
-        if (!parsedSummary?.event?.image) {
-          console.warn('Missing event.image in order summary');
-          parsedSummary.event = { ...parsedSummary.event, image: null };
-        }
-        const note = parsedSummary?.event?.note || '';
-        if (!parsedSummary?.event?.note) {
-          console.warn('Missing event.note in order summary');
-        }
-        parsedSummary.event = { ...parsedSummary.event, note };
-        setOrderSummary(parsedSummary);
+        setOrderSummary(JSON.parse(storedOrderSummary));
       } catch (error) {
         console.error('Error parsing order summary:', error);
       }
@@ -69,15 +60,27 @@ const ThankYouPage = () => {
     return () => clearTimeout(timer);
   }, [navigate]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (orderSummary) {
-      if (!orderSummary.event?.image) console.warn('Missing event.image before PDF generation');
-      if (!orderSummary.event?.note) console.warn('Missing event.note before PDF generation');
-      const eventWithNote = {
-        ...orderSummary.event,
-        image: orderSummary.event?.image || null,
-        note: orderSummary.event?.note || '',
-      };
+      let eventWithNote = { ...orderSummary.event };
+      if (orderSummary.event?.id) {
+        try {
+          const freshEvent = await fetchEventById(orderSummary.event.id);
+          eventWithNote = {
+            ...eventWithNote,
+            image: freshEvent.image || null,
+            note: freshEvent.note || '',
+          };
+        } catch (err) {
+          console.error('Error fetching event for PDF:', err);
+          eventWithNote = {
+            ...eventWithNote,
+            image: orderSummary.event?.image || null,
+            note: orderSummary.event?.note || '',
+          };
+        }
+      }
+
       const orderData = {
         ...orderSummary,
         event: eventWithNote,

@@ -447,7 +447,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   };
 
   // НОВАЯ функция для обработки загрузки изображения
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -467,28 +467,33 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
       return;
     }
 
-    // Создаем FileReader для конвертации в base64
-    const reader = new FileReader();
-    
-    reader.onload = (event) => {
-      const base64Image = event.target.result;
-      
-      // Обновляем состояние с новым изображением
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `event-${Date.now()}.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('event-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('event-images')
+        .getPublicUrl(uploadData.path);
+
       setEventData(prev => ({
         ...prev,
-        image: base64Image
+        image: publicUrl
       }));
-      
+
       // Сохраняем имя файла для отображения
       setUploadedFileName(file.name);
-    };
-
-    reader.onerror = () => {
-      setImageUploadError('Ошибка при чтении файла');
-    };
-
-    // Читаем файл как base64
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      setImageUploadError('Ошибка при загрузке файла');
+    }
   };
 
   // НОВАЯ функция для удаления загруженного изображения
@@ -508,7 +513,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
 
   // НОВАЯ функция для проверки, является ли изображение загруженным файлом
   const isUploadedImage = () => {
-    return eventData.image.startsWith('data:image/');
+    return !!uploadedFileName;
   };
 
   // Handle venue selection

@@ -4,6 +4,7 @@ import {motion} from 'framer-motion';
 import {FiCreditCard,FiUser,FiMail,FiPhone,FiLock} from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import supabase from '../lib/supabase';
+import {fetchEventById} from '../services/eventService';
 
 const CheckoutPage=()=> {
   const navigate=useNavigate();
@@ -52,10 +53,10 @@ const CheckoutPage=()=> {
     return price ? Number(price).toFixed(2) : '0.00';
   };
 
-  // Load selected seats from sessionStorage
+  // Load selected seats and event by ID from sessionStorage
   useEffect(()=> {
     const storedSeats=sessionStorage.getItem('selectedSeats');
-    const storedEventDetails=sessionStorage.getItem('eventDetails');
+    const storedEventId=sessionStorage.getItem('eventId');
 
     if (storedSeats) {
       try {
@@ -76,21 +77,12 @@ const CheckoutPage=()=> {
       navigate('/');
     }
 
-    if (storedEventDetails) {
-      try {
-        const parsedEvent=JSON.parse(storedEventDetails);
-        if (!parsedEvent.image) {
-          console.warn('Missing event.image in sessionStorage');
-          parsedEvent.image=null;
-        }
-        if (!parsedEvent.note) {
-          console.warn('Missing event.note in sessionStorage');
-          parsedEvent.note='';
-        }
-        setEventDetails(parsedEvent);
-      } catch (error) {
-        console.error('Error parsing event details:',error);
-      }
+    if (storedEventId) {
+      fetchEventById(storedEventId)
+        .then(event=> setEventDetails({ ...event, date: event.event_date, venue: event.venue?.name }))
+        .catch(err=> console.error('Error fetching event:',err));
+    } else {
+      navigate('/');
     }
   },[navigate]);
 
@@ -362,12 +354,12 @@ const CheckoutPage=()=> {
 
         // Store order summary in sessionStorage for thank you page
         const eventForSummary = {
-          ...eventDetails,
-          image: eventDetails?.image || null,
-          note: eventDetails?.note || '',
+          id: eventDetails.id,
+          title: eventDetails.title,
+          date: eventDetails.event_date,
+          location: eventDetails.location,
+          venue: eventDetails.venue,
         };
-        if (!eventDetails?.image) console.warn('Missing event.image when building order summary');
-        if (!eventDetails?.note) console.warn('Missing event.note when building order summary');
         sessionStorage.setItem('orderSummary', JSON.stringify({
           seats: selectedSeats.map(seat=> ({
             ...seat,
@@ -413,12 +405,12 @@ const CheckoutPage=()=> {
 
         // Store order summary in sessionStorage for thank you page
         const eventForSummary = {
-          ...eventDetails,
-          image: eventDetails?.image || null,
-          note: eventDetails?.note || '',
+          id: eventDetails.id,
+          title: eventDetails.title,
+          date: eventDetails.event_date,
+          location: eventDetails.location,
+          venue: eventDetails.venue,
         };
-        if (!eventDetails?.image) console.warn('Missing event.image when building order summary');
-        if (!eventDetails?.note) console.warn('Missing event.note when building order summary');
         sessionStorage.setItem('orderSummary', JSON.stringify({
           seats: selectedSeats.map(seat=> ({
             ...seat,
