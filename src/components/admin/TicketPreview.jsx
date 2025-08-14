@@ -32,7 +32,7 @@ const TicketPreview = ({
     seat: '12',
     price: '2500',
     currency: '₽',
-    ticketId: 'TW-123456',
+    qrValue: 'TW-123456',
     ticketType: 'seat',
   };
 
@@ -53,7 +53,7 @@ const TicketPreview = ({
     seat: t.seat,
     price: t.price,
     currency: t.currency,
-    ticketId: t.ticketId,
+    qrValue: t.qrValue,
     ticketType: t.ticketType,
     terms: buildTermsText({}, settings),
   };

@@ -102,7 +102,7 @@ const TicketTemplateSettings = () => {
         ? parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)
         : '',
       currency: '€',
-      ticketId: lastSoldTicket.id
+      qrValue: lastSoldTicket.id
         ? `T-${lastSoldTicket.id.substring(0, 8)}`
         : '',
       ticketType: lastSoldTicket.seat
