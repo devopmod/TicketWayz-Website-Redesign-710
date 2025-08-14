@@ -97,7 +97,10 @@ const TicketTemplateSettings = () => {
       terms: lastSoldTicket.event?.note || '',
       section: lastSoldTicket.seat?.section,
       row: lastSoldTicket.seat?.row_number,
-      seat: lastSoldTicket.seat?.seat_number,
+      seat:
+        lastSoldTicket.seat?.seat_number != null
+          ? String(lastSoldTicket.seat.seat_number)
+          : lastSoldTicket.seat?.label,
       price: lastSoldTicket.order_item?.unit_price
         ? parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)
         : '',
