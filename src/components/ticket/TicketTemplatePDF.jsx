@@ -1,12 +1,9 @@
 import React from 'react';
 import { Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer';
 import { CARD_WIDTH, HEADER_HEIGHT, sanitizeTicket } from './TicketTemplate';
+import RobotoTtf from '@/assets/fonts/Roboto-Regular.ttf';
 
-Font.register({
-  family: 'Roboto',
-  src: new URL('../../assets/fonts/Roboto-Regular.ttf', import.meta.url).href,
-  format: 'truetype',
-});
+Font.register({ family: 'Roboto', src: RobotoTtf, format: 'truetype' });
 
 const styles = StyleSheet.create({
   page: {
