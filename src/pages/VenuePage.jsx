@@ -421,7 +421,10 @@ quantity: seat.quantity,
 price: seat.totalPrice,
 unitPrice: seat.unitPrice,
 categoryId: seat.categoryId,
-type: seat.type
+type: seat.type,
+section: seat.section,
+row_number: seat.row,
+seat_number: seat.number
 }));
 
 console.log('🚀 Proceeding to checkout with seats:',seatsForCheckout);
