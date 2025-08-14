@@ -812,10 +812,12 @@ const AdminPage = () => {
       const zone = item.ticket?.zone;
       const price = item.unit_price || item.ticket?.price;
       if (seat) {
+        const id = seat.seat_number ?? seat.label;
         return {
           section: seat.section,
           row_number: seat.row_number,
-          seat_number: seat.seat_number,
+          seat_number: id != null ? String(id) : undefined,
+          label: seat.label || (id != null ? String(id) : undefined),
           price,
           id: seat.id
         };
@@ -823,12 +825,14 @@ const AdminPage = () => {
       if (zone) {
         return {
           zone: { name: zone.name },
+          label: zone.name,
           price,
           id: zone.id
         };
       }
       return {
         zone: { name: 'Общий вход' },
+        label: 'Общий вход',
         price,
         id: item.ticket?.id
       };

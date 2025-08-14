@@ -82,12 +82,16 @@ const ThankYouPage = () => {
     if (orderSummary) {
       const orderData = {
         ...orderSummary,
-        seats: orderSummary.seats?.map(seat => ({
-          ...seat,
-          section: seat.section,
-          row_number: seat.row_number,
-          seat_number: seat.seat_number
-        })),
+        seats: orderSummary.seats?.map(seat => {
+          const id = seat.seat_number ?? seat.label ?? seat.zone?.name;
+          return {
+            ...seat,
+            section: seat.section,
+            row_number: seat.row_number,
+            seat_number: id != null ? String(id) : undefined,
+            label: seat.label || seat.zone?.name || (id != null ? String(id) : undefined),
+          };
+        }),
         company: {
           name: templateSettings?.companyInfo?.brand || 'TicketWayz',
         },
