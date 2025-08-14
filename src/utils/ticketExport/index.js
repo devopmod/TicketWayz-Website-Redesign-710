@@ -40,7 +40,7 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
     currency: order.currency,
     qrValue: seatInfo.id || order.orderNumber || order.qrValue,
     ticketType: seatInfo.ticketType || seatInfo.type || order.ticketType,
-    terms: order?.event?.note || '',
+    terms: event.note || '',
   };
 
   const options = {
@@ -48,7 +48,7 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
     darkHeader: design.darkHeader,
     showPrice: ticketContent.showPrice,
     showQr: design.showQRCode,
-    showTerms: Boolean(order?.event?.note),
+    showTerms: Boolean(event.note),
     rounded: design.rounded,
     shadow: design.shadow,
     scale: settings.scale || design.scale,
