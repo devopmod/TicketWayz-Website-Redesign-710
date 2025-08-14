@@ -36,3 +36,10 @@ test('sanitizeTicket stringifies ticketId', async () => {
   const { sanitizeTicket } = await loadSanitizeTicket();
   assert.equal(sanitizeTicket({ ticketId: 456 }).ticketId, '456');
 });
+
+test('sanitizeTicket extracts seat identifiers', async () => {
+  const { sanitizeTicket } = await loadSanitizeTicket();
+  assert.equal(sanitizeTicket({ seat: { seat_number: 7 } }).seat, '7');
+  assert.equal(sanitizeTicket({ seat: { label: 'VIP' } }).seat, 'VIP');
+  assert.equal(sanitizeTicket({ seat: {} }).seat, undefined);
+});
