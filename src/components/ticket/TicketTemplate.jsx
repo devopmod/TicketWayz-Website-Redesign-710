@@ -19,6 +19,7 @@ export function sanitizeTicket(data = {}) {
     'seat',
     'price',
     'currency',
+    'ticketId',
     'qrValue',
     'terms',
   ];
@@ -36,7 +37,7 @@ const SafeText = ({ text, className, ...props }) => (
   </span>
 );
 
-const MiniQR = ({ value }) => {
+const MiniQR = ({ value, ticketId }) => {
   if (!value) return null;
   const src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(value)}&size=164x164`;
   return (
@@ -52,9 +53,11 @@ const MiniQR = ({ value }) => {
           />
         </div>
       </div>
-      <div className="mt-2 text-xs text-gray-500">
-        <SafeText data-slot="qrValue (text)" text={value} />
-      </div>
+      {ticketId && (
+        <div className="mt-2 text-xs text-gray-500">
+          <SafeText data-slot="ticketId" text={ticketId} />
+        </div>
+      )}
     </div>
   );
 };
@@ -96,9 +99,12 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
     seat,
     price,
     currency,
+    ticketId,
     qrValue,
     terms,
   } = ticket;
+
+  const actualTicketId = ticketId || qrValue;
 
   const {
     accent,
@@ -225,12 +231,12 @@ const TicketTemplate = forwardRef(({ data = {}, options = {} }, ref) => {
 
             {showQr && qrValue && (
               <div className="mt-6 flex items-center justify-center">
-                <MiniQR value={qrValue} />
+                <MiniQR value={qrValue} ticketId={actualTicketId} />
               </div>
             )}
-            {qrValue && (
+            {qrValue && actualTicketId && qrValue !== actualTicketId && (
               <div className="mt-2 text-xs text-gray-500 text-center">
-                <SafeText data-slot="ticketId" text={qrValue} />
+                <SafeText data-slot="qrValueText" text={qrValue} />
               </div>
             )}
           </div>
