@@ -26,7 +26,12 @@ export function sanitizeTicket(data = {}) {
   ];
   const result = {};
   for (const key of fields) {
-    const val = data[key];
+    let val = data[key];
+    if (key === 'seat' && val && typeof val === 'object') {
+      val = [val.seat_number, val.label, val.number, val.id].find(
+        (v) => v !== undefined && v !== null,
+      );
+    }
     if (val !== undefined && val !== null) result[key] = toStr(val);
   }
   return result;
