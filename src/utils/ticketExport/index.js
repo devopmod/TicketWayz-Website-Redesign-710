@@ -92,7 +92,7 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
       date,
       time,
       venue: event.location,
-      address: event.address || event.note,
+      address: event.address,
       section: seatInfo.section,
       row: seatInfo.row_number,
       seat: seatInfo.seat_number,
@@ -108,7 +108,7 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
       darkHeader: settings.design?.darkHeader,
       showPrice: settings.ticketContent?.showPrice,
       showQr: settings.design?.showQRCode,
-      showTerms: settings.ticketContent?.showTerms,
+      showTerms: settings.ticketContent?.showTerms ?? true,
       rounded: settings.design?.rounded,
       shadow: settings.design?.shadow,
     };

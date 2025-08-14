@@ -55,7 +55,8 @@ const TicketDesigner = () => {
         title: data.artist,
         date: data.date,
         location: data.venue,
-        note: data.address,
+        address: data.address,
+        note: data.terms,
         image: data.heroImage,
       },
       seats: [

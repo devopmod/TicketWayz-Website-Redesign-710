@@ -55,7 +55,7 @@ const TicketPreview = ({
     currency: t.currency,
     qrValue: t.qrValue,
     ticketType: t.ticketType,
-    terms: buildTermsText({}, settings),
+    terms: buildTermsText({ event: { note: t.terms } }, settings),
   };
 
   const options = {
