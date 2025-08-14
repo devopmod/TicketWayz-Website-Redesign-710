@@ -1,7 +1,6 @@
-import { toPng } from 'html-to-image';
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { TicketTemplate } from '../../components/ticket';
+import { pdf, Document } from '@react-pdf/renderer';
+import { TicketTemplatePDF } from '../../components/ticket';
 
 /**
  * Combine event notes and custom text into a single terms string.
@@ -126,92 +125,24 @@ export async function downloadTicketsPDF(order, baseFileName = 'ticket', templat
   order.event.image = validateImageUrl(order.event.image);
 
   const seats = Array.isArray(order.seats) && order.seats.length > 0 ? order.seats : [null];
-  const images = [];
+  const pages = [];
 
   for (const seat of seats) {
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'absolute';
-    wrapper.style.left = '-10000px';
-    document.body.appendChild(wrapper);
-
     const seatInfo = seat || order.seat || {};
     const { data, options } = buildTicketTemplateProps(order, seatInfo, settings);
-
-    const markup = renderToStaticMarkup(
-      React.createElement(TicketTemplate, { data, options }),
+    pages.push(
+      React.createElement(TicketTemplatePDF, {
+        key: pages.length,
+        data,
+        options,
+      }),
     );
-    wrapper.innerHTML = markup;
-
-    const child = wrapper.firstElementChild;
-    if (child && child.style) {
-      child.style.width = '560px';
-      const scale = options.scale;
-      if (scale && scale !== 1) {
-        child.style.transform = `scale(${scale})`;
-        child.style.transformOrigin = 'top left';
-      }
-      if (options.rounded !== undefined) {
-        child.style.borderRadius = options.rounded ? '24px' : '0';
-      }
-      if (options.shadow !== undefined) {
-        child.style.boxShadow = options.shadow
-          ? '0 25px 50px -12px rgba(0,0,0,0.25)'
-          : 'none';
-      }
-    }
-
-    await new Promise((r) => setTimeout(r, 100));
-
-    try {
-      const dataUrl = await toPng(wrapper.firstElementChild, {
-        cacheBust: true,
-        backgroundColor: null,
-        style: {
-          transform: child?.style.transform,
-          transformOrigin: child?.style.transformOrigin,
-          borderRadius: child?.style.borderRadius,
-          boxShadow: child?.style.boxShadow,
-        },
-      });
-      images.push(dataUrl);
-    } catch (err) {
-      console.error('Error generating image', err);
-    }
-
-    document.body.removeChild(wrapper);
   }
 
-  if (images.length === 0) return;
+  if (pages.length === 0) return;
 
-  let PDFDocument;
-  try {
-    ({ PDFDocument } = await import('pdf-lib'));
-  } catch (err) {
-    console.error('pdf-lib not available', err);
-    return;
-  }
-
-  const pdfDoc = await PDFDocument.create();
-  const PAGE_WIDTH = 595.28; // A4 width in points
-  const PAGE_HEIGHT = 841.89; // A4 height in points
-  for (const img of images) {
-    const pngBytes = await fetch(img).then((res) => res.arrayBuffer());
-    const pngImage = await pdfDoc.embedPng(pngBytes);
-    const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-    const scale = Math.min(PAGE_WIDTH / pngImage.width, PAGE_HEIGHT / pngImage.height);
-    const imgWidth = pngImage.width * scale;
-    const imgHeight = pngImage.height * scale;
-    const x = (PAGE_WIDTH - imgWidth) / 2;
-    const y = (PAGE_HEIGHT - imgHeight) / 2;
-    page.drawImage(pngImage, {
-      x,
-      y,
-      width: imgWidth,
-      height: imgHeight,
-    });
-  }
-  const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const doc = pdf(React.createElement(Document, null, pages));
+  const blob = await doc.toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
