@@ -58,7 +58,7 @@ export function buildTicketTemplateProps(order = {}, seat = {}, settings = {}) {
     currency: order.currency,
     qrValue: seatInfo.id || order.orderNumber || order.qrValue,
     ticketType: seatInfo.ticketType || seatInfo.type || order.ticketType,
-    terms: event.note || '',
+    terms: event.note ? event.note : undefined,
   };
 
   const options = {

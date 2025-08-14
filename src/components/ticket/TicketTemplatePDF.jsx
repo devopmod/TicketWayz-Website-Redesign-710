@@ -179,33 +179,33 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
     <Page size="A4" style={styles.page}>
       <View style={styles.ticket}>
         <View style={styles.hero}>
-          {heroImage && <Image src={heroImage} style={styles.heroImage} />}
-          {brand && <Text style={styles.brand}>{brand}</Text>}
+          {heroImage ? <Image src={heroImage} style={styles.heroImage} /> : null}
+          {brand ? <Text style={styles.brand}>{brand}</Text> : null}
         </View>
         <View style={styles.content}>
-          {artist && <Text style={styles.heading}>{artist}</Text>}
-          {(date || time) && (
+          {artist ? <Text style={styles.heading}>{artist}</Text> : null}
+          {(date || time) ? (
             <Text style={styles.smallText}>
               {date}
               {time ? ` ${time}` : ''}
             </Text>
-          )}
-          {venue && <Text style={[styles.smallText, styles.highlight]}>{venue}</Text>}
-          {address && <Text style={styles.smallText}>{address}</Text>}
+          ) : null}
+          {venue ? <Text style={[styles.smallText, styles.highlight]}>{venue}</Text> : null}
+          {address ? <Text style={styles.smallText}>{address}</Text> : null}
 
-          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0) && (<View style={{ flexDirection: 'row' }}><View style={{ flex: 1, borderRightWidth: 1, borderColor: 'transparent', alignItems: 'flex-start' }}>{filteredFirstRow}</View><View style={{ flex: 1, borderLeftWidth: 1, borderColor: 'transparent', alignItems: 'flex-end' }}>{filteredSecondRow}</View></View>)}
+          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0) ? (<View style={{ flexDirection: 'row' }}><View style={{ flex: 1, borderRightWidth: 1, borderColor: 'transparent', alignItems: 'flex-start' }}>{filteredFirstRow}</View><View style={{ flex: 1, borderLeftWidth: 1, borderColor: 'transparent', alignItems: 'flex-end' }}>{filteredSecondRow}</View></View>) : null}
 
-          {showQr && qrSrc && (
+          {showQr && qrSrc ? (
             <View style={styles.qrContainer}>
               <Image style={styles.qr} src={qrSrc} />
-              {actualTicketId && <Text style={styles.ticketId}>{actualTicketId}</Text>}
+              {actualTicketId ? <Text style={styles.ticketId}>{actualTicketId}</Text> : null}
             </View>
-          )}
-          {qrValue && actualTicketId && qrValue !== actualTicketId && (
+          ) : null}
+          {qrValue && actualTicketId && qrValue !== actualTicketId ? (
             <Text style={styles.ticketId}>{qrValue}</Text>
-          )}
+          ) : null}
 
-          {terms && <Text style={styles.terms}>{terms}</Text>}
+          {terms ? <Text style={styles.terms}>{terms}</Text> : null}
         </View>
       </View>
     </Page>

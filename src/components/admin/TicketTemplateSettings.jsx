@@ -88,13 +88,13 @@ const TicketTemplateSettings = () => {
     }
     return {
       brand: templateSettings.companyInfo?.brand || 'TicketWayz',
-      heroImage: templateSettings.design?.heroUrl || lastSoldTicket.event?.image || '',
-      artist: lastSoldTicket.event?.title || '',
+      heroImage: templateSettings.design?.heroUrl || lastSoldTicket.event?.image || undefined,
+      artist: lastSoldTicket.event?.title || undefined,
       date: eventDate,
       time: eventTime,
-      venue: lastSoldTicket.event?.location || '',
-      address: lastSoldTicket.event?.address || '',
-      terms: lastSoldTicket.event?.note || '',
+      venue: lastSoldTicket.event?.location || undefined,
+      address: lastSoldTicket.event?.address || undefined,
+      terms: lastSoldTicket.event?.note || undefined,
       section: lastSoldTicket.seat?.section,
       row: lastSoldTicket.seat?.row_number,
       seat: (() => {
@@ -110,11 +110,11 @@ const TicketTemplateSettings = () => {
       })(),
       price: lastSoldTicket.order_item?.unit_price
         ? parseFloat(lastSoldTicket.order_item.unit_price).toFixed(2)
-        : '',
+        : undefined,
       currency: '€',
       qrValue: lastSoldTicket.id
         ? `T-${lastSoldTicket.id.substring(0, 8)}`
-        : '',
+        : undefined,
       ticketType: lastSoldTicket.seat
         ? 'seat'
         : lastSoldTicket.zone
