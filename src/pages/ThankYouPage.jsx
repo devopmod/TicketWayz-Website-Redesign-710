@@ -63,6 +63,12 @@ const ThankYouPage = () => {
     if (orderSummary) {
       const orderData = {
         ...orderSummary,
+        seats: orderSummary.seats?.map(seat => ({
+          ...seat,
+          section: seat.section,
+          row_number: seat.row_number,
+          seat_number: seat.seat_number
+        })),
         company: {
           name: templateSettings?.companyInfo?.brand || 'TicketWayz',
         },
@@ -109,12 +115,21 @@ const ThankYouPage = () => {
             </>
           )}
           {orderSummary && orderSummary.seats && (
-            <div className="flex justify-between mb-2">
-              <span className="text-zinc-400">Билеты:</span>
-              <span>
-                {orderSummary.seats.length} шт.
-              </span>
-            </div>
+            <>
+              <div className="flex justify-between mb-2">
+                <span className="text-zinc-400">Билеты:</span>
+                <span>
+                  {orderSummary.seats.length} шт.
+                </span>
+              </div>
+              <div className="text-sm text-left text-zinc-400 space-y-1 mb-2">
+                {orderSummary.seats.map(seat => (
+                  <div key={seat.id}>
+                    Секция {seat.section || '-'}, ряд {seat.row_number || '-'}, место {seat.seat_number || seat.number || '-'}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
           <div className="flex justify-between font-medium pt-2 border-t border-zinc-600">
             <span>Итого:</span>

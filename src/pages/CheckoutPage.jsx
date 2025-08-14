@@ -59,7 +59,12 @@ const CheckoutPage=()=> {
 
     if (storedSeats) {
       try {
-        const parsedSeats=JSON.parse(storedSeats);
+        const parsedSeats=JSON.parse(storedSeats).map(seat=> ({
+          ...seat,
+          section: seat.section,
+          row_number: seat.row_number ?? seat.row,
+          seat_number: seat.seat_number ?? seat.number ?? seat.label
+        }));
         console.log('🎫 Loaded seats from sessionStorage:',parsedSeats);
         setSelectedSeats(parsedSeats);
       } catch (error) {
@@ -348,7 +353,12 @@ const CheckoutPage=()=> {
 
         // Store order summary in sessionStorage for thank you page
         sessionStorage.setItem('orderSummary',JSON.stringify({
-          seats: selectedSeats,
+          seats: selectedSeats.map(seat=> ({
+            ...seat,
+            section: seat.section,
+            row_number: seat.row_number,
+            seat_number: seat.seat_number
+          })),
           event: eventDetails,
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
@@ -387,7 +397,12 @@ const CheckoutPage=()=> {
 
         // Store order summary in sessionStorage for thank you page
         sessionStorage.setItem('orderSummary',JSON.stringify({
-          seats: selectedSeats,
+          seats: selectedSeats.map(seat=> ({
+            ...seat,
+            section: seat.section,
+            row_number: seat.row_number,
+            seat_number: seat.seat_number
+          })),
           event: eventDetails,
           totalPrice: calculateTotal(),
           orderNumber: `TW-${order.id.substring(0,6)}`,
