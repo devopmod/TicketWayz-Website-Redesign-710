@@ -39,6 +39,14 @@ const TicketPreview = ({
 
   const ticketRef = useRef(null);
 
+  const seatObj = typeof t.seat === 'object' ? t.seat : {};
+  const seatNumber =
+    seatObj.seat_number ??
+    seatObj.label ??
+    seatObj.number ??
+    seatObj.id ??
+    (typeof t.seat === 'string' || typeof t.seat === 'number' ? t.seat : undefined);
+
   const previewOrder = {
     date: t.date,
     time: t.time,
@@ -55,9 +63,9 @@ const TicketPreview = ({
     },
     company: { name: t.brand },
     seat: {
-      section: t.section,
-      row_number: t.row,
-      seat_number: t.seat,
+      section: t.section ?? seatObj.section,
+      row_number: t.row ?? seatObj.row_number,
+      seat_number: seatNumber != null ? String(seatNumber) : undefined,
       price: t.price,
       id: t.qrValue,
       ticketType: t.ticketType,
