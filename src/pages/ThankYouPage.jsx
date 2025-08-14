@@ -21,10 +21,11 @@ const ThankYouPage = () => {
           console.warn('Missing event.image in order summary');
           parsedSummary.event = { ...parsedSummary.event, image: null };
         }
+        const note = parsedSummary?.event?.note || '';
         if (!parsedSummary?.event?.note) {
           console.warn('Missing event.note in order summary');
-          parsedSummary.event = { ...parsedSummary.event, note: '' };
         }
+        parsedSummary.event = { ...parsedSummary.event, note };
         setOrderSummary(parsedSummary);
       } catch (error) {
         console.error('Error parsing order summary:', error);
@@ -72,13 +73,14 @@ const ThankYouPage = () => {
     if (orderSummary) {
       if (!orderSummary.event?.image) console.warn('Missing event.image before PDF generation');
       if (!orderSummary.event?.note) console.warn('Missing event.note before PDF generation');
+      const eventWithNote = {
+        ...orderSummary.event,
+        image: orderSummary.event?.image || null,
+        note: orderSummary.event?.note || '',
+      };
       const orderData = {
         ...orderSummary,
-        event: {
-          ...orderSummary.event,
-          image: orderSummary.event?.image || null,
-          note: orderSummary.event?.note || '',
-        },
+        event: eventWithNote,
         seats: orderSummary.seats?.map(seat => ({
           ...seat,
           section: seat.section,

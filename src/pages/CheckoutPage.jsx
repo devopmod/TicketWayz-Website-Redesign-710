@@ -361,14 +361,14 @@ const CheckoutPage=()=> {
         const order=await createOrder();
 
         // Store order summary in sessionStorage for thank you page
-        const eventForSummary={
+        const eventForSummary = {
           ...eventDetails,
           image: eventDetails?.image || null,
-          note: eventDetails?.note || ''
+          note: eventDetails?.note || '',
         };
         if (!eventDetails?.image) console.warn('Missing event.image when building order summary');
         if (!eventDetails?.note) console.warn('Missing event.note when building order summary');
-        sessionStorage.setItem('orderSummary',JSON.stringify({
+        sessionStorage.setItem('orderSummary', JSON.stringify({
           seats: selectedSeats.map(seat=> ({
             ...seat,
             section: seat.section,
@@ -412,14 +412,14 @@ const CheckoutPage=()=> {
         const order=await createOrder();
 
         // Store order summary in sessionStorage for thank you page
-        const eventForSummary={
+        const eventForSummary = {
           ...eventDetails,
           image: eventDetails?.image || null,
-          note: eventDetails?.note || ''
+          note: eventDetails?.note || '',
         };
         if (!eventDetails?.image) console.warn('Missing event.image when building order summary');
         if (!eventDetails?.note) console.warn('Missing event.note when building order summary');
-        sessionStorage.setItem('orderSummary',JSON.stringify({
+        sessionStorage.setItem('orderSummary', JSON.stringify({
           seats: selectedSeats.map(seat=> ({
             ...seat,
             section: seat.section,
