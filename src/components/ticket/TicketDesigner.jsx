@@ -24,7 +24,6 @@ const defaultOptions = {
   darkHeader: false,
   showPrice: true,
   showQr: true,
-  showTerms: true,
   rounded: true,
   shadow: true,
 };
@@ -80,7 +79,6 @@ const TicketDesigner = () => {
       },
       ticketContent: {
         showPrice: options.showPrice,
-        showTerms: options.showTerms,
       },
     };
 
@@ -141,16 +139,6 @@ const TicketDesigner = () => {
             onChange={handleOptionsChange}
           />
           <label htmlFor="showQr">Show QR</label>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <input
-            id="showTerms"
-            type="checkbox"
-            name="showTerms"
-            checked={options.showTerms}
-            onChange={handleOptionsChange}
-          />
-          <label htmlFor="showTerms">Show terms</label>
         </div>
         <button
           type="button"

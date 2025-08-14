@@ -93,15 +93,6 @@ const TicketLayoutSettings = ({
           <span className="text-sm text-zinc-700 dark:text-zinc-300">Show QR</span>
         </label>
 
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            className="rounded border-zinc-300 dark:border-zinc-600"
-            checked={settings.ticketContent.showTerms}
-            onChange={handle('ticketContent', 'showTerms')}
-          />
-          <span className="text-sm text-zinc-700 dark:text-zinc-300">Show terms</span>
-        </label>
       </div>
 
       <TicketPreview
@@ -112,7 +103,6 @@ const TicketLayoutSettings = ({
         shadow={settings.design.shadow}
         showPrice={settings.ticketContent.showPrice}
         showQr={settings.design.showQRCode}
-        showTerms={settings.ticketContent.showTerms}
         onDownload={onDownloadPreview}
         onRefresh={onRefreshPreview}
         ticketData={ticketData}

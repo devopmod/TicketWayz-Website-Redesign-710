@@ -120,7 +120,7 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
   } = ticket;
 
   const actualTicketId = ticketId || qrValue;
-  const { showPrice = true, showQr = true, showTerms = true } = options;
+  const { showPrice = true, showQr = true } = options;
   const qrSrc = qrImage || (qrValue ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrValue)}&size=164x164` : null);
 
   return (
@@ -187,7 +187,7 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
             <Text style={styles.ticketId}>{qrValue}</Text>
           )}
 
-          {showTerms && terms && <Text style={styles.terms}>{terms}</Text>}
+          {terms && <Text style={styles.terms}>{terms}</Text>}
         </View>
       </View>
     </Page>
