@@ -63,6 +63,10 @@ const ThankYouPage = () => {
     if (orderSummary) {
       const orderData = {
         ...orderSummary,
+        event: {
+          ...orderSummary.event,
+          image: orderSummary.event?.image,
+        },
         seats: orderSummary.seats?.map(seat => ({
           ...seat,
           section: seat.section,

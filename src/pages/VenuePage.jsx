@@ -437,7 +437,8 @@ sessionStorage.setItem('selectedSeats',JSON.stringify(seatsForCheckout));
   date: event.event_date,
   location: event.location,
   venue: venue?.name,
-  note: event.note
+  note: event.note,
+  image: event.image
 }));
 
 navigate('/checkout');
