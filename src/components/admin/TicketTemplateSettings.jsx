@@ -406,7 +406,15 @@ const TicketTemplateSettings = () => {
     setSaving(true);
     setError(null);
     try {
-      localStorage.setItem('ticketTemplateSettings', JSON.stringify(templateSettings));
+      const settingsToSave = {
+        ...templateSettings,
+        ticketContent: {
+          ...templateSettings.ticketContent,
+          showTerms: true,
+        },
+      };
+      localStorage.setItem('ticketTemplateSettings', JSON.stringify(settingsToSave));
+      setTemplateSettings(settingsToSave);
       localStorage.setItem('smtpSettings', JSON.stringify(smtpSettings));
       localStorage.setItem('emailSettings', JSON.stringify(emailSettings));
       setSuccess(true);

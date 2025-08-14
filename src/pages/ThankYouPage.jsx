@@ -78,7 +78,14 @@ const ThankYouPage = () => {
         },
         currency: orderSummary.currency || '€',
       };
-      downloadTicketsPDF(orderData, `tickets-${orderNumber}`, templateSettings);
+      const settings = {
+        ...templateSettings,
+        ticketContent: {
+          ...templateSettings?.ticketContent,
+          showTerms: true,
+        },
+      };
+      downloadTicketsPDF(orderData, `tickets-${orderNumber}`, settings);
     }
   };
 
