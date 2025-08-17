@@ -219,6 +219,13 @@ const CheckoutPage=()=> {
         throw new Error('Нет выбранных мест для заказа');
       }
 
+      // Собираем все ticket IDs и проверяем на дубликаты до обращения к БД
+      const allTicketIds=selectedSeats.flatMap(seat=> seat.ticketIds || [seat.ticketId]).filter(Boolean);
+      const uniqueIds=new Set(allTicketIds);
+      if (uniqueIds.size !== allTicketIds.length) {
+        throw new Error('Обнаружены дублирующиеся билеты среди выбранных мест');
+      }
+
       // 1. Создаем или получаем пользователя с реальными данными
       const userId=await createOrGetUser();
       console.log('✅ User ID:',userId);
