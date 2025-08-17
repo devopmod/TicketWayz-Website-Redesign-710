@@ -272,6 +272,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   const [uploadedFileName, setUploadedFileName] = useState('');
   const [imageUploadError, setImageUploadError] = useState('');
   const fileInputRef = useRef(null);
+  const [previewUrl, setPreviewUrl] = useState('https://placehold.co/600x400/333/FFF?text=Event');
 
   // Form data
   const [eventData, setEventData] = useState({
@@ -282,7 +283,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
     genre: '',
     location: '',
     event_date: new Date().toISOString().slice(0, 16), // Format for datetime-local
-    image: 'https://placehold.co/600x400/333/FFF?text=Event',
+    image: '',
     venue_id: null,
     prices: {},
     note: ''
@@ -404,7 +405,7 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
         artist: event.artist || '',
         genre: event.genre || '',
         location: event.location || '',
-        image: event.image || 'https://placehold.co/600x400/333/FFF?text=Event',
+        image: event.image || '',
         venue_id: event.venue_id || null,
         prices: {},
         note: event.note || ''
@@ -412,6 +413,20 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
 
       console.log("Formatted event data:", formattedEventData);
       setEventData(formattedEventData);
+
+      if (formattedEventData.image) {
+        if (formattedEventData.image.startsWith('http')) {
+          setPreviewUrl(formattedEventData.image);
+        } else {
+          const { data: { publicUrl } } = supabase
+            .storage
+            .from('event-images')
+            .getPublicUrl(formattedEventData.image);
+          setPreviewUrl(publicUrl);
+        }
+      } else {
+        setPreviewUrl('https://placehold.co/600x400/333/FFF?text=Event');
+      }
 
       // Fetch event prices if we have an event ID
       if (event.id) {
@@ -444,6 +459,9 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
       ...prev,
       [field]: value
     }));
+    if (field === 'image') {
+      setPreviewUrl(value || 'https://placehold.co/600x400/333/FFF?text=Event');
+    }
   };
 
   // НОВАЯ функция для обработки загрузки изображения
@@ -485,8 +503,10 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
 
       setEventData(prev => ({
         ...prev,
-        image: publicUrl
+        image: uploadData.path
       }));
+
+      setPreviewUrl(publicUrl);
 
       // Сохраняем имя файла для отображения
       setUploadedFileName(file.name);
@@ -500,8 +520,9 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
   const handleRemoveUploadedImage = () => {
     setEventData(prev => ({
       ...prev,
-      image: 'https://placehold.co/600x400/333/FFF?text=Event'
+      image: ''
     }));
+    setPreviewUrl('https://placehold.co/600x400/333/FFF?text=Event');
     setUploadedFileName('');
     setImageUploadError('');
     
@@ -1090,10 +1111,10 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
                           Enter URL for event cover image or upload from computer
                         </p>
                       </div>
-                      {eventData.image && (
+                      {previewUrl && (
                         <div className="w-24 h-24 flex-shrink-0">
                           <img
-                            src={eventData.image}
+                            src={previewUrl}
                             alt="Preview"
                             className="w-full h-full object-cover rounded-lg"
                             onError={(e) => {
