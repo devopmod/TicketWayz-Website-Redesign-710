@@ -373,7 +373,7 @@ if (purchasedSeats.find(s => s.seat_id === seatId)) return 'purchased';
 if (reservedSeats.find(s => s.seat_id === seatId)) return 'reserved';
 // ИСПРАВЛЕНО: Проверяем выбранные кресла по правильному полю seatId
 if (selectedSeats.find(s => s.seatId === seatId)) return 'selected';
-return 'available';
+return 'free';
 }, [reservedSeats, purchasedSeats, selectedSeats]);
 
 const getSeatColor=useCallback((seat,status)=> {
@@ -381,7 +381,7 @@ switch (status) {
 case 'purchased': return '#6B7280';// Gray
 case 'reserved': return '#F59E0B';// Amber
 case 'selected': return '#10B981';// Green
-case 'available':
+case 'free':
 default:
 // Use category color if available
 if (seat.categoryId && categories[seat.categoryId]) {
@@ -448,7 +448,7 @@ ticketStatuses: relevantTickets.map(t=> t.status)
 });
 
 // Подсчитываем билеты по статусам
-const freeTickets=relevantTickets.filter(t=> t.status==='free' || t.status==='available');
+const freeTickets=relevantTickets.filter(t=> t.status==='free');
 const heldTickets=relevantTickets.filter(t=> t.status==='held');
 const soldTickets=relevantTickets.filter(t=> t.status==='sold');
 
@@ -828,7 +828,7 @@ return isPointInElement(pos,element);
 
 if (clickedSeat) {
 const status=getSeatStatus(clickedSeat.id);
-if (status==='available' || status==='selected') {
+if (status==='free' || status==='selected') {
 onSeatSelect?.(clickedSeat);
 }
 return;

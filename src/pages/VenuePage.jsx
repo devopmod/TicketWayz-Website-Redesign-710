@@ -164,7 +164,7 @@ console.log('🔍 ПОИСК БИЛЕТОВ для места/зоны:',seat);
 console.log('🔍 Доступные билеты:',tickets.length);
 
 // Фильтруем только свободные билеты
-const freeTickets=tickets.filter(t=> t.status==='free' || t.status==='available');
+const freeTickets=tickets.filter(t=> t.status==='free');
 console.log('🔍 Свободные билеты:',freeTickets.length);
 
 if (seat.type==='seat') {
@@ -496,10 +496,10 @@ getSeatPrice(selectedCapacityElement).then(unitPrice=> {
 console.log(`Got unit price for capacity selection: ${unitPrice}`);
 
 // Найти доступные билеты для этой зоны
-const availableTicketsForZone=tickets.filter(t=> 
-t.zone_id===selectedCapacityElement.id && 
-(t.status==='free' || t.status==='available')
-);
+const availableTicketsForZone=tickets.filter(t=>
+        t.zone_id===selectedCapacityElement.id &&
+        t.status==='free'
+      );
 
 if (availableTicketsForZone.length < capacityToSelect) {
 alert('Недостаточно доступных билетов для выбранного количества мест');
