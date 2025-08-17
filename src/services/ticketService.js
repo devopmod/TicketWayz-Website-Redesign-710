@@ -483,7 +483,21 @@ export const refundOrder = async (orderId) => {
 
     if (ticketsError) throw ticketsError;
 
-    return { success: true, orderId, ticketCount: ticketIds.length };
+    // Refresh ticket statistics for affected events
+    const { data: eventInfo, error: eventInfoError } = await supabase
+      .from('tickets')
+      .select('event_id')
+      .in('id', ticketIds);
+
+    if (eventInfoError) throw eventInfoError;
+
+    const eventIds = [...new Set(eventInfo.map(t => t.event_id))];
+    const stats = [];
+    for (const eventId of eventIds) {
+      stats.push(await getTicketsStatistics(eventId));
+    }
+
+    return { success: true, orderId, ticketCount: ticketIds.length, stats };
   } catch (error) {
     console.error('Error processing refund:', error);
     throw error;
