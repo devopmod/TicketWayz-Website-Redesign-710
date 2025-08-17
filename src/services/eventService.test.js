@@ -48,3 +48,72 @@ test('fetchEventById returns event with prices', async (t) => {
   delete global.__mockSupabase;
   delete global.__mockTicketService;
 });
+
+test('fetchEvents resolves image URLs', async (t) => {
+  const events = [
+    { id: 1, title: 'Event 1', image: 'path/to/image1.jpg', venue: {} },
+    { id: 2, title: 'Event 2', image: 'http://example.com/img.jpg', venue: {} }
+  ];
+  const priceMap = {
+    1: [{ price: 50 }, { price: 30 }],
+    2: [{ price: 40 }]
+  };
+
+  const mockSupabase = {
+    from(table) {
+      if (table === 'events') {
+        return {
+          select() {
+            return {
+              order() {
+                return Promise.resolve({ data: events, error: null });
+              }
+            };
+          }
+        };
+      }
+      if (table === 'event_prices') {
+        return {
+          select() {
+            return {
+              eq(_, id) {
+                return {
+                  order() {
+                    return Promise.resolve({ data: priceMap[id], error: null });
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+      return {};
+    },
+    storage: {
+      from() {
+        return {
+          getPublicUrl(path) {
+            return { data: { publicUrl: `https://storage/${path}` } };
+          }
+        };
+      }
+    }
+  };
+
+  global.__mockSupabase = mockSupabase;
+  global.__mockTicketService = { createEventTickets: async () => ({}) };
+  const code = await fs.readFile(new URL('./eventService.js', import.meta.url), 'utf8');
+  const patched = code
+    .replace("import supabase from '../lib/supabase';", 'const supabase = global.__mockSupabase;')
+    .replace("import {createEventTickets} from './ticketService';", 'const {createEventTickets} = global.__mockTicketService;');
+  const { fetchEvents } = await import(`data:text/javascript;base64,${Buffer.from(patched).toString('base64')}?fetchEvents`);
+
+  const result = await fetchEvents();
+  assert.equal(result.length, 2);
+  assert.equal(result[0].image, 'https://storage/path/to/image1.jpg');
+  assert.equal(result[1].image, 'http://example.com/img.jpg');
+  assert.equal(result[0].price, 30);
+  assert.equal(result[1].price, 40);
+  delete global.__mockSupabase;
+  delete global.__mockTicketService;
+});
