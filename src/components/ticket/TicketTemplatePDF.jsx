@@ -27,6 +27,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: '#ffffff',
     overflow: 'hidden',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   },
   hero: {
     width: '100%',
