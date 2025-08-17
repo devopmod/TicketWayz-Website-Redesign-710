@@ -22,6 +22,7 @@ const [ticketStats,setTicketStats]=useState({total: 0,free: 0,held: 0,sold: 0});
 const [showCart,setShowCart]=useState(false);
 const [categoryPrices,setCategoryPrices]=useState({});
 const [venueCategories,setVenueCategories]=useState({});
+const [unavailableMessage,setUnavailableMessage]=useState('');
 
 // State for capacity modal
 const [showCapacityModal,setShowCapacityModal]=useState(false);
@@ -239,14 +240,7 @@ return selectedTickets;
 }
 } 
 
-// 3. Поиск любых билетов зоны (fallback)
-zoneTickets=freeTickets.filter(t=> t.zone_id);
-if (zoneTickets.length >=quantity) {
-const selectedTickets=zoneTickets.slice(0,quantity);
-console.log(`⚠️ Найдено ${selectedTickets.length} билетов зоны (fallback):`,selectedTickets);
-return selectedTickets;
 }
-} 
 
 console.log('❌ Билеты не найдены для места/зоны:',seat);
 return [];
@@ -274,17 +268,19 @@ const correspondingTickets=findCorrespondingTickets(seat);
 if (!correspondingTickets || correspondingTickets.length===0) {
 console.error('❌ No corresponding tickets found for seat:',seat);
 if (seat.type==='seat') {
-alert('Выбранное место уже занято.');
+setUnavailableMessage('Выбранное место недоступно.');
 } else {
-alert('Не удалось найти доступные билеты. Возможно,все билеты уже забронированы.');
+setUnavailableMessage('Не удалось найти доступные билеты. Возможно,все билеты уже забронированы.');
 }
+setTimeout(()=> setUnavailableMessage(''),3000);
 return;
 }
 
 const requiredQuantity=seat.quantity || 1;
 if (correspondingTickets.length < requiredQuantity) {
 console.error(`❌ Not enough tickets found. Required: ${requiredQuantity},Found: ${correspondingTickets.length}`);
-alert(`Недостаточно доступных билетов. Требуется: ${requiredQuantity},найдено: ${correspondingTickets.length}`);
+setUnavailableMessage(`Недостаточно доступных билетов. Требуется: ${requiredQuantity},найдено: ${correspondingTickets.length}`);
+setTimeout(()=> setUnavailableMessage(''),3000);
 return;
 }
 
@@ -303,7 +299,8 @@ console.log('🎯 ОТЛАДКА handleSeatToggle: Created cart item:', cartItem
 setSelectedSeats([...selectedSeats,cartItem]);
 } catch (error) {
 console.error('Error getting seat price:',error);
-alert('Не удалось получить цену для выбранного места. Попробуйте еще раз.');
+setUnavailableMessage('Не удалось получить цену для выбранного места. Попробуйте еще раз.');
+setTimeout(()=> setUnavailableMessage(''),3000);
 }
 }
 };
@@ -498,7 +495,8 @@ const freeTicketsForZone=tickets.filter(t=>
       );
 
 if (freeTicketsForZone.length < capacityToSelect) {
-alert('Недостаточно доступных билетов для выбранного количества мест');
+setUnavailableMessage('Недостаточно доступных билетов для выбранного количества мест');
+setTimeout(()=> setUnavailableMessage(''),3000);
 return;
 }
 
@@ -527,7 +525,8 @@ setCapacityToSelect(1);
 }).catch(error=> {
 console.error('Error getting price for capacity selection:',error);
 // Показываем ошибку пользователю
-alert('Не удалось получить цену для выбранной зоны. Попробуйте еще раз.');
+setUnavailableMessage('Не удалось получить цену для выбранной зоны. Попробуйте еще раз.');
+setTimeout(()=> setUnavailableMessage(''),3000);
 setShowCapacityModal(false);
 setSelectedCapacityElement(null);
 setCapacityToSelect(1);
@@ -653,6 +652,9 @@ return categoryPricesDisplay;
 
 return (
 <div className="container mx-auto max-w-[960px] px-4 py-8">
+{unavailableMessage && (
+<div className="mb-4 p-4 bg-red-100 text-red-700 rounded">{unavailableMessage}</div>
+)}
 {/* Event header */}
 <div className="flex flex-row w-full max-w-100vw min-w-0 mb-6">
 {/* Back arrow */}
