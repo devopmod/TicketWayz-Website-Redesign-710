@@ -42,6 +42,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     objectFit: 'cover',
   },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0))',
+  },
   brand: {
     position: 'absolute',
     top: 10,
@@ -55,8 +63,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontFamily,
   },
-  content: {
+  body: {
+    marginTop: -24,
     padding: 24,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
   },
   heading: {
     fontSize: 24,
@@ -184,11 +196,13 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
   return (
     <Page size="A4" style={styles.page}>
       <View style={styles.ticket}>
-        <View style={styles.hero}>
-          {heroImage ? <Image src={heroImage} style={styles.heroImage} /> : null}
-          {brand ? <Text style={styles.brand}>{brand}</Text> : null}
-        </View>
-        <View style={styles.content}>
+        <View>
+          <View style={styles.hero}>
+            {heroImage ? <Image src={heroImage} style={styles.heroImage} /> : null}
+            {heroImage ? <View style={styles.overlay} /> : null}
+            {brand ? <Text style={styles.brand}>{brand}</Text> : null}
+          </View>
+          <View style={styles.body}>
           {artist ? <Text style={styles.heading}>{artist}</Text> : null}
           {(date || time) ? (
             <Text style={styles.smallText}>
@@ -227,6 +241,7 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
           ) : null}
 
           {terms ? <Text style={styles.terms}>{terms}</Text> : null}
+        </View>
         </View>
       </View>
     </Page>
