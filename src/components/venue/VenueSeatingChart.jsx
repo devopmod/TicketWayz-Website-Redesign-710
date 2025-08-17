@@ -393,14 +393,14 @@ return '#3B82F6';// Blue
 
 // КРИТИЧЕСКИ ИСПРАВЛЕННАЯ функция получения информации о вместимости элемента
 const getElementCapacityInfo=useCallback((element)=> {
-if (!element || !tickets) {
-return {
-total: 0,
-available: 0,
-selected: 0,
-unavailable: 0
-};
-}
+  if (!element || !tickets) {
+    return {
+      total: 0,
+      free: 0,
+      selected: 0,
+      unavailable: 0
+    };
+  }
 
 console.log('🔍 ОТЛАДКА getElementCapacityInfo для элемента:',{
 elementId: element.id,
@@ -452,16 +452,16 @@ const freeTickets=relevantTickets.filter(t=> t.status==='free');
 const heldTickets=relevantTickets.filter(t=> t.status==='held');
 const soldTickets=relevantTickets.filter(t=> t.status==='sold');
 
-const total=relevantTickets.length;
-const unavailable=heldTickets.length + soldTickets.length;
-const available=Math.max(0,freeTickets.length - selectedFromElement);
+  const total=relevantTickets.length;
+  const unavailable=heldTickets.length + soldTickets.length;
+  const free=Math.max(0,freeTickets.length - selectedFromElement);
 
-const result={
-total,
-available,
-selected: selectedFromElement,
-unavailable
-};
+  const result={
+    total,
+    free,
+    selected: selectedFromElement,
+    unavailable
+  };
 
 console.log('🔍 ОТЛАДКА результат getElementCapacityInfo:',{
 elementId: element.id,
@@ -594,7 +594,7 @@ let opacity=1;
 let strokeStyle=sectionColor;
 if (!isBookable) {
 opacity=0.4;
-} else if (capacityInfo.available===0) {
+} else if (capacityInfo.free===0) {
 opacity=0.6;
 strokeStyle='#6B7280';// Gray when full
 }
@@ -620,7 +620,7 @@ ctx.fillText(section.label,x + width / 2,y + height / 2);
 
 // Capacity info - ИСПРАВЛЕНО: показываем реальные доступные места
 if (scale > 0.5) {
-const capacityText=`${capacityInfo.available}/${capacityInfo.total}`;
+const capacityText=`${capacityInfo.free}/${capacityInfo.total}`;
 ctx.fillStyle='#9CA3AF';
 ctx.font=`${10 * scale}px Arial`;
 ctx.textAlign='center';
@@ -653,7 +653,7 @@ let opacity=1;
 let strokeStyle=polygonColor;
 if (!isBookable) {
 opacity=0.4;
-} else if (capacityInfo.available===0) {
+} else if (capacityInfo.free===0) {
 opacity=0.6;
 strokeStyle='#6B7280';// Gray when full
 }
@@ -690,7 +690,7 @@ ctx.fillText(polygon.label,centerX,centerY);
 
 // Capacity info - ИСПРАВЛЕНО: показываем реальные доступные места
 if (scale > 0.5) {
-const capacityText=`${capacityInfo.available}/${capacityInfo.total}`;
+const capacityText=`${capacityInfo.free}/${capacityInfo.total}`;
 ctx.fillStyle='#9CA3AF';
 ctx.font=`${10 * scale}px Arial`;
 ctx.textAlign='center';
@@ -841,17 +841,17 @@ if (element.is_bookable===false) return false;
 
 // ИСПРАВЛЕНО: проверяем реальное количество доступных билетов
 const capacityInfo=getElementCapacityInfo(element);
-if (capacityInfo.available <=0) return false;
+if (capacityInfo.free <=0) return false;
 
 return isPointInElement(pos,element);
 });
 
 if (clickedCapacityElement) {
 const capacityInfo=getElementCapacityInfo(clickedCapacityElement);
-if (capacityInfo.available > 0) {
-setSelectedCapacityElement(clickedCapacityElement);
-setCapacityToSelect(Math.min(capacityInfo.available,1));
-setShowCapacityModal(true);
+if (capacityInfo.free > 0) {
+  setSelectedCapacityElement(clickedCapacityElement);
+  setCapacityToSelect(Math.min(capacityInfo.free,1));
+  setShowCapacityModal(true);
 }
 return;
 }
@@ -1136,7 +1136,7 @@ Select Seats - {selectedCapacityElement.label}
 <div className="mb-4">
 {/* ИСПРАВЛЕНО: Используем динамическое значение из getElementCapacityInfo */}
 <p className="text-gray-400 text-sm mb-2">
-Available seats: {getElementCapacityInfo(selectedCapacityElement).available}
+Free seats: {getElementCapacityInfo(selectedCapacityElement).free}
 </p>
 <label className="block text-sm font-medium text-gray-400 mb-2">
 Number of seats to select:
@@ -1147,7 +1147,7 @@ onChange={(e)=> setCapacityToSelect(parseInt(e.target.value))}
 className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
 >
 {Array.from(
-{length: getElementCapacityInfo(selectedCapacityElement).available},
+{length: getElementCapacityInfo(selectedCapacityElement).free},
 (_,i)=> i + 1
 ).map(num=> (
 <option key={num} value={num}>{num}</option>

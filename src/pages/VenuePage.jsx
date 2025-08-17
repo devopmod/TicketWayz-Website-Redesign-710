@@ -18,7 +18,7 @@ const [selectedSeats,setSelectedSeats]=useState([]);
 const [showInfo,setShowInfo]=useState(false);
 const [error,setError]=useState(null);
 const [tickets,setTickets]=useState([]);
-const [ticketStats,setTicketStats]=useState({total: 0,available: 0,held: 0,sold: 0});
+const [ticketStats,setTicketStats]=useState({total: 0,free: 0,held: 0,sold: 0});
 const [showCart,setShowCart]=useState(false);
 const [categoryPrices,setCategoryPrices]=useState({});
 const [venueCategories,setVenueCategories]=useState({});
@@ -31,26 +31,26 @@ const [capacityToSelect,setCapacityToSelect]=useState(1);
 /** * @typedef {Object} CartItem * @property {string} id - Уникальный идентификатор элемента корзины * @property {string} ticketId - РЕАЛЬНЫЙ ID билета из базы данных * @property {string} elementId - Идентификатор связанного элемента (места или зоны) * @property {string} label - Отображаемое название * @property {number} quantity - Количество мест * @property {number} unitPrice - Цена за одно место * @property {number} totalPrice - Общая цена (unitPrice * quantity) * @property {string} [categoryId] - ID категории для определения цены * @property {string} [type] - Тип элемента (seat,section,polygon) * @property {string[]} [ticketIds] - Массив ID всех билетов для групповых элементов */ 
 
 // КРИТИЧНО ИСПРАВЛЕННАЯ функция-фабрика для создания элементов корзины
-const createCartItem=(seat,unitPrice,availableTickets=[])=> {
+const createCartItem=(seat,unitPrice,freeTickets=[])=> {
 // Определяем базовые значения
 const quantity=seat.quantity || 1;
 const actualUnitPrice=unitPrice !==undefined ? unitPrice : (seat.price / quantity);
 
-// КРИТИЧНО: Используем реальные ticket IDs из доступных билетов
+// КРИТИЧНО: Используем реальные ticket IDs из свободных билетов
 let realTicketIds=[];
-if (availableTickets && availableTickets.length > 0) {
-// Берем нужное количество ticket IDs из доступных билетов
-realTicketIds=availableTickets.slice(0,quantity).map(ticket=> ticket.id);
+if (freeTickets && freeTickets.length > 0) {
+// Берем нужное количество ticket IDs из свободных билетов
+realTicketIds=freeTickets.slice(0,quantity).map(ticket=> ticket.id);
 } else if (seat.ticketId) {
 realTicketIds=[seat.ticketId];
 } else {
 realTicketIds=[seat.id];
-} 
+}
 
 console.log('🔧 Creating cart item:',{
 seatId: seat.id,
 quantity: quantity,
-availableTicketsCount: availableTickets.length,
+freeTicketsCount: freeTickets.length,
 selectedTicketIds: realTicketIds,
 unitPrice: actualUnitPrice
 });
@@ -142,7 +142,7 @@ console.log('Ticket stats:',stats);
 } catch (ticketError) {
 console.error('Error loading tickets:',ticketError);
 setTickets([]);
-setTicketStats({total: 0,available: 0,held: 0,sold: 0});
+setTicketStats({total: 0,free: 0,held: 0,sold: 0});
 }
 } else {
 setError("Для этого события не выбрано место проведения");
@@ -465,7 +465,7 @@ return ticket.zone_id===element.id && ticket.status==='sold';
 }).length;
 
 const unavailable=reservedFromElement + purchasedFromElement;
-const available=Math.max(0,totalCapacity - unavailable - selectedFromElement);
+const free=Math.max(0,totalCapacity - unavailable - selectedFromElement);
 
 console.log(`📊 Capacity info for element ${element.id}:`,{
 totalCapacity,
@@ -473,12 +473,12 @@ selectedFromElement,
 reservedFromElement,
 purchasedFromElement,
 unavailable,
-available
+free
 });
 
 return {
 total: totalCapacity,
-available,
+free,
 selected: selectedFromElement,
 unavailable
 };
@@ -491,19 +491,19 @@ if (selectedCapacityElement && capacityToSelect > 0) {
 getSeatPrice(selectedCapacityElement).then(unitPrice=> {
 console.log(`Got unit price for capacity selection: ${unitPrice}`);
 
-// Найти доступные билеты для этой зоны
-const availableTicketsForZone=tickets.filter(t=>
+// Найти свободные билеты для этой зоны
+const freeTicketsForZone=tickets.filter(t=>
         t.zone_id===selectedCapacityElement.id &&
         t.status==='free'
       );
 
-if (availableTicketsForZone.length < capacityToSelect) {
+if (freeTicketsForZone.length < capacityToSelect) {
 alert('Недостаточно доступных билетов для выбранного количества мест');
 return;
-} 
+}
 
 // Берем первые N билетов для резервирования
-const ticketsToReserve=availableTicketsForZone.slice(0,capacityToSelect);
+const ticketsToReserve=freeTicketsForZone.slice(0,capacityToSelect);
 
 // ИСПОЛЬЗУЕМ ФАБРИКУ для создания элемента корзины
 const cartItem=createCartItem({
@@ -683,7 +683,7 @@ className="cursor-pointer flex items-center h-full"
 )}
 {ticketStats.total > 0 && (
 <span className="text-zinc-500 dark:text-zinc-400 text-xs font-medium leading-tight mb-2 break-words">
-Доступно билетов: {ticketStats.available} из {ticketStats.total}
+Доступно билетов: {ticketStats.free} из {ticketStats.total}
 </span>
 )}
 
@@ -756,7 +756,7 @@ className="bg-zinc-200 dark:bg-zinc-800 p-4 rounded-lg mb-4"
 {ticketStats.total > 0 && (
 <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
 <p>Всего билетов: {ticketStats.total}</p>
-<p>Доступно: {ticketStats.available}</p>
+<p>Доступно: {ticketStats.free}</p>
 <p>Забронировано: {ticketStats.held}</p>
 <p>Продано: {ticketStats.sold}</p>
 </div>
@@ -918,7 +918,7 @@ Select Seats - {selectedCapacityElement.label}
 </h3>
 <div className="mb-4">
 <p className="text-gray-400 text-sm mb-2">
-Available seats: {getElementCapacityInfo(selectedCapacityElement).available}
+Free seats: {getElementCapacityInfo(selectedCapacityElement).free}
 </p>
 <label className="block text-sm font-medium text-gray-400 mb-2">
 Number of seats to select:
@@ -931,7 +931,7 @@ className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-w
 >
 {/* КРИТИЧНО ИСПРАВЛЕНО: Генерируем опции на основе РЕАЛЬНОГО количества доступных мест */}
 {(() => {
-const availableCount = getElementCapacityInfo(selectedCapacityElement).available;
+const availableCount = getElementCapacityInfo(selectedCapacityElement).free;
 if (availableCount === 0) {
 return <option value={0}>Нет доступных мест</option>;
 }
@@ -954,7 +954,7 @@ Cancel
 </button>
 <button 
 onClick={handleCapacityModalConfirm}
-disabled={getElementCapacityInfo(selectedCapacityElement).available === 0}
+disabled={getElementCapacityInfo(selectedCapacityElement).free === 0}
 className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 >
 Add to Selection

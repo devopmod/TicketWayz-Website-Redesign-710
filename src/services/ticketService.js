@@ -92,8 +92,8 @@ export const getEventTickets = async (eventId) => {
   }
 };
 
-// Get available tickets for booking
-export const getAvailableTickets = async (eventId) => {
+// Get free tickets for booking
+export const getFreeTickets = async (eventId) => {
   try {
     const { data, error } = await supabase
       .from('tickets')
@@ -123,7 +123,7 @@ export const getAvailableTickets = async (eventId) => {
 
     return data;
   } catch (error) {
-    console.error('Error fetching available tickets:', error);
+    console.error('Error fetching free tickets:', error);
     throw error;
   }
 };
@@ -140,7 +140,7 @@ export const getTicketsStatistics = async (eventId) => {
 
     const stats = {
       total: data.length,
-      available: data.filter(t => t.status === 'free').length,
+      free: data.filter(t => t.status === 'free').length,
       held: data.filter(t => t.status === 'held').length,
       sold: data.filter(t => t.status === 'sold').length
     };
