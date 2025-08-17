@@ -153,14 +153,14 @@ const CheckoutPage=()=> {
       // Генерируем новый UUID для каждого пользователя
       const userId=crypto.randomUUID();
 
-      // Проверяем,существует ли уже пользователь с таким email
-      const {data: existingUser,error: checkError}=await supabase
+      // Проверяем, существует ли уже пользователь с таким email
+      const {data: existingUser, error: checkError} = await supabase
         .from('user_meta')
         .select('id')
-        .eq('email',formData.email.trim())
-        .single();
+        .eq('email', formData.email.trim())
+        .maybeSingle();
 
-      if (checkError && checkError.code !=='PGRST116') {// PGRST116=no rows found
+      if (checkError) {
         throw checkError;
       }
 
@@ -183,6 +183,7 @@ const CheckoutPage=()=> {
         console.log('Updated existing user:',updatedUser);
         return existingUser.id;
       } else {
+        // existingUser === null -> создаем нового пользователя
         // Создаем нового пользователя с реальными данными из формы
         const {data: newUser,error: createError}=await supabase
           .from('user_meta')
