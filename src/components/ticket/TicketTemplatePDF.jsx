@@ -1,7 +1,7 @@
 import React from 'react';
 import { Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer';
 import { CARD_WIDTH, HEADER_HEIGHT, sanitizeTicket } from './TicketTemplate';
-import robotoTtf from '../../assets/fonts/Roboto-Regular.ttf?url';
+import robotoTtf from '/fonts/Roboto-Regular.ttf';
 
 let fontFamily = 'Helvetica';
 try {
