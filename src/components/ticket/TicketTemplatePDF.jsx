@@ -33,10 +33,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
+  content: {
+    position: 'relative',
+  },
   hero: {
     width: '100%',
     height: HEADER_HEIGHT,
     position: 'relative',
+    overflow: 'hidden',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   heroImage: {
     position: 'absolute',
@@ -200,7 +208,7 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
   return (
     <Page size="A4" style={styles.page}>
       <View style={styles.ticket}>
-        <View>
+        <View style={styles.content}>
           <View style={styles.hero}>
             {heroImage ? <Image src={heroImage} style={styles.heroImage} /> : null}
             {heroImage ? <View style={styles.overlay} /> : null}
