@@ -116,7 +116,7 @@ export const getAvailableTickets = async (eventId) => {
         )
       `)
       .eq('event_id', eventId)
-      .in('status', ['free', 'available']) // Используем правильные статусы
+      .eq('status', 'free')
       .order('created_at');
 
     if (error) throw error;
@@ -140,7 +140,7 @@ export const getTicketsStatistics = async (eventId) => {
 
     const stats = {
       total: data.length,
-      available: data.filter(t => t.status === 'free' || t.status === 'available').length,
+      available: data.filter(t => t.status === 'free').length,
       held: data.filter(t => t.status === 'held').length,
       sold: data.filter(t => t.status === 'sold').length
     };
@@ -165,7 +165,7 @@ export const holdTickets = async (ticketIds, holdDuration = 15) => {
         updated_at: new Date().toISOString()
       })
       .in('id', ticketIds)
-      .in('status', ['free', 'available'])
+      .eq('status', 'free')
       .select();
 
     if (error) throw error;
