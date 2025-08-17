@@ -68,3 +68,5 @@ EXCEPTION
         END IF;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.create_order_with_items(uuid, jsonb, numeric, text) TO anon, authenticated;
