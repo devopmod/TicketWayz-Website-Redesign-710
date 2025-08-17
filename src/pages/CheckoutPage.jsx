@@ -209,7 +209,7 @@ const CheckoutPage=()=> {
     }
   };
 
-  // КРИТИЧНО ИСПРАВЛЕННАЯ функция для создания заказа и обновления статусов билетов
+  // Создает заказ и обновляет статусы билетов через единый RPC вызов
   const createOrder=async ()=> {
     try {
       console.log('🚀 Starting order creation with seats:',selectedSeats);
@@ -230,131 +230,56 @@ const CheckoutPage=()=> {
       const userId=await createOrGetUser();
       console.log('✅ User ID:',userId);
 
-      // 2. Создаем заказ
-      const {data: order,error: orderError}=await supabase
-        .from('orders')
-        .insert({
-          user_id: userId,
-          status: 'paid',// Сразу устанавливаем статус "paid"
-          total_price: calculateTotal(),
-          currency: 'EUR',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-      console.log('✅ Created order:',order);
-
-      // 3. КРИТИЧНО ИСПРАВЛЕННАЯ обработка каждого места с УНИКАЛЬНЫМИ ticket IDs
+      // 2. Формируем список элементов заказа
+      const orderItems=[];
       for (const seat of selectedSeats) {
-        console.log('🎫 Processing seat:',seat);
-
-        // КРИТИЧНО: Обрабатываем все УНИКАЛЬНЫЕ ticket IDs для каждого элемента
         const ticketIds=seat.ticketIds || [seat.ticketId];
         const quantity=seat.quantity || 1;
         const unitPrice=seat.unitPrice || (seat.price / quantity);
 
-        console.log(`🎫 Processing ${ticketIds.length} tickets for seat:`,{
-          seatId: seat.id,
-          ticketIds: ticketIds,
-          quantity: quantity,
-          unitPrice: unitPrice
-        });
-
-        // Проверяем что у нас достаточно УНИКАЛЬНЫХ ticket IDs
         if (ticketIds.length < quantity) {
-          console.error(`❌ Not enough ticket IDs. Required: ${quantity}, Found: ${ticketIds.length}`);
           throw new Error(`Недостаточно билетов для места: ${seat.label}`);
         }
 
-        // КРИТИЧНО: Убеждаемся что все ticket IDs уникальные
         const uniqueTicketIds=[...new Set(ticketIds)];
         if (uniqueTicketIds.length !== ticketIds.length) {
-          console.error('❌ Duplicate ticket IDs found:',ticketIds);
           throw new Error(`Обнаружены дублирующиеся билеты для места: ${seat.label}`);
         }
 
-        // Создаем order_item для каждого УНИКАЛЬНОГО билета отдельно
         for (let i=0;i < quantity;i++) {
           const ticketId=uniqueTicketIds[i];
-
           if (!ticketId) {
-            console.error(`❌ No ticket ID found for seat ${seat.id} at index ${i}`);
             throw new Error(`Не найден ID билета для места: ${seat.label} (${i + 1}/${quantity})`);
           }
 
           // Проверяем что это валидный UUID
           const uuidRegex=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
           if (!uuidRegex.test(ticketId)) {
-            console.error('❌ Invalid UUID format for ticket ID:',ticketId);
             throw new Error(`Неверный формат ID билета: ${ticketId}`);
           }
 
-          console.log(`✅ Using valid ticket ID (${i + 1}/${quantity}):`,ticketId);
-
-          // КРИТИЧНО: Проверяем что билет еще не используется в других order_items
-          const {data: existingOrderItem,error: checkError}=await supabase
-            .from('order_items')
-            .select('id')
-            .eq('ticket_id',ticketId)
-            .single();
-
-          if (checkError && checkError.code !== 'PGRST116') {
-            // PGRST116 = no rows found, это нормально
-            throw checkError;
-          }
-
-          if (existingOrderItem) {
-            console.error(`❌ Ticket ${ticketId} is already used in another order`);
-            throw new Error(`Билет ${ticketId} уже используется в другом заказе`);
-          }
-
-          // Создаем элемент заказа с УНИКАЛЬНЫМ ticket ID
-          const {data: orderItem,error: orderItemError}=await supabase
-            .from('order_items')
-            .insert({
-              order_id: order.id,
-              ticket_id: ticketId,// Используем УНИКАЛЬНЫЙ ticket ID
-              unit_price: unitPrice,
-              currency: 'EUR',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (orderItemError) {
-            console.error('❌ Error creating order item:',orderItemError);
-            throw orderItemError;
-          }
-
-          console.log(`✅ Created order item (${i + 1}/${quantity}):`,orderItem);
-
-          // Обновляем статус билета на "sold" и связываем с order item
-          const {error: ticketError}=await supabase
-            .from('tickets')
-            .update({
-              status: 'sold',
-              order_item_id: orderItem.id,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id',ticketId);
-
-          if (ticketError) {
-            console.error('❌ Error updating ticket status:',ticketError);
-            throw ticketError;
-          }
-
-          console.log(`✅ Updated ticket status (${i + 1}/${quantity}) for:`,ticketId);
+          orderItems.push({
+            ticket_id: ticketId,
+            unit_price: unitPrice,
+            currency: 'EUR'
+          });
         }
       }
 
-      console.log('🎉 Order creation completed successfully');
+      // 3. Вызываем RPC для создания заказа и обновления билетов в одной транзакции
+      const {data: order,error: rpcError}=await supabase.rpc('create_order_with_items',{
+        user_id: userId,
+        items: orderItems,
+        total_price: calculateTotal(),
+        currency: 'EUR'
+      });
+
+      if (rpcError) throw rpcError;
+
+      console.log('🎉 Order creation completed successfully via RPC');
       return order;
     } catch (error) {
-      console.error('❌ Error creating order:',error);
+      console.error('❌ Error creating order via RPC:',error);
       throw error;
     }
   };
