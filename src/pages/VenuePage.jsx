@@ -202,13 +202,6 @@ if (ticket) {
 console.log('✅ Найден билет по категории места:',ticket);
 return [ticket];
 }
-} 
-
-// Последняя попытка - любой свободный билет для места
-ticket=freeTickets.find(t=> t.seat_id);
-if (ticket) {
-console.log('⚠️ Найден любой свободный билет для места (last resort):',ticket);
-return [ticket];
 }
 } else if (seat.type==='section' || seat.type==='polygon') {
 console.log('🔍 ПОИСК БИЛЕТОВ ДЛЯ ЗОНЫ:',{
@@ -276,24 +269,27 @@ setSelectedSeats(selectedSeats.filter((_, index) => index !== existingIndex));
 // Add the seat with the price from event prices
 try {
 console.log('🎯 ОТЛАДКА handleSeatToggle: Adding seat to selection');
-const seatPrice=await getSeatPrice(seat);
-console.log(`Got price for seat ${seat.id}: ${seatPrice}`);
-
 // КРИТИЧНО: Найти соответствующие билеты в базе данных
 const correspondingTickets=findCorrespondingTickets(seat);
 if (!correspondingTickets || correspondingTickets.length===0) {
 console.error('❌ No corresponding tickets found for seat:',seat);
-alert('Не удалось найти доступные билеты для выбранного места. Возможно,все билеты уже забронированы.');
+if (seat.type==='seat') {
+alert('Выбранное место уже занято.');
+} else {
+alert('Не удалось найти доступные билеты. Возможно,все билеты уже забронированы.');
+}
 return;
-} 
+}
 
 const requiredQuantity=seat.quantity || 1;
 if (correspondingTickets.length < requiredQuantity) {
 console.error(`❌ Not enough tickets found. Required: ${requiredQuantity},Found: ${correspondingTickets.length}`);
 alert(`Недостаточно доступных билетов. Требуется: ${requiredQuantity},найдено: ${correspondingTickets.length}`);
 return;
-} 
+}
 
+const seatPrice=await getSeatPrice(seat);
+console.log(`Got price for seat ${seat.id}: ${seatPrice}`);
 console.log(`✅ Found ${correspondingTickets.length} corresponding tickets:`,correspondingTickets);
 
 // КРИТИЧНО: Создаем элемент корзины с РЕАЛЬНЫМИ билетами
