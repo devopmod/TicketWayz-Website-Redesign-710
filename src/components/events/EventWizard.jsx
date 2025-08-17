@@ -412,21 +412,24 @@ const EventWizard = ({ onCancel, eventToEdit = null, onEventSaved }) => {
       };
 
       console.log("Formatted event data:", formattedEventData);
-      setEventData(formattedEventData);
 
+      // Determine preview URL while keeping the stored path
+      let previewUrl = 'https://placehold.co/600x400/333/FFF?text=Event';
       if (formattedEventData.image) {
         if (formattedEventData.image.startsWith('http')) {
-          setPreviewUrl(formattedEventData.image);
+          previewUrl = formattedEventData.image;
         } else {
           const { data: { publicUrl } } = supabase
             .storage
             .from('event-images')
             .getPublicUrl(formattedEventData.image);
-          setPreviewUrl(publicUrl);
+          previewUrl = publicUrl;
         }
-      } else {
-        setPreviewUrl('https://placehold.co/600x400/333/FFF?text=Event');
       }
+
+      // Store only the path while using the public URL for the preview
+      setEventData(formattedEventData);
+      setPreviewUrl(previewUrl);
 
       // Fetch event prices if we have an event ID
       if (event.id) {
