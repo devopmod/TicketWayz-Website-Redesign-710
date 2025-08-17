@@ -24,8 +24,8 @@ export const fetchEvents = async () => {
       if (priceError) throw priceError;
 
       // Add minimum price to event object
-      const minPrice = priceData && priceData.length > 0 
-        ? Math.min(...priceData.map(p => p.price)) 
+      const minPrice = priceData && priceData.length > 0
+        ? Math.min(...priceData.map(p => p.price))
         : 0;
 
       return {
@@ -35,7 +35,23 @@ export const fetchEvents = async () => {
       };
     }));
 
-    return eventsWithPrices;
+    // Resolve image URLs for events stored in Supabase storage
+    const eventsWithImages = eventsWithPrices.map(event => {
+      let imageUrl = event.image;
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        const { data: publicData } = supabase
+          .storage
+          .from('event-images')
+          .getPublicUrl(imageUrl);
+        imageUrl = publicData?.publicUrl || imageUrl;
+      }
+      return {
+        ...event,
+        image: imageUrl
+      };
+    });
+
+    return eventsWithImages;
   } catch (error) {
     console.error('Error fetching events:', error);
     throw error;
