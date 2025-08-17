@@ -72,11 +72,6 @@ const styles = StyleSheet.create({
   highlight: {
     color: '#f59e0b',
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
   infoBox: {
     flexDirection: 'column',
   },
@@ -203,7 +198,22 @@ const TicketTemplatePDF = ({ data = {}, options = {} }) => {
           {venue ? <Text style={[styles.smallText, styles.highlight]}>{venue}</Text> : null}
           {address ? <Text style={styles.smallText}>{address}</Text> : null}
 
-          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0) ? (<View style={{ flexDirection: 'row' }}><View style={{ flex: 1, borderRightWidth: 1, borderColor: 'transparent', alignItems: 'flex-start' }}>{filteredFirstRow}</View><View style={{ flex: 1, borderLeftWidth: 1, borderColor: 'transparent', alignItems: 'flex-end' }}>{filteredSecondRow}</View></View>) : null}
+          {(filteredFirstRow.length > 0 || filteredSecondRow.length > 0)
+            ? (
+              <View style={{ marginTop: 16 }}>
+                {filteredFirstRow.length > 0 && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    {filteredFirstRow}
+                  </View>
+                )}
+                {filteredSecondRow.length > 0 && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+                    {filteredSecondRow}
+                  </View>
+                )}
+              </View>
+            )
+            : null}
 
           {showQr && qrSrc ? (
             <View style={styles.qrContainer}>
