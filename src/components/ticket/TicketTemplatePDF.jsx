@@ -4,12 +4,16 @@ import { CARD_WIDTH, HEADER_HEIGHT, sanitizeTicket } from './TicketTemplate';
 import robotoTtf from '/fonts/Roboto-Regular.ttf';
 
 let fontFamily = 'Helvetica';
-try {
-  Font.register({ family: 'Roboto', src: robotoTtf, format: 'truetype' });
-  fontFamily = 'Roboto';
-} catch (err) {
-  console.error('Failed to register Roboto font', err);
-}
+(async () => {
+  try {
+    Font.register({ family: 'Roboto', src: robotoTtf, format: 'truetype' });
+    await Font.load('Roboto');
+    fontFamily = 'Roboto';
+  } catch (err) {
+    console.error('Failed to load Roboto font', err);
+    // show notification and halt generation if needed
+  }
+})();
 
 const styles = StyleSheet.create({
   page: {
