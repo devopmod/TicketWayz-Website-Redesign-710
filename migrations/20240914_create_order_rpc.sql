@@ -14,9 +14,9 @@ DECLARE
     item jsonb;
     new_order_item_id uuid;
 BEGIN
-    -- Insert the order record
+    -- Insert the order record with pending status
     INSERT INTO orders (user_id, status, total_price, currency, created_at, updated_at)
-    VALUES (user_id, 'paid', total_price, currency, NOW(), NOW())
+    VALUES (user_id, 'pending', total_price, currency, NOW(), NOW())
     RETURNING * INTO new_order;
 
     -- Process each order item
@@ -45,10 +45,26 @@ BEGIN
         END IF;
     END LOOP;
 
+    -- Mark order as paid after successful processing
+    UPDATE orders
+    SET status = 'paid',
+        updated_at = NOW()
+    WHERE id = new_order.id
+    RETURNING * INTO new_order;
+
     RETURN new_order;
 EXCEPTION
     WHEN OTHERS THEN
-        -- Any error will cause a rollback
-        RAISE;
+        -- Mark order as failed on error
+        IF new_order.id IS NOT NULL THEN
+            UPDATE orders
+            SET status = 'failed',
+                updated_at = NOW()
+            WHERE id = new_order.id
+            RETURNING * INTO new_order;
+            RETURN new_order;
+        ELSE
+            RAISE;
+        END IF;
 END;
 $$;
