@@ -41,7 +41,7 @@ BEGIN
           AND status = 'free';
 
         IF NOT FOUND THEN
-            RAISE EXCEPTION 'Ticket % is not available', (item->>'ticket_id')::uuid;
+            RAISE EXCEPTION 'Ticket % is not free', (item->>'ticket_id')::uuid;
         END IF;
     END LOOP;
 
