@@ -3,6 +3,11 @@ import {createEventTickets} from './ticketService';
 
 const isDevelopment = (import.meta.env?.MODE || process.env.NODE_ENV) !== 'production';
 
+const EVENTS_TABLE = 'events';
+const EVENT_PRICES_TABLE = 'event_prices';
+const TICKETS_TABLE = 'tickets';
+const ORDER_ITEMS_TABLE = 'order_items';
+
 // Fetch all events
 export const fetchEvents = async (includeArchived = false) => {
   try {
@@ -502,6 +507,145 @@ export const deleteEventCascade = async (eventId) => {
       throw new Error('Невозможно удалить проданные билеты');
     }
     console.error('Error deleting event cascade:', error);
+    throw error;
+  }
+};
+
+// Get statistics for an event
+export const getEventStatistics = async (eventId) => {
+  try {
+    const { data: tickets, error } = await supabase
+      .from(TICKETS_TABLE)
+      .select(`
+        status,
+        order_item:${ORDER_ITEMS_TABLE}(
+          unit_price,
+          order:orders(created_at)
+        )
+      `)
+      .eq('event_id', eventId);
+
+    if (error) throw error;
+
+    const totalSeats = tickets?.length || 0;
+    let soldSeats = 0;
+    let heldSeats = 0;
+    let freeSeats = 0;
+    let estimatedRevenue = 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    let todaysSales = 0;
+    let yesterdaysSales = 0;
+
+    for (const ticket of tickets) {
+      switch (ticket.status) {
+        case 'sold':
+          soldSeats++;
+          const price = ticket.order_item?.unit_price || 0;
+          estimatedRevenue += price;
+          const createdAt = ticket.order_item?.order?.created_at;
+          if (createdAt) {
+            if (createdAt >= today.toISOString() && createdAt < tomorrow.toISOString()) {
+              todaysSales += price;
+            } else if (createdAt >= yesterday.toISOString() && createdAt < today.toISOString()) {
+              yesterdaysSales += price;
+            }
+          }
+          break;
+        case 'held':
+          heldSeats++;
+          break;
+        case 'free':
+          freeSeats++;
+          break;
+        default:
+          break;
+      }
+    }
+
+    const occupancyRate = totalSeats > 0 ? (soldSeats / totalSeats) * 100 : 0;
+    const averagePrice = soldSeats > 0 ? estimatedRevenue / soldSeats : 0;
+    const salesGrowth = yesterdaysSales > 0
+      ? ((todaysSales - yesterdaysSales) / yesterdaysSales) * 100
+      : todaysSales > 0 ? 100 : 0;
+
+    return {
+      totalSeats,
+      soldSeats,
+      heldSeats,
+      freeSeats,
+      occupancyRate,
+      estimatedRevenue,
+      averagePrice,
+      todaysSales,
+      salesGrowth
+    };
+  } catch (error) {
+    console.error('Error getting event statistics:', error);
+    throw error;
+  }
+};
+
+// Update event prices with upsert
+export const updateEventPrices = async (eventId, prices) => {
+  try {
+    const records = prices.map(p => ({
+      event_id: eventId,
+      price: p.price,
+      currency: p.currency || 'EUR',
+      updated_at: new Date().toISOString(),
+      ...(p.id ? { id: p.id } : {}),
+      ...(p.category_id ? { category_id: p.category_id } : {})
+    }));
+
+    const { data, error } = await supabase
+      .from(EVENT_PRICES_TABLE)
+      .upsert(records)
+      .select();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error('Error updating event prices:', error);
+    throw error;
+  }
+};
+
+// Initialize realtime subscription for event prices and tickets
+export const initializeRealtimeSubscription = (eventId, onPricesUpdate, onTicketChange) => {
+  const pricesChannel = supabase
+    .channel(`event-prices-${eventId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: EVENT_PRICES_TABLE, filter: `event_id=eq.${eventId}` }, payload => onPricesUpdate?.(payload))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: EVENT_PRICES_TABLE, filter: `event_id=eq.${eventId}` }, payload => onPricesUpdate?.(payload))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: EVENT_PRICES_TABLE, filter: `event_id=eq.${eventId}` }, payload => onPricesUpdate?.(payload))
+    .subscribe();
+
+  const ticketsChannel = supabase
+    .channel(`event-tickets-${eventId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: TICKETS_TABLE, filter: `event_id=eq.${eventId}` }, payload => onTicketChange?.(payload))
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(pricesChannel);
+    supabase.removeChannel(ticketsChannel);
+  };
+};
+
+// Regenerate event seats using RPC and return updated statistics
+export const regenerateEventSeats = async (eventId) => {
+  try {
+    const { error } = await supabase.rpc('create_event_tickets', { p_event_id: eventId });
+    if (error) throw error;
+    return await getEventStatistics(eventId);
+  } catch (error) {
+    console.error('Error regenerating event seats:', error);
     throw error;
   }
 };
