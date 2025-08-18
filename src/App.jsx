@@ -9,6 +9,7 @@ import VenuePage from './pages/VenuePage';
 import CheckoutPage from './pages/CheckoutPage';
 import ThankYouPage from './pages/ThankYouPage';
 import AdminPage from './pages/AdminPage';
+import EventDashboard from './components/admin/EventDashboard';
 import SchemaPage from './pages/SchemaPage';
 import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
@@ -66,6 +67,7 @@ function App() {
           <Route path="/venue/:id" element={<VenuePage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/thank-you" element={<ThankYouPage />} />
+          <Route path="/admin/events/:id/dashboard" element={<EventDashboard />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/schema" element={<SchemaPage />} />
           <Route path="*" element={<NotFoundPage />} />
