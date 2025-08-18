@@ -518,7 +518,7 @@ export const getEventStatistics = async (eventId) => {
       .from(TICKETS_TABLE)
       .select(`
         status,
-        order_item:${ORDER_ITEMS_TABLE}(
+        order_item:${ORDER_ITEMS_TABLE}!tickets_order_item_id_fkey(
           unit_price,
           order:orders(created_at)
         )
