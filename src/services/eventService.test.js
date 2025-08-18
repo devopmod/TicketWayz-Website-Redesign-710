@@ -11,7 +11,11 @@ test('fetchEventById returns event with prices', async (t) => {
             return {
               eq() {
                 return {
-                  single: async () => ({ data: { id: 1, title: 'Concert', venue: {} }, error: null })
+                  neq() {
+                    return {
+                      single: async () => ({ data: { id: 1, title: 'Concert', venue: {} }, error: null })
+                    };
+                  }
                 };
               }
             };
@@ -67,6 +71,13 @@ test('fetchEvents resolves image URLs', async (t) => {
             return {
               order() {
                 return Promise.resolve({ data: events, error: null });
+              },
+              neq() {
+                return {
+                  order() {
+                    return Promise.resolve({ data: events, error: null });
+                  }
+                };
               }
             };
           }

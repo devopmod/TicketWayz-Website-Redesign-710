@@ -9,6 +9,7 @@ export const fetchEvents = async () => {
     const { data, error } = await supabase
       .from('events')
       .select('*, venue:venues(*)')
+      .neq('status', 'archived')
       .order('event_date', { ascending: true });
 
     if (error) throw error;
@@ -65,6 +66,7 @@ export const fetchEventById = async (eventId) => {
       .from('events')
       .select('*, venue:venues(*)')
       .eq('id', eventId)
+      .neq('status', 'archived')
       .single();
 
     if (error) throw error;
@@ -391,7 +393,7 @@ export const archiveEvent = async (eventId) => {
   try {
     const { error } = await supabase
       .from('events')
-      .update({ archived: true })
+      .update({ status: 'archived' })
       .eq('id', eventId);
 
     if (error) throw error;
@@ -446,10 +448,10 @@ export const deleteEventPartial = async (eventId) => {
 
     if (priceError) throw priceError;
 
-    // Mark event as archived so sold tickets remain linked
+    // Mark event with status 'archived' so sold tickets remain linked
     const { error: eventError } = await supabase
       .from('events')
-      .update({ archived: true })
+      .update({ status: 'archived' })
       .eq('id', eventId);
 
     if (eventError) throw eventError;
