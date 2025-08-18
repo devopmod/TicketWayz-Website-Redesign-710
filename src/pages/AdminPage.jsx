@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { fetchEvents, archiveEvent, deleteEventPartial, deleteEventCascade } from '../services/eventService';
+import { fetchEvents, archiveEvent, deleteEventPartial, deleteEventCascade, unarchiveEvent } from '../services/eventService';
 import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import TicketTemplateSettings from '../components/admin/TicketTemplateSettings';
@@ -41,6 +41,15 @@ const {
   FiPieChart,
   FiMail // Добавлен импорт для иконки билетов
 } = FiIcons;
+
+const STATUS_LABELS = {
+  archive: 'Архив',
+  archived: 'Архив',
+  partial: 'Проданные',
+  published: 'Активно'
+};
+
+const getEventStatusLabel = (status) => STATUS_LABELS[status] || status;
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -1268,6 +1277,22 @@ const AdminPage = () => {
     }
   };
 
+  const handleUnarchiveEvent = async (eventId) => {
+    try {
+      const success = await unarchiveEvent(eventId);
+      if (success !== false) {
+        setEvents(prev =>
+          prev.map(event =>
+            event.id === eventId ? { ...event, status: 'published' } : event
+          )
+        );
+        await loadEvents();
+      }
+    } catch (error) {
+      console.error('Error unarchiving event:', error);
+    }
+  };
+
   const handleEventWizardClose = () => {
     setShowEventWizard(false);
     setSelectedEvent(null);
@@ -1713,6 +1738,7 @@ const AdminPage = () => {
                         <th className="pb-3">Дата</th>
                         <th className="pb-3 hidden md:table-cell">Категория</th>
                         <th className="pb-3">Место</th>
+                        <th className="pb-3">Статус</th>
                         <th className="pb-3 text-right">Действия</th>
                       </tr>
                     </thead>
@@ -1723,22 +1749,35 @@ const AdminPage = () => {
                           <td className="py-3">{formatDate(event.event_date)}</td>
                           <td className="py-3 hidden md:table-cell capitalize">{event.category}</td>
                           <td className="py-3">{event.location}</td>
+                          <td className="py-3">{getEventStatusLabel(event.status)}</td>
                           <td className="py-3 text-right">
-                            <button
-                              onClick={() => handleEditEvent(event)}
-                              className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
-                              title="Edit"
-                            >
-                              <SafeIcon icon={FiEdit2} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteEvent(event.id)}
-                              disabled={deleting === event.id}
-                              className="p-2 text-red-500 hover:text-red-700 transition disabled:opacity-50"
-                              title="Delete"
-                            >
-                              <SafeIcon icon={FiTrash2} />
-                            </button>
+                            {event.status === 'archived' ? (
+                              <button
+                                onClick={() => handleUnarchiveEvent(event.id)}
+                                className="p-2 text-green-500 hover:text-green-700 transition"
+                                title="Вернуть"
+                              >
+                                <SafeIcon icon={FiRotateCcw} />
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleEditEvent(event)}
+                                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                                  title="Edit"
+                                >
+                                  <SafeIcon icon={FiEdit2} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  disabled={deleting === event.id}
+                                  className="p-2 text-red-500 hover:text-red-700 transition disabled:opacity-50"
+                                  title="Delete"
+                                >
+                                  <SafeIcon icon={FiTrash2} />
+                                </button>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}
