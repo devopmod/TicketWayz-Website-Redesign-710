@@ -89,11 +89,6 @@ const EventCard=({event,size="large"})=> {
             <div className="text-[13px] font-medium" style={{color: accentColor}}>
               {event.venue.name}
             </div>
-            {(event.venue.address || event.address) && (
-              <div className="text-[12px] text-gray-500">
-                {event.venue.address || event.address}
-              </div>
-            )}
           </div>
         )}
         
@@ -131,11 +126,6 @@ const EventCard=({event,size="large"})=> {
             <div className="text-[13px] font-medium truncate" style={{color: accentColor}}>
               {event.venue.name}
             </div>
-            {(event.venue.address || event.address) && (
-              <div className="text-[12px] text-gray-500 truncate">
-                {event.venue.address || event.address}
-              </div>
-            )}
           </div>
         )}
         
