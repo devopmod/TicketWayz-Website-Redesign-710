@@ -30,7 +30,6 @@ const EventDashboard = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPricingModal, setShowPricingModal] = useState(false);
-  const [showSeatManager, setShowSeatManager] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState(false);
   const [regeneratingSeats, setRegeneratingSeats] = useState(false);
 
@@ -196,12 +195,6 @@ const EventDashboard = () => {
             Edit Prices
           </button>
           <button
-            onClick={() => setShowSeatManager(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded"
-          >
-            Manage Seats
-          </button>
-          <button
             onClick={handleRegenerateSeats}
             disabled={regeneratingSeats}
             className="flex items-center px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded"
@@ -220,15 +213,9 @@ const EventDashboard = () => {
             {realtimeStatus ? 'Connected' : 'Disconnected'}
           </p>
         </div>
-      </div>
 
-      {showSeatManager && (
-        <SeatStatusManager
-          event={event}
-          statistics={statistics}
-          onClose={() => setShowSeatManager(false)}
-        />
-      )}
+        <SeatStatusManager statistics={statistics} />
+      </div>
 
       {showPricingModal && (
         <PricingModal
