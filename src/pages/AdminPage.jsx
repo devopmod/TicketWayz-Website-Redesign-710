@@ -527,7 +527,7 @@ const AdminPage = () => {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const eventsData = await fetchEvents();
+      const eventsData = await fetchEvents(true);
       setEvents(eventsData || []);
     } catch (error) {
       console.error('Error loading events:', error);
