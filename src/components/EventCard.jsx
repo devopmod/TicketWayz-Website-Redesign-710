@@ -51,11 +51,6 @@ const EventCard=({event,size="large"})=> {
     navigate(`/event/${event.id}`);
   };
 
-  // Format price with proper decimal places
-  const formatPrice=(price)=> {
-    return price ? Number(price).toFixed(2) : '0.00';
-  };
-
   const accentColor=event?.accent_color || event?.accent || '#f59e0b';
 
   if (size==="large") {
@@ -102,12 +97,9 @@ const EventCard=({event,size="large"})=> {
           </div>
         )}
         
-        <div className="flex justify-between items-center">
+        <div className="flex items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs">
             {formatDate(event.date)} • {event.location}
-          </span>
-          <span className="text-xs font-bold text-zinc-900 dark:text-white">
-            от €{formatPrice(event.price)}
           </span>
         </div>
       </div>
@@ -147,11 +139,8 @@ const EventCard=({event,size="large"})=> {
           </div>
         )}
         
-        <div className="flex justify-between items-center">
+        <div className="flex items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs block truncate">{formatDate(event.date)}</span>
-          <span className="text-xs font-bold text-zinc-900 dark:text-white">
-            от €{formatPrice(event.price)}
-          </span>
         </div>
       </div>
     </div>
