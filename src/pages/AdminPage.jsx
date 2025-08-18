@@ -1236,6 +1236,10 @@ const AdminPage = () => {
     navigate(`/event/${eventId}`);
   };
 
+  const handleViewEventDashboard = (eventId) => {
+    navigate(`/admin/events/${eventId}/dashboard`);
+  };
+
   const handleDeleteEvent = (eventId) => {
     setEventToDelete(eventId);
     setShowDeleteModal(true);
@@ -1755,6 +1759,16 @@ const AdminPage = () => {
                           <td className="py-3">{event.location}</td>
                           <td className="py-3">{getEventStatusLabel(event.status)}</td>
                           <td className="py-3 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewEventDashboard(event.id);
+                              }}
+                              className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                              title="View Dashboard"
+                            >
+                              <SafeIcon icon={FiBarChart3} />
+                            </button>
                             {event.status === 'archived' ? (
                               <button
                                 onClick={() => handleUnarchiveEvent(event.id)}
