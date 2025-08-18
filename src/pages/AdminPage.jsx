@@ -54,6 +54,7 @@ const AdminPage = () => {
   const [deleting, setDeleting] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Venues state
   const [venues, setVenues] = useState([]);
@@ -1244,7 +1245,7 @@ const AdminPage = () => {
       }
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event. Please try again.');
+      setDeleteError(error.message || 'Failed to delete event. Please try again.');
     } finally {
       setDeleting(null);
       setShowDeleteModal(false);
@@ -2436,6 +2437,21 @@ const AdminPage = () => {
               className="mt-4 px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:underline"
             >
               Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {deleteError && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">Ошибка</h2>
+            <p className="mb-4 text-zinc-700 dark:text-zinc-300">{deleteError}</p>
+            <button
+              onClick={() => setDeleteError(null)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              Закрыть
             </button>
           </div>
         </div>
