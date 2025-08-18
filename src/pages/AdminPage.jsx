@@ -1232,16 +1232,31 @@ const AdminPage = () => {
     if (!eventToDelete) return;
     try {
       setDeleting(eventToDelete);
-      let success = false;
       if (action === 'archive') {
-        success = await archiveEvent(eventToDelete);
+        const success = await archiveEvent(eventToDelete);
+        if (success !== false) {
+          setEvents((prev) =>
+            prev.map(event =>
+              event.id === eventToDelete ? { ...event, status: 'archived' } : event
+            )
+          );
+          await loadEvents();
+        }
       } else if (action === 'partial') {
-        success = await deleteEventPartial(eventToDelete);
+        const success = await deleteEventPartial(eventToDelete);
+        if (success !== false) {
+          setEvents((prev) =>
+            prev.map(event =>
+              event.id === eventToDelete ? { ...event, status: 'archived' } : event
+            )
+          );
+          await loadEvents();
+        }
       } else if (action === 'cascade') {
-        success = await deleteEventCascade(eventToDelete);
-      }
-      if (success !== false) {
-        setEvents(events.filter(event => event.id !== eventToDelete));
+        const success = await deleteEventCascade(eventToDelete);
+        if (success !== false) {
+          setEvents((prev) => prev.filter(event => event.id !== eventToDelete));
+        }
       }
     } catch (error) {
       console.error('Error deleting event:', error);
