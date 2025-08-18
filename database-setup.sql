@@ -1,15 +1,20 @@
 -- Создание правильной структуры таблиц согласно схеме
 
--- 1. Обновляем таблицу tickets согласно схеме
+-- Добавляем статус события, если отсутствует
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'draft'
+  CHECK (status IN ('draft','published','archived'));
+
 DROP TABLE IF EXISTS tickets CASCADE;
 CREATE TABLE tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES events(id) ON DELETE SET NULL,
   zone_id UUID REFERENCES zones(id) ON DELETE CASCADE,
   seat_id UUID REFERENCES single_seats(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'free' CHECK (status IN ('free','held','sold')),
   hold_expires_at TIMESTAMPTZ,
   order_item_id UUID,
+  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -27,10 +32,11 @@ CREATE TABLE tickets (
 -- 2. Создаем таблицу orders
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL, -- Ссылка на auth.users.id
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Ссылка на auth.users.id
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','refunded')),
   total_price NUMERIC(10,2) NOT NULL,
   currency TEXT NOT NULL DEFAULT 'EUR',
+  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -39,9 +45,10 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  ticket_id UUID NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  ticket_id UUID REFERENCES tickets(id) ON DELETE SET NULL,
   unit_price NUMERIC(10,2) NOT NULL,
   currency TEXT NOT NULL DEFAULT 'EUR',
+  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
