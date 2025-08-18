@@ -1231,14 +1231,17 @@ const AdminPage = () => {
     if (!eventToDelete) return;
     try {
       setDeleting(eventToDelete);
+      let success = false;
       if (action === 'archive') {
-        await archiveEvent(eventToDelete);
+        success = await archiveEvent(eventToDelete);
       } else if (action === 'partial') {
-        await deleteEventPartial(eventToDelete);
+        success = await deleteEventPartial(eventToDelete);
       } else if (action === 'cascade') {
-        await deleteEventCascade(eventToDelete);
+        success = await deleteEventCascade(eventToDelete);
       }
-      setEvents(events.filter(event => event.id !== eventToDelete));
+      if (success !== false) {
+        setEvents(events.filter(event => event.id !== eventToDelete));
+      }
     } catch (error) {
       console.error('Error deleting event:', error);
       alert('Failed to delete event. Please try again.');
