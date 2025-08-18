@@ -403,9 +403,32 @@ export const archiveEvent = async (eventId) => {
   }
 };
 
+// Check if event has linked order items (sold tickets)
+const hasEventOrderItems = async (eventId) => {
+  try {
+    const { count, error } = await supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .not('order_item_id', 'is', null);
+
+    if (error) throw error;
+
+    return count > 0;
+  } catch (error) {
+    console.error('Error checking event order items:', error);
+    throw error;
+  }
+};
+
 // Delete event but keep sold tickets
 export const deleteEventPartial = async (eventId) => {
   try {
+    // Check if event has sold tickets
+    if (await hasEventOrderItems(eventId)) {
+      throw new Error('Невозможно удалить проданные билеты');
+    }
+
     // Remove all tickets that are not sold
     const { error: ticketsError } = await supabase
       .from('tickets')
@@ -433,6 +456,9 @@ export const deleteEventPartial = async (eventId) => {
 
     return true;
   } catch (error) {
+    if (error.code === '23503') {
+      throw new Error('Невозможно удалить проданные билеты');
+    }
     console.error('Error partially deleting event:', error);
     throw error;
   }
@@ -441,6 +467,11 @@ export const deleteEventPartial = async (eventId) => {
 // Delete event and all related data using RPC/transaction
 export const deleteEventCascade = async (eventId) => {
   try {
+    // Check if event has sold tickets
+    if (await hasEventOrderItems(eventId)) {
+      throw new Error('Невозможно удалить проданные билеты');
+    }
+
     const { data, error } = await supabase.rpc('delete_event_cascade', {
       event_id: eventId
     });
@@ -449,6 +480,9 @@ export const deleteEventCascade = async (eventId) => {
 
     return data;
   } catch (error) {
+    if (error.code === '23503') {
+      throw new Error('Невозможно удалить проданные билеты');
+    }
     console.error('Error deleting event cascade:', error);
     throw error;
   }
