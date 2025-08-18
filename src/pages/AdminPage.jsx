@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import { fetchEvents, deleteEvent } from '../services/eventService';
+import { fetchEvents, archiveEvent, deleteEventPartial, deleteEventCascade } from '../services/eventService';
 import EventWizard from '../components/events/EventWizard';
 import VenueDesigner from '../components/venue/VenueDesigner';
 import TicketTemplateSettings from '../components/admin/TicketTemplateSettings';
@@ -52,6 +52,8 @@ const AdminPage = () => {
   const [showEventWizard, setShowEventWizard] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
 
   // Venues state
   const [venues, setVenues] = useState([]);
@@ -1220,20 +1222,30 @@ const AdminPage = () => {
     setShowEventWizard(true);
   };
 
-  const handleDeleteEvent = async (eventId) => {
-    if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      try {
-        setDeleting(eventId);
-        await deleteEvent(eventId);
-        // Remove event from local state
-        setEvents(events.filter(event => event.id !== eventId));
-        alert('Event deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting event:', error);
-        alert('Failed to delete event. Please try again.');
-      } finally {
-        setDeleting(null);
+  const handleDeleteEvent = (eventId) => {
+    setEventToDelete(eventId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteAction = async (action) => {
+    if (!eventToDelete) return;
+    try {
+      setDeleting(eventToDelete);
+      if (action === 'archive') {
+        await archiveEvent(eventToDelete);
+      } else if (action === 'partial') {
+        await deleteEventPartial(eventToDelete);
+      } else if (action === 'cascade') {
+        await deleteEventCascade(eventToDelete);
       }
+      setEvents(events.filter(event => event.id !== eventToDelete));
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event. Please try again.');
+    } finally {
+      setDeleting(null);
+      setShowDeleteModal(false);
+      setEventToDelete(null);
     }
   };
 
@@ -2389,6 +2401,40 @@ const AdminPage = () => {
               </button>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-white">Удалить событие?</h2>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleDeleteAction('archive')}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              >
+                Архивировать
+              </button>
+              <button
+                onClick={() => handleDeleteAction('partial')}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition"
+              >
+                Удалить (оставить проданные)
+              </button>
+              <button
+                onClick={() => handleDeleteAction('cascade')}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+              >
+                Удалить полностью
+              </button>
+            </div>
+            <button
+              onClick={() => { setShowDeleteModal(false); setEventToDelete(null); }}
+              className="mt-4 px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:underline"
+            >
+              Отмена
+            </button>
+          </div>
         </div>
       )}
     </div>

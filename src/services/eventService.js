@@ -384,9 +384,61 @@ export const updateEvent = async (eventId, eventData) => {
     console.error('Error updating event:', error);
     throw error;
   }
+}; 
+
+// Archive event without deleting related data
+export const archiveEvent = async (eventId) => {
+  try {
+    const { error } = await supabase
+      .from('events')
+      .update({ status: 'archived' })
+      .eq('id', eventId);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error('Error archiving event:', error);
+    throw error;
+  }
 };
 
-// Delete event
+// Delete event but keep sold tickets
+export const deleteEventPartial = async (eventId) => {
+  try {
+    // Remove all tickets that are not sold
+    const { error: ticketsError } = await supabase
+      .from('tickets')
+      .delete()
+      .eq('event_id', eventId)
+      .neq('status', 'sold');
+
+    if (ticketsError) throw ticketsError;
+
+    // Remove event prices
+    const { error: priceError } = await supabase
+      .from('event_prices')
+      .delete()
+      .eq('event_id', eventId);
+
+    if (priceError) throw priceError;
+
+    // Mark event as archived so sold tickets remain linked
+    const { error: eventError } = await supabase
+      .from('events')
+      .update({ status: 'archived' })
+      .eq('id', eventId);
+
+    if (eventError) throw eventError;
+
+    return true;
+  } catch (error) {
+    console.error('Error partially deleting event:', error);
+    throw error;
+  }
+};
+
+// Delete event and all related data
 export const deleteEvent = async (eventId) => {
   try {
     // First delete tickets
@@ -419,3 +471,6 @@ export const deleteEvent = async (eventId) => {
     throw error;
   }
 };
+
+// Alias for clarity in imports
+export const deleteEventCascade = deleteEvent;
