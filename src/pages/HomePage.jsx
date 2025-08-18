@@ -29,7 +29,6 @@ const HomePage=()=> {
             title: event.title,
             location: event.location,
             venue: event.venue,
-            address: event.address,
             accent: event.accent_color || event.accent,
             date: event.event_date ? new Date(event.event_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             image: event.image || 'https://placehold.co/600x400/333/FFF?text=Event',
