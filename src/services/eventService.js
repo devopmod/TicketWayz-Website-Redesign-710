@@ -391,7 +391,7 @@ export const archiveEvent = async (eventId) => {
   try {
     const { error } = await supabase
       .from('events')
-      .update({ status: 'archived' })
+      .update({ archived: true })
       .eq('id', eventId);
 
     if (error) throw error;
@@ -426,7 +426,7 @@ export const deleteEventPartial = async (eventId) => {
     // Mark event as archived so sold tickets remain linked
     const { error: eventError } = await supabase
       .from('events')
-      .update({ status: 'archived' })
+      .update({ archived: true })
       .eq('id', eventId);
 
     if (eventError) throw eventError;
@@ -438,39 +438,18 @@ export const deleteEventPartial = async (eventId) => {
   }
 };
 
-// Delete event and all related data
-export const deleteEvent = async (eventId) => {
+// Delete event and all related data using RPC/transaction
+export const deleteEventCascade = async (eventId) => {
   try {
-    // First delete tickets
-    const { error: ticketsError } = await supabase
-      .from('tickets')
-      .delete()
-      .eq('event_id', eventId);
+    const { data, error } = await supabase.rpc('delete_event_cascade', {
+      event_id: eventId
+    });
 
-    if (ticketsError) throw ticketsError;
+    if (error) throw error;
 
-    // Then delete event prices
-    const { error: priceError } = await supabase
-      .from('event_prices')
-      .delete()
-      .eq('event_id', eventId);
-
-    if (priceError) throw priceError;
-
-    // Finally delete the event
-    const { error: eventError } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', eventId);
-
-    if (eventError) throw eventError;
-
-    return true;
+    return data;
   } catch (error) {
-    console.error('Error deleting event:', error);
+    console.error('Error deleting event cascade:', error);
     throw error;
   }
 };
-
-// Alias for clarity in imports
-export const deleteEventCascade = deleteEvent;
