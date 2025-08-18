@@ -409,6 +409,23 @@ export const archiveEvent = async (eventId) => {
   }
 };
 
+// Unarchive event
+export const unarchiveEvent = async (eventId) => {
+  try {
+    const { error } = await supabase
+      .from('events')
+      .update({ status: 'published' })
+      .eq('id', eventId);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error('Error unarchiving event:', error);
+    throw error;
+  }
+};
+
 // Check if event has linked order items (sold tickets)
 const hasEventOrderItems = async (eventId) => {
   try {
