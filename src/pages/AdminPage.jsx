@@ -1232,6 +1232,10 @@ const AdminPage = () => {
     setShowEventWizard(true);
   };
 
+  const handleViewEvent = (eventId) => {
+    navigate(`/event/${eventId}`);
+  };
+
   const handleDeleteEvent = (eventId) => {
     setEventToDelete(eventId);
     setShowDeleteModal(true);
@@ -1256,7 +1260,7 @@ const AdminPage = () => {
         if (success !== false) {
           setEvents((prev) =>
             prev.map(event =>
-              event.id === eventToDelete ? { ...event, status: 'archived' } : event
+              event.id === eventToDelete ? { ...event, status: 'partial' } : event
             )
           );
           await loadEvents();
@@ -1758,6 +1762,14 @@ const AdminPage = () => {
                                 title="Вернуть"
                               >
                                 <SafeIcon icon={FiRotateCcw} />
+                              </button>
+                            ) : event.status === 'partial' ? (
+                              <button
+                                onClick={() => handleViewEvent(event.id)}
+                                className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+                                title="Просмотр"
+                              >
+                                <SafeIcon icon={FiEye} />
                               </button>
                             ) : (
                               <>

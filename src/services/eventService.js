@@ -447,11 +447,6 @@ const hasEventOrderItems = async (eventId) => {
 // Delete event but keep sold tickets
 export const deleteEventPartial = async (eventId) => {
   try {
-    // Check if event has sold tickets
-    if (await hasEventOrderItems(eventId)) {
-      throw new Error('Невозможно удалить проданные билеты');
-    }
-
     // Remove all tickets that are not sold
     const { error: ticketsError } = await supabase
       .from('tickets')
@@ -469,10 +464,10 @@ export const deleteEventPartial = async (eventId) => {
 
     if (priceError) throw priceError;
 
-    // Mark event with status 'archived' so sold tickets remain linked
+    // Mark event with status 'partial' so sold tickets remain linked
     const { error: eventError } = await supabase
       .from('events')
-      .update({ status: 'archived' })
+      .update({ status: 'partial' })
       .eq('id', eventId);
 
     if (eventError) throw eventError;

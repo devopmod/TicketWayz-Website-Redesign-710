@@ -1,7 +1,7 @@
 -- Add status column to events
 ALTER TABLE events
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'draft'
-  CHECK (status IN ('draft','published','archived'));
+  CHECK (status IN ('draft','published','archived','partial'));
 
 -- Add archived_at columns for soft delete support
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
