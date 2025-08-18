@@ -220,8 +220,8 @@ const EventDashboard = () => {
       {showPricingModal && (
         <PricingModal
           event={event}
-          prices={event?.prices || []}
           onClose={() => setShowPricingModal(false)}
+          onSave={(updated) => setEvent(prev => ({ ...prev, prices: updated }))}
         />
       )}
     </div>
