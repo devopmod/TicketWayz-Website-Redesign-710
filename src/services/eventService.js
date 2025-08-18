@@ -4,13 +4,17 @@ import {createEventTickets} from './ticketService';
 const isDevelopment = (import.meta.env?.MODE || process.env.NODE_ENV) !== 'production';
 
 // Fetch all events
-export const fetchEvents = async () => {
+export const fetchEvents = async (includeArchived = false) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('events')
-      .select('*, venue:venues(*)')
-      .neq('status', 'archived')
-      .order('event_date', { ascending: true });
+      .select('*, venue:venues(*)');
+
+    if (!includeArchived) {
+      query = query.neq('status', 'archived');
+    }
+
+    const { data, error } = await query.order('event_date', { ascending: true });
 
     if (error) throw error;
 
