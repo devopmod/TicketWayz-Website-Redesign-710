@@ -51,8 +51,6 @@ const EventCard=({event,size="large"})=> {
     navigate(`/event/${event.id}`);
   };
 
-  const accentColor=event?.accent_color || event?.accent || '#f59e0b';
-
   if (size==="large") {
     return (
       <div className="flex-shrink-0 flex-grow-0 w-60 min-w-[240px] mr-6 mb-3 cursor-pointer" onClick={handleCardClick}>
@@ -84,14 +82,6 @@ const EventCard=({event,size="large"})=> {
           <span>{event.artist}</span>
         </div>
 
-        {event.venue && (
-          <div className="mb-1">
-            <div className="text-[13px] font-medium" style={{color: accentColor}}>
-              {event.venue.name}
-            </div>
-          </div>
-        )}
-        
         <div className="flex items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs">
             {formatDate(event.date)} • {event.location}
@@ -121,14 +111,6 @@ const EventCard=({event,size="large"})=> {
           <span className="truncate">{event.artist}</span>
         </div>
 
-        {event.venue && (
-          <div className="mb-1">
-            <div className="text-[13px] font-medium truncate" style={{color: accentColor}}>
-              {event.venue.name}
-            </div>
-          </div>
-        )}
-        
         <div className="flex items-center">
           <span className="text-zinc-500 dark:text-neutral-500 text-xs block truncate">{formatDate(event.date)}</span>
         </div>
