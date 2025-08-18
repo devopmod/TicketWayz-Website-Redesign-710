@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../../../common/SafeIcon';
-import AdminNavBar from '../AdminNavBar';
 import PricingModal from './PricingModal';
 import SeatStatusManager from './SeatStatusManager';
 import {
@@ -139,7 +138,6 @@ const EventDashboard = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900">
-      <AdminNavBar title={event?.title} />
       <div className="p-6 space-y-6">
         <button
           onClick={() => navigate(-1)}
