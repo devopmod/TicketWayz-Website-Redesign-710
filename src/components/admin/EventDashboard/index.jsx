@@ -30,11 +30,29 @@ const EventDashboard = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPricingModal, setShowPricingModal] = useState(false);
-  const [realtimeStatus, setRealtimeStatus] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState('DISCONNECTED');
   const [regeneratingSeats, setRegeneratingSeats] = useState(false);
+
+  const checkRealtimeStatus = () => {
+    const channels = supabase
+      .getChannels()
+      .filter((ch) =>
+        [`event-prices-${id}`, `event-tickets-${id}`].includes(ch.topic)
+      );
+
+    if (channels.some((ch) => ch.state === 'joined')) {
+      setRealtimeStatus('CONNECTED');
+    } else if (channels.length > 0) {
+      setRealtimeStatus('CONNECTING');
+    } else {
+      setRealtimeStatus('DISCONNECTED');
+    }
+  };
 
   useEffect(() => {
     let unsubscribe;
+    let timeoutId;
+    let intervalId;
 
     const loadData = async () => {
       try {
@@ -71,14 +89,13 @@ const EventDashboard = () => {
     loadData();
     unsubscribe = initializeRealtimeSubscription(id, handlePricesUpdate, handleTicketsChange);
 
-    const interval = setInterval(() => {
-      const connected = supabase.getChannels().length > 0;
-      setRealtimeStatus(connected);
-    }, 5000);
+    timeoutId = setTimeout(checkRealtimeStatus, 2000);
+    intervalId = setInterval(checkRealtimeStatus, 5000);
 
     return () => {
       unsubscribe && unsubscribe();
-      clearInterval(interval);
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
     };
   }, [id]);
 
@@ -104,6 +121,13 @@ const EventDashboard = () => {
       return `€${Number(value || 0).toFixed(2)}`;
     }
   };
+
+  const statusColor =
+    realtimeStatus === 'CONNECTED'
+      ? 'text-green-500'
+      : realtimeStatus === 'CONNECTING'
+        ? 'text-yellow-500'
+        : 'text-red-500';
 
   if (loading) {
     return (
@@ -209,9 +233,7 @@ const EventDashboard = () => {
         {/* Real-time status block */}
         <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-lg">
           <h3 className="text-sm font-medium mb-2">Real-time Status</h3>
-          <p className={realtimeStatus ? 'text-green-500' : 'text-red-500'}>
-            {realtimeStatus ? 'Connected' : 'Disconnected'}
-          </p>
+          <p className={statusColor}>{realtimeStatus}</p>
         </div>
 
         <SeatStatusManager statistics={statistics} />
