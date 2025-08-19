@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "lint:error": "eslint . --quiet",
     "test": "node --test",
-    "preview": "vite preview",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@questlabs/react-sdk": "^2.2.4",
