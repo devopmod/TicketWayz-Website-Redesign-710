@@ -10,7 +10,6 @@
     "lint:error": "eslint . --quiet",
     "test": "node --test",
     "preview": "vite preview",
-    "migrate": "supabase db push"
   },
   "dependencies": {
     "@questlabs/react-sdk": "^2.2.4",
