@@ -1260,15 +1260,13 @@ const AdminPage = () => {
           await loadEvents();
         }
       } else if (action === 'partial') {
-        const success = await deleteEventPartial(eventToDelete);
-        if (success !== false) {
-          setEvents((prev) =>
-            prev.map(event =>
-              event.id === eventToDelete ? { ...event, status: 'partial' } : event
-            )
-          );
-          await loadEvents();
-        }
+        await deleteEventPartial(eventToDelete);
+        setEvents((prev) =>
+          prev.map(event =>
+            event.id === eventToDelete ? { ...event, status: 'partial' } : event
+          )
+        );
+        await loadEvents();
       } else if (action === 'cascade') {
         const success = await deleteEventCascade(eventToDelete, true);
         if (success !== false) {
