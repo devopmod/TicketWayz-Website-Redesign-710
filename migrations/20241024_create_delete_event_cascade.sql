@@ -1,5 +1,5 @@
 -- Ensure cascading delete of an event and related data
-CREATE OR REPLACE FUNCTION delete_event_cascade(event_id uuid)
+CREATE OR REPLACE FUNCTION delete_event_cascade(p_event_id uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -8,17 +8,17 @@ BEGIN
     -- Remove order items associated with event tickets
     DELETE FROM order_items
     WHERE ticket_id IN (
-        SELECT id FROM tickets WHERE event_id = delete_event_cascade.event_id
+        SELECT id FROM tickets WHERE event_id = p_event_id
     );
 
     -- Remove tickets for the event
-    DELETE FROM tickets WHERE event_id = delete_event_cascade.event_id;
+    DELETE FROM tickets WHERE event_id = p_event_id;
 
     -- Remove event prices
-    DELETE FROM event_prices WHERE event_id = delete_event_cascade.event_id;
+    DELETE FROM event_prices WHERE event_id = p_event_id;
 
     -- Finally remove the event itself
-    DELETE FROM events WHERE id = delete_event_cascade.event_id;
+    DELETE FROM events WHERE id = p_event_id;
 END;
 $$;
 
