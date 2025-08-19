@@ -454,7 +454,7 @@ export const deleteEventPartial = async (eventId) => {
   try {
     // Rely on database logic to handle sold tickets
     const { data, error } = await supabase.rpc('delete_event_partial', {
-      event_id: eventId
+      p_event_id: eventId
     });
 
     if (error) {
@@ -484,7 +484,7 @@ export const deleteEventCascade = async (eventId, force = false) => {
     }
 
     const { data, error } = await supabase.rpc('delete_event_cascade', {
-      event_id: eventId
+      p_event_id: eventId
     });
 
     if (error) {

@@ -234,7 +234,7 @@ test('deleteEventPartial calls RPC without checking sold tickets', async (t) => 
   assert.equal(fromCalled, 0);
   assert.equal(rpcCalled, 1);
   assert.equal(rpcArgs.name, 'delete_event_partial');
-  assert.deepEqual(rpcArgs.args, { event_id: 1 });
+  assert.deepEqual(rpcArgs.args, { p_event_id: 1 });
   assert.equal(result, true);
 
   delete global.__mockSupabase;
