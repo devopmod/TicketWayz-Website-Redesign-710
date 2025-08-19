@@ -411,40 +411,60 @@ totalTickets: tickets.length
 
 // Подсчет уже выбранных мест от этого элемента
 const selectedFromElement=selectedSeats
-.filter(seat=> seat.elementId===element.id)
-.reduce((total,seat)=> total + (seat.quantity || 1),0);
+  .filter(seat=> seat.elementId===element.id)
+  .reduce((total,seat)=> total + (seat.quantity || 1),0);
 
 let relevantTickets=[];
+let matchingZone=null;
 
 if (element.type==='seat') {
-// Для отдельных мест ищем билеты с seat_id равным element.id
-relevantTickets=tickets.filter(ticket=> ticket.seat_id===element.id);
+  // Для отдельных мест ищем билеты с seat_id равным element.id
+  relevantTickets=tickets.filter(ticket=> ticket.seat_id===element.id);
 } else if (element.type==='section' || element.type==='polygon') {
-// КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Используем функцию сопоставления зоны
-const matchingZone=findMatchingZoneForElement(element);
+  // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Используем функцию сопоставления зоны
+  matchingZone=findMatchingZoneForElement(element);
 
-if (matchingZone) {
-console.log('✅ НАЙДЕНА СООТВЕТСТВУЮЩАЯ ЗОНА:',{
-elementId: element.id,
-zoneId: matchingZone.id,
-zoneName: matchingZone.name,
-zoneCapacity: matchingZone.capacity
-});
+  if (matchingZone) {
+    console.log('✅ НАЙДЕНА СООТВЕТСТВУЮЩАЯ ЗОНА:',{
+      elementId: element.id,
+      zoneId: matchingZone.id,
+      zoneName: matchingZone.name,
+      zoneCapacity: matchingZone.capacity
+    });
 
-// Ищем билеты по найденной зоне
-relevantTickets=tickets.filter(ticket=> ticket.zone_id===matchingZone.id);
-} else {
-console.log('❌ НЕ НАЙДЕНА СООТВЕТСТВУЮЩАЯ ЗОНА для элемента:',element.id);
+    // Ищем билеты по найденной зоне
+    relevantTickets=tickets.filter(ticket=> ticket.zone_id===matchingZone.id);
+  } else {
+    console.log('❌ НЕ НАЙДЕНА СООТВЕТСТВУЮЩАЯ ЗОНА для элемента:',element.id);
 
-// FALLBACK: Попытка поиска по оригинальному element.id
-relevantTickets=tickets.filter(ticket=> ticket.zone_id===element.id);
+    // FALLBACK: Попытка поиска по оригинальному element.id
+    relevantTickets=tickets.filter(ticket=> ticket.zone_id===element.id);
+  }
 }
+
+if (relevantTickets.length===0) {
+  if (matchingZone) {
+    return {
+      total: matchingZone.capacity,
+      free: matchingZone.capacity,
+      selected: selectedFromElement,
+      unavailable: 0
+    };
+  }
+
+  const capacity=element.capacity || 0;
+  return {
+    total: capacity,
+    free: capacity,
+    selected: selectedFromElement,
+    unavailable: 0
+  };
 }
 
 console.log('🔍 ОТЛАДКА relevantTickets:',{
-elementId: element.id,
-relevantTicketsCount: relevantTickets.length,
-ticketStatuses: relevantTickets.map(t=> t.status)
+  elementId: element.id,
+  relevantTicketsCount: relevantTickets.length,
+  ticketStatuses: relevantTickets.map(t=> t.status)
 });
 
 // Подсчитываем билеты по статусам
@@ -452,16 +472,16 @@ const freeTickets=relevantTickets.filter(t=> t.status==='free');
 const heldTickets=relevantTickets.filter(t=> t.status==='held');
 const soldTickets=relevantTickets.filter(t=> t.status==='sold');
 
-  const total=relevantTickets.length;
-  const unavailable=heldTickets.length + soldTickets.length;
-  const free=Math.max(0,freeTickets.length - selectedFromElement);
+const total=relevantTickets.length;
+const unavailable=heldTickets.length + soldTickets.length;
+const free=Math.max(0,freeTickets.length - selectedFromElement);
 
-  const result={
-    total,
-    free,
-    selected: selectedFromElement,
-    unavailable
-  };
+const result={
+  total,
+  free,
+  selected: selectedFromElement,
+  unavailable
+};
 
 console.log('🔍 ОТЛАДКА результат getElementCapacityInfo:',{
 elementId: element.id,
@@ -1064,8 +1084,8 @@ return ()=> window.removeEventListener('resize',resizeCanvas);
 
 // Redraw when dependencies change
 useEffect(()=> {
-draw();
-},[draw]);
+  draw();
+},[draw,venueZones]);
 
 return (
 <div 
