@@ -452,58 +452,22 @@ const hasEventOrderItems = async (eventId) => {
 // Delete event but keep sold tickets
 export const deleteEventPartial = async (eventId) => {
   try {
-    // Remove all tickets that are not sold
-    const { error: ticketsError } = await supabase
-      .from('tickets')
-      .delete()
-      .eq('event_id', eventId)
-      .neq('status', 'sold')
-      .is('order_item_id', null);
-
-    if (ticketsError) throw ticketsError;
-
-    // Get event price IDs linked to remaining tickets
-    const { data: ticketRefs, error: ticketRefError } = await supabase
-      .from('tickets')
-      .select('event_price_id')
-      .eq('event_id', eventId);
-
-    if (ticketRefError) throw ticketRefError;
-
-    const priceIdsToKeep = (ticketRefs || [])
-      .map(ticket => ticket.event_price_id)
-      .filter(Boolean);
-
-    // Remove event prices that are not referenced by remaining tickets
-    let priceDeleteQuery = supabase
-      .from('event_prices')
-      .delete()
-      .eq('event_id', eventId);
-
-    if (priceIdsToKeep.length > 0) {
-      priceDeleteQuery = priceDeleteQuery.not(
-        'id',
-        'in',
-        `(${priceIdsToKeep.join(',')})`
-      );
+    // Exit early if there are sold tickets
+    if (await hasEventOrderItems(eventId)) {
+      throw new Error('Невозможно удалить проданные билеты');
     }
 
-    const { error: priceError } = await priceDeleteQuery;
+    const { data, error } = await supabase.rpc('delete_event_partial', {
+      event_id: eventId
+    });
 
-    if (priceError) throw priceError;
+    if (error) throw error;
 
-    // Mark event with status 'partial' so sold tickets remain linked
-    const { error: eventError } = await supabase
-      .from('events')
-      .update({ status: 'partial' })
-      .eq('id', eventId);
-
-    if (eventError) throw eventError;
-
-    return true;
+    return data;
   } catch (error) {
-    if (error.code === '23503') {
-      throw new Error('Невозможно удалить проданные билеты');
+    if (error.code === 'PGRST100' || error.message?.includes('delete_event_partial')) {
+      console.error('delete_event_partial function missing. Did you run the migrations?', error);
+      throw new Error('Функция delete_event_partial отсутствует');
     }
     console.error('Error partially deleting event:', error);
     throw error;
