@@ -461,11 +461,34 @@ export const deleteEventPartial = async (eventId) => {
 
     if (ticketsError) throw ticketsError;
 
-    // Remove event prices
-    const { error: priceError } = await supabase
+    // Get event price IDs linked to sold tickets
+    const { data: soldPriceRefs, error: soldPriceError } = await supabase
+      .from('tickets')
+      .select('event_price_id')
+      .eq('event_id', eventId)
+      .eq('status', 'sold');
+
+    if (soldPriceError) throw soldPriceError;
+
+    const priceIdsToKeep = (soldPriceRefs || [])
+      .map(ticket => ticket.event_price_id)
+      .filter(Boolean);
+
+    // Remove event prices that are not referenced by sold tickets
+    let priceDeleteQuery = supabase
       .from('event_prices')
       .delete()
       .eq('event_id', eventId);
+
+    if (priceIdsToKeep.length > 0) {
+      priceDeleteQuery = priceDeleteQuery.not(
+        'id',
+        'in',
+        `(${priceIdsToKeep.join(',')})`
+      );
+    }
+
+    const { error: priceError } = await priceDeleteQuery;
 
     if (priceError) throw priceError;
 
