@@ -204,80 +204,13 @@ test('deleteEventCascade allows force deletion with sold tickets', async (t) => 
   delete global.__mockTicketService;
 });
 
-test('deleteEventPartial aborts when sold tickets exist', async (t) => {
+test('deleteEventPartial calls RPC without checking sold tickets', async (t) => {
   let rpcCalled = 0;
-  const mockSupabase = {
-    from(table) {
-      if (table === 'tickets') {
-        return {
-          select() {
-            return {
-              eq(column, id) {
-                assert.equal(column, 'event_id');
-                assert.equal(id, 1);
-                return {
-                  not(col, op, val) {
-                    assert.equal(col, 'order_item_id');
-                    assert.equal(op, 'is');
-                    assert.equal(val, null);
-                    return Promise.resolve({ count: 1, error: null });
-                  }
-                };
-              }
-            };
-          }
-        };
-      }
-      return {};
-    },
-    rpc() {
-      rpcCalled++;
-      return Promise.resolve({ data: null, error: null });
-    }
-  };
-
-  global.__mockSupabase = mockSupabase;
-  global.__mockTicketService = { createEventTickets: async () => ({}) };
-  const code = await fs.readFile(new URL('./eventService.js', import.meta.url), 'utf8');
-  const patched = code
-    .replace("import supabase from '../lib/supabase';", 'const supabase = global.__mockSupabase;')
-    .replace("import {createEventTickets} from './ticketService';", 'const {createEventTickets} = global.__mockTicketService;');
-  const { deleteEventPartial } = await import(
-    `data:text/javascript;base64,${Buffer.from(patched).toString('base64')}?partialAbort`
-  );
-
-  await assert.rejects(() => deleteEventPartial(1), /Невозможно удалить проданные билеты/);
-  assert.equal(rpcCalled, 0);
-
-  delete global.__mockSupabase;
-  delete global.__mockTicketService;
-});
-
-test('deleteEventPartial calls RPC when no sold tickets exist', async (t) => {
-  let rpcCalled = 0;
+  let fromCalled = 0;
   let rpcArgs = null;
   const mockSupabase = {
-    from(table) {
-      if (table === 'tickets') {
-        return {
-          select() {
-            return {
-              eq(column, id) {
-                assert.equal(column, 'event_id');
-                assert.equal(id, 1);
-                return {
-                  not(col, op, val) {
-                    assert.equal(col, 'order_item_id');
-                    assert.equal(op, 'is');
-                    assert.equal(val, null);
-                    return Promise.resolve({ count: 0, error: null });
-                  }
-                };
-              }
-            };
-          }
-        };
-      }
+    from() {
+      fromCalled++;
       return {};
     },
     rpc(name, args) {
@@ -298,6 +231,7 @@ test('deleteEventPartial calls RPC when no sold tickets exist', async (t) => {
   );
 
   const result = await deleteEventPartial(1);
+  assert.equal(fromCalled, 0);
   assert.equal(rpcCalled, 1);
   assert.equal(rpcArgs.name, 'delete_event_partial');
   assert.deepEqual(rpcArgs.args, { event_id: 1 });

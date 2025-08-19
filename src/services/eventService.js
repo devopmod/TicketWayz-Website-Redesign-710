@@ -452,16 +452,17 @@ const hasEventOrderItems = async (eventId) => {
 // Delete event but keep sold tickets
 export const deleteEventPartial = async (eventId) => {
   try {
-    // Exit early if there are sold tickets
-    if (await hasEventOrderItems(eventId)) {
-      throw new Error('Невозможно удалить проданные билеты');
-    }
-
+    // Rely on database logic to handle sold tickets
     const { data, error } = await supabase.rpc('delete_event_partial', {
       event_id: eventId
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23503') {
+        throw new Error('Невозможно удалить проданные билеты');
+      }
+      throw error;
+    }
 
     return data;
   } catch (error) {
