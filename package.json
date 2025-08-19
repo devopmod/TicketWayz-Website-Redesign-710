@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run lint && vite build",
+    "build": "npm run lint && npm run migrate && vite build",
     "lint": "eslint .",
     "lint:error": "eslint . --quiet",
     "test": "node --test",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "migrate": "supabase db push"
   },
   "dependencies": {
     "@questlabs/react-sdk": "^2.2.4",

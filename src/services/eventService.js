@@ -486,16 +486,66 @@ export const deleteEventCascade = async (eventId, force = false) => {
       event_id: eventId
     });
 
-    if (error) throw error;
+    if (error) {
+      if (
+        error.code === 'PGRST202' ||
+        error.code === 'PGRST100' ||
+        error.message?.includes('delete_event_cascade')
+      ) {
+        console.warn(
+          'delete_event_cascade function missing. Falling back to manual deletion.',
+          error
+        );
+
+        const { error: txError } = await supabase.transaction(async (tx) => {
+          const { data: tickets, error: ticketsError } = await tx
+            .from(TICKETS_TABLE)
+            .select('id')
+            .eq('event_id', eventId);
+
+          if (ticketsError) throw ticketsError;
+
+          const ticketIds = tickets.map(t => t.id);
+
+          if (ticketIds.length) {
+            const { error: orderItemsError } = await tx
+              .from(ORDER_ITEMS_TABLE)
+              .delete()
+              .in('ticket_id', ticketIds);
+            if (orderItemsError) throw orderItemsError;
+          }
+
+          const { error: deleteTicketsError } = await tx
+            .from(TICKETS_TABLE)
+            .delete()
+            .eq('event_id', eventId);
+          if (deleteTicketsError) throw deleteTicketsError;
+
+          const { error: deletePricesError } = await tx
+            .from(EVENT_PRICES_TABLE)
+            .delete()
+            .eq('event_id', eventId);
+          if (deletePricesError) throw deletePricesError;
+
+          const { error: deleteEventError } = await tx
+            .from(EVENTS_TABLE)
+            .delete()
+            .eq('id', eventId);
+          if (deleteEventError) throw deleteEventError;
+        });
+
+        if (txError) throw txError;
+
+        return null;
+      }
+
+      throw error;
+    }
 
     return data;
   } catch (error) {
     if (error.code === '23503') {
       throw new Error('Невозможно удалить проданные билеты');
-    }
-    if (error.code === 'PGRST100' || error.message?.includes('delete_event_cascade')) {
-      console.error('delete_event_cascade function missing. Did you run the migrations?', error);
-      throw new Error('Функция delete_event_cascade отсутствует');
     }
     console.error('Error deleting event cascade:', error);
     throw error;
