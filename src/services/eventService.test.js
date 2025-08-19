@@ -203,3 +203,100 @@ test('deleteEventCascade allows force deletion with sold tickets', async (t) => 
   delete global.__mockSupabase;
   delete global.__mockTicketService;
 });
+
+test('deleteEventPartial keeps prices for sold and reserved tickets', async (t) => {
+  const mockSupabase = {
+    from(table) {
+      if (table === 'tickets') {
+        return {
+          delete() {
+            return {
+              eq(column, id) {
+                assert.equal(column, 'event_id');
+                assert.equal(id, 1);
+                return {
+                  neq(col, val) {
+                    assert.equal(col, 'status');
+                    assert.equal(val, 'sold');
+                    return {
+                      is(col2, val2) {
+                        assert.equal(col2, 'order_item_id');
+                        assert.equal(val2, null);
+                        return Promise.resolve({ error: null });
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          },
+          select() {
+            return {
+              eq(column, id) {
+                assert.equal(column, 'event_id');
+                assert.equal(id, 1);
+                return Promise.resolve({
+                  data: [
+                    { event_price_id: 1 },
+                    { event_price_id: 2 }
+                  ],
+                  error: null
+                });
+              }
+            };
+          }
+        };
+      }
+      if (table === 'event_prices') {
+        return {
+          delete() {
+            return {
+              eq(column, id) {
+                assert.equal(column, 'event_id');
+                assert.equal(id, 1);
+                return {
+                  not(col, operator, list) {
+                    assert.equal(col, 'id');
+                    assert.equal(operator, 'in');
+                    assert.equal(list, '(1,2)');
+                    return Promise.resolve({ error: null });
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+      if (table === 'events') {
+        return {
+          update() {
+            return {
+              eq(column, id) {
+                assert.equal(column, 'id');
+                assert.equal(id, 1);
+                return Promise.resolve({ error: null });
+              }
+            };
+          }
+        };
+      }
+      return {};
+    }
+  };
+
+  global.__mockSupabase = mockSupabase;
+  global.__mockTicketService = { createEventTickets: async () => ({}) };
+  const code = await fs.readFile(new URL('./eventService.js', import.meta.url), 'utf8');
+  const patched = code
+    .replace("import supabase from '../lib/supabase';", 'const supabase = global.__mockSupabase;')
+    .replace("import {createEventTickets} from './ticketService';", 'const {createEventTickets} = global.__mockTicketService;');
+  const { deleteEventPartial } = await import(
+    `data:text/javascript;base64,${Buffer.from(patched).toString('base64')}?partial`
+  );
+
+  const result = await deleteEventPartial(1);
+  assert.equal(result, true);
+
+  delete global.__mockSupabase;
+  delete global.__mockTicketService;
+});

@@ -457,24 +457,24 @@ export const deleteEventPartial = async (eventId) => {
       .from('tickets')
       .delete()
       .eq('event_id', eventId)
-      .neq('status', 'sold');
+      .neq('status', 'sold')
+      .is('order_item_id', null);
 
     if (ticketsError) throw ticketsError;
 
-    // Get event price IDs linked to sold tickets
-    const { data: soldPriceRefs, error: soldPriceError } = await supabase
+    // Get event price IDs linked to remaining tickets
+    const { data: ticketRefs, error: ticketRefError } = await supabase
       .from('tickets')
       .select('event_price_id')
-      .eq('event_id', eventId)
-      .eq('status', 'sold');
+      .eq('event_id', eventId);
 
-    if (soldPriceError) throw soldPriceError;
+    if (ticketRefError) throw ticketRefError;
 
-    const priceIdsToKeep = (soldPriceRefs || [])
+    const priceIdsToKeep = (ticketRefs || [])
       .map(ticket => ticket.event_price_id)
       .filter(Boolean);
 
-    // Remove event prices that are not referenced by sold tickets
+    // Remove event prices that are not referenced by remaining tickets
     let priceDeleteQuery = supabase
       .from('event_prices')
       .delete()
