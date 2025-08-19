@@ -490,10 +490,11 @@ export const deleteEventCascade = async (eventId, force = false) => {
       if (
         error.code === 'PGRST202' ||
         error.code === 'PGRST100' ||
+        error.code?.startsWith('42') || // SQL-level failures like 42702
         error.message?.includes('delete_event_cascade')
       ) {
         console.warn(
-          'delete_event_cascade function missing. Falling back to manual deletion.',
+          'delete_event_cascade RPC failed. Falling back to manual deletion.',
           error
         );
 
