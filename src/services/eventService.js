@@ -511,10 +511,10 @@ export const deleteEventPartial = async (eventId) => {
 };
 
 // Delete event and all related data using RPC/transaction
-export const deleteEventCascade = async (eventId) => {
+export const deleteEventCascade = async (eventId, force = false) => {
   try {
-    // Check if event has sold tickets
-    if (await hasEventOrderItems(eventId)) {
+    // Check if event has sold tickets unless forced
+    if (!force && await hasEventOrderItems(eventId)) {
       throw new Error('Невозможно удалить проданные билеты');
     }
 
