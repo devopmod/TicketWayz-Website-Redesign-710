@@ -53,6 +53,29 @@ test('fetchEventById returns event with prices', async (t) => {
   delete global.__mockTicketService;
 });
 
+test('deleteEventCascade reports missing RPC function', async (t) => {
+  const mockSupabase = {
+    rpc() {
+      return Promise.resolve({ data: null, error: { code: 'PGRST100', message: 'Function delete_event_cascade not found' } });
+    }
+  };
+
+  global.__mockSupabase = mockSupabase;
+  global.__mockTicketService = { createEventTickets: async () => ({}) };
+  const code = await fs.readFile(new URL('./eventService.js', import.meta.url), 'utf8');
+  const patched = code
+    .replace("import supabase from '../lib/supabase';", 'const supabase = global.__mockSupabase;')
+    .replace("import {createEventTickets} from './ticketService';", 'const {createEventTickets} = global.__mockTicketService;');
+  const { deleteEventCascade } = await import(
+    `data:text/javascript;base64,${Buffer.from(patched).toString('base64')}?missingRpc`
+  );
+
+  await assert.rejects(() => deleteEventCascade('1', true), /Функция delete_event_cascade отсутствует/);
+
+  delete global.__mockSupabase;
+  delete global.__mockTicketService;
+});
+
 test('fetchEvents resolves image URLs', async (t) => {
   const events = [
     { id: 1, title: 'Event 1', image: 'path/to/image1.jpg', venue: {} },
