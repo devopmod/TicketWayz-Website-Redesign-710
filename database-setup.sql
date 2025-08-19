@@ -89,7 +89,6 @@ DECLARE
   v_tickets_created INTEGER := 0;
   v_seats_created INTEGER := 0;
   v_zones_created INTEGER := 0;
-  v_has_single_seats BOOLEAN;
   v_result JSON;
 BEGIN
   -- Получаем venue_id для события
@@ -107,27 +106,21 @@ BEGIN
   -- Удаляем только свободные и удержанные билеты
   DELETE FROM tickets WHERE event_id = p_event_id AND status IN ('free', 'held');
 
-  -- Проверяем наличие индивидуальных мест и при их наличии пропускаем создание зональных билетов
-  SELECT EXISTS (SELECT 1 FROM single_seats WHERE venue_id = v_venue_id)
-    INTO v_has_single_seats;
-
-  IF NOT v_has_single_seats THEN
-    -- Создаем билеты для зон (sections/polygons)
-    FOR v_zone_record IN
-      SELECT id, capacity FROM zones WHERE venue_id = v_venue_id AND capacity > 0
-    LOOP
-      -- Создаем билеты для каждой зоны
-      FOR i IN 1..v_zone_record.capacity LOOP
-        INSERT INTO tickets (
-          event_id, zone_id, seat_id, status, created_at, updated_at
-        ) VALUES (
-          p_event_id, v_zone_record.id, NULL, 'free', NOW(), NOW()
-        );
-        v_tickets_created := v_tickets_created + 1;
-      END LOOP;
-      v_zones_created := v_zones_created + 1;
+  -- Создаем билеты для зон (sections/polygons)
+  FOR v_zone_record IN
+    SELECT id, capacity FROM zones WHERE venue_id = v_venue_id AND capacity > 0
+  LOOP
+    -- Создаем билеты для каждой зоны
+    FOR i IN 1..v_zone_record.capacity LOOP
+      INSERT INTO tickets (
+        event_id, zone_id, seat_id, status, created_at, updated_at
+      ) VALUES (
+        p_event_id, v_zone_record.id, NULL, 'free', NOW(), NOW()
+      );
+      v_tickets_created := v_tickets_created + 1;
     END LOOP;
-  END IF;
+    v_zones_created := v_zones_created + 1;
+  END LOOP;
 
   -- Создаем билеты для отдельных мест
   FOR v_seat_record IN 
