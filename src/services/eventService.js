@@ -529,6 +529,10 @@ export const deleteEventCascade = async (eventId, force = false) => {
     if (error.code === '23503') {
       throw new Error('Невозможно удалить проданные билеты');
     }
+    if (error.code === 'PGRST100' || error.message?.includes('delete_event_cascade')) {
+      console.error('delete_event_cascade function missing. Did you run the migrations?', error);
+      throw new Error('Функция delete_event_cascade отсутствует');
+    }
     console.error('Error deleting event cascade:', error);
     throw error;
   }
