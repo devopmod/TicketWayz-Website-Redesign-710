@@ -1270,7 +1270,7 @@ const AdminPage = () => {
           await loadEvents();
         }
       } else if (action === 'cascade') {
-        const success = await deleteEventCascade(eventToDelete);
+        const success = await deleteEventCascade(eventToDelete, true);
         if (success !== false) {
           setEvents((prev) => prev.filter(event => event.id !== eventToDelete));
         }

@@ -128,3 +128,55 @@ test('fetchEvents resolves image URLs', async (t) => {
   delete global.__mockSupabase;
   delete global.__mockTicketService;
 });
+
+test('deleteEventCascade allows force deletion with sold tickets', async (t) => {
+  let ticketsQueryCount = 0;
+  let rpcCalled = 0;
+  const mockSupabase = {
+    from(table) {
+      if (table === 'tickets') {
+        ticketsQueryCount++;
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  not() {
+                    return Promise.resolve({ count: 1, error: null });
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+      return {};
+    },
+    rpc(name) {
+      if (name === 'delete_event_cascade') {
+        rpcCalled++;
+        return Promise.resolve({ data: null, error: null });
+      }
+      return Promise.resolve({});
+    }
+  };
+
+  global.__mockSupabase = mockSupabase;
+  global.__mockTicketService = { createEventTickets: async () => ({}) };
+  const code = await fs.readFile(new URL('./eventService.js', import.meta.url), 'utf8');
+  const patched = code
+    .replace("import supabase from '../lib/supabase';", 'const supabase = global.__mockSupabase;')
+    .replace("import {createEventTickets} from './ticketService';", 'const {createEventTickets} = global.__mockTicketService;');
+  const { deleteEventCascade } = await import(
+    `data:text/javascript;base64,${Buffer.from(patched).toString('base64')}?forceDelete`
+  );
+
+  await assert.rejects(() => deleteEventCascade('1'), /Невозможно удалить проданные билеты/);
+  const result = await deleteEventCascade('1', true);
+  assert.equal(ticketsQueryCount, 1); // Second call skips check
+  assert.equal(rpcCalled, 1);
+  assert.equal(result, null);
+
+  delete global.__mockSupabase;
+  delete global.__mockTicketService;
+});
